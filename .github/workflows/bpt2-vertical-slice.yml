@@ -1,4 +1,4 @@
-name: BPT2 Gate 01 Host Build
+name: BPT2 Gate 01 Bootstrap
 
 on:
   pull_request:
@@ -6,12 +6,33 @@ on:
       - main
     paths:
       - 'bpt2/main/**'
+      - 'bpt2/modules/**'
+      - 'bpt2/scripts/**'
       - 'bpt2/global.json'
+      - 'bpt2/.config/**'
       - '.github/workflows/bpt2-vertical-slice.yml'
 
 jobs:
-  host-build:
+  bootstrap:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: BomPraTi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d BomPraTi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,5 +40,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Build ABP host
+      - name: Build ABP host and modules
         run: dotnet build bpt2/main/BomPraTi.slnx --configuration Release --nologo
+
+      - name: Fresh PostgreSQL migrations
+        working-directory: bpt2
+        run: scripts/migrate.sh
