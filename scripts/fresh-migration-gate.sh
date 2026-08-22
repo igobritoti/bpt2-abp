@@ -18,6 +18,7 @@ add_migration() {
     --startup-project "$HOST" \
     --context "$context" \
     --output-dir Data/Migrations/Gate \
+    --configuration Release \
     --no-build
 }
 
@@ -28,6 +29,7 @@ update_context() {
     --startup-project "$HOST" \
     --context "$context" \
     --connection "$CONNECTION" \
+    --configuration Release \
     --no-build
 }
 
@@ -36,6 +38,9 @@ add_migration "$ROOT/modules/media/src/BomPraTi.Media/BomPraTi.Media.csproj" Med
 add_migration "$ROOT/modules/sellers/src/BomPraTi.Sellers/BomPraTi.Sellers.csproj" SellersDbContext GateInitialSellers
 add_migration "$ROOT/modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj" MarketplaceDbContext GateInitialMarketplace
 add_migration "$ROOT/modules/ingestion/src/BomPraTi.Ingestion/BomPraTi.Ingestion.csproj" IngestionDbContext GateInitialIngestion
+
+# Compile the generated migration classes before --no-build database updates.
+dotnet build "$HOST" --configuration Release --nologo
 
 update_context "$HOST" BomPraTiDbContext
 update_context "$ROOT/modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj" CatalogDbContext
