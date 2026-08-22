@@ -48,6 +48,13 @@ p=Path(os.environ["BPT_ATTACK_ROOT"])/"modules/marketplace/src/BomPraTi.Marketpl
 s=p.read_text(); p.write_text(s.replace("</Project>", "  <ItemGroup>\n    <ProjectReference Include=\"../../../media/src/BomPraTi.Media/BomPraTi.Media.csproj\" />\n  </ItemGroup>\n</Project>"))
 '
 
+run_attack "Marketplace -> Sellers implementation project reference" '
+from pathlib import Path
+import os
+p=Path(os.environ["BPT_ATTACK_ROOT"])/"modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj"
+s=p.read_text(); p.write_text(s.replace("</Project>", "  <ItemGroup>\n    <ProjectReference Include=\"../../../sellers/src/BomPraTi.Sellers/BomPraTi.Sellers.csproj\" />\n  </ItemGroup>\n</Project>"))
+'
+
 run_attack "Marketplace storage-provider key leakage" '
 from pathlib import Path
 import os
@@ -73,6 +80,7 @@ run_attack "Fully-qualified Ingestion -> Catalog.Domain bypass" '
 from pathlib import Path
 import os
 p=Path(os.environ["BPT_ATTACK_ROOT"])/"modules/ingestion/src/BomPraTi.Ingestion/BoundaryAttack.cs"
+p.parent.mkdir(parents=True, exist_ok=True)
 p.write_text("namespace BomPraTi.Ingestion; internal sealed class BoundaryAttack { private BomPraTi.Catalog.Domain.Brand? _brand; }\n")
 '
 
