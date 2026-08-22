@@ -6,6 +6,7 @@ Estados: `PASSA`, `NAO_PASSA`, `DECIDIDO`, `NAO_DECIDIDO`, `ADIADO`.
 
 | ID | Questão | Estado | Decisão atual |
 |---|---|---|---|
+| G01-01 | Host ABP 10.6 / .NET 10 builda no repositório BPT2 | PASSA / DECIDIDO | workflow `BPT2 Gate 01 Host Build` passou no destino em 2026-08-22 |
 | ARCH-001 | ABP 10.6 como chassis | PASSA / DECIDIDO | baseline 10.6 |
 | ARCH-002 | Modular monolith | PASSA / DECIDIDO | iniciar como monólito modular |
 | ARCH-003 | Evitar arquitetura clássica multilayer por padrão | PASSA / DECIDIDO | host no-layers; criar abstração somente por necessidade |
