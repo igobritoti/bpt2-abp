@@ -27,6 +27,10 @@ jobs:
         run: python3 scripts/check-bootstrap-command.py
       - name: Verify deterministic host wiring
         run: python3 scripts/test-wire-host.py
+      - name: Inspect evaluated module framework
+        run: |
+          dotnet msbuild modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
+          dotnet msbuild modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
       - name: Generate and wire ABP 10.6 host
         run: bash scripts/bootstrap-host.sh
       - name: Build generated host and modules
