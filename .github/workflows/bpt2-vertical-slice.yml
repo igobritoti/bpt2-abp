@@ -1,46 +1,23 @@
-name: BPT2 Listing Facts Slice
+name: BPT2 Gate 01 Host Build
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - 'bpt2/**'
+      - 'bpt2/main/**'
+      - 'bpt2/global.json'
       - '.github/workflows/bpt2-vertical-slice.yml'
 
 jobs:
-  listing-facts-slice:
+  host-build:
     runs-on: ubuntu-24.04
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: BomPraTi
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d BomPraTi"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-
-    env:
-      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
-
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Restore tools
-        working-directory: bpt2
-        run: dotnet tool restore
-      - name: Build
-        run: dotnet build bpt2/main/BomPraTi/BomPraTi.csproj --configuration Release --nologo
-      - name: Apply migrations
-        working-directory: bpt2
-        run: scripts/migrate.sh
-      - name: Listing create publish public facts
-        run: dotnet run --project bpt2/tests/BomPraTi.ListingManagementSmoke/BomPraTi.ListingManagementSmoke.csproj --configuration Release
+
+      - name: Build ABP host
+        run: dotnet build bpt2/main/BomPraTi.slnx --configuration Release --nologo
