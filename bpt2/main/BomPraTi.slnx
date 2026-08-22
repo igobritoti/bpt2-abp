@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="BomPraTi/BomPraTi.csproj" />
+  <Project Path="../modules/catalog/src/BomPraTi.Catalog.Contracts/BomPraTi.Catalog.Contracts.csproj" />
+  <Project Path="../modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj" />
+  <Project Path="../modules/sellers/src/BomPraTi.Sellers.Contracts/BomPraTi.Sellers.Contracts.csproj" />
+  <Project Path="../modules/sellers/src/BomPraTi.Sellers/BomPraTi.Sellers.csproj" />
 </Solution>

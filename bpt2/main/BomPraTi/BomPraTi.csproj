@@ -11,4 +11,9 @@
     <PackageReference Include="Volo.Abp.Autofac" Version="10.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj" />
+    <ProjectReference Include="../../modules/sellers/src/BomPraTi.Sellers/BomPraTi.Sellers.csproj" />
+  </ItemGroup>
+
 </Project>
