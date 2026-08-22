@@ -15,11 +15,14 @@ ALLOWED_PROJECT_REFS: dict[str, set[str]] = {
     "BomPraTi.Catalog": {"BomPraTi.Catalog.Contracts"},
     "BomPraTi.Media.Contracts": set(),
     "BomPraTi.Media": {"BomPraTi.Media.Contracts"},
+    "BomPraTi.Sellers.Contracts": set(),
+    "BomPraTi.Sellers": {"BomPraTi.Sellers.Contracts"},
     "BomPraTi.Marketplace.Contracts": set(),
     "BomPraTi.Marketplace": {
         "BomPraTi.Marketplace.Contracts",
         "BomPraTi.Catalog.Contracts",
         "BomPraTi.Media.Contracts",
+        "BomPraTi.Sellers.Contracts",
     },
     "BomPraTi.Ingestion.Contracts": set(),
     "BomPraTi.Ingestion": {
@@ -31,6 +34,7 @@ ALLOWED_PROJECT_REFS: dict[str, set[str]] = {
 MODULE_BY_KEY = {
     "catalog": "Catalog",
     "media": "Media",
+    "sellers": "Sellers",
     "marketplace": "Marketplace",
     "ingestion": "Ingestion",
 }
@@ -79,7 +83,7 @@ for csproj in MODULES.rglob("*.csproj"):
                 )
 
 
-qualified_re = re.compile(r"\bBomPraTi\.(Catalog|Media|Marketplace|Ingestion)(\.[A-Za-z_][A-Za-z0-9_.]*)?")
+qualified_re = re.compile(r"\bBomPraTi\.(Catalog|Media|Sellers|Marketplace|Ingestion)(\.[A-Za-z_][A-Za-z0-9_.]*)?")
 for source in MODULES.rglob("*.cs"):
     rel = source.relative_to(MODULES)
     own_module = MODULE_BY_KEY.get(rel.parts[0])
