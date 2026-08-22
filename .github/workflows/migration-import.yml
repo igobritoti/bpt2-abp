@@ -1,0 +1,38 @@
+name: Import BPT2 migration archive
+
+on:
+  push:
+    branches:
+      - migrate-bpt2-assets-20260822
+    paths:
+      - 'migration/bpt2-export.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: migrate-bpt2-assets-20260822
+      - name: Decode and unpack
+        run: |
+          set -euo pipefail
+          base64 -d migration/bpt2-export.b64 > /tmp/bpt2-export.tgz
+          tar -xzf /tmp/bpt2-export.tgz
+          rm -f migration/bpt2-export.b64
+          rmdir migration 2>/dev/null || true
+      - name: Commit imported subtree
+        run: |
+          set -euo pipefail
+          git config user.name 'BPT2 migration bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- bpt2 .github/workflows/bpt2-vertical-slice.yml migration 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git commit -m 'chore: import BPT2 subtree from legacy repository'
+          git push origin HEAD:migrate-bpt2-assets-20260822
