@@ -13,7 +13,8 @@ if [[ "$major" -lt 10 ]]; then
   exit 2
 fi
 
-if [[ -n "$(find "$MAIN" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -print -quit 2>/dev/null)" ]]; then
+mkdir -p "$MAIN"
+if [[ -n "$(find "$MAIN" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -print -quit)" ]]; then
   echo "main/ is not empty. Refusing to overwrite an existing generated host." >&2
   exit 3
 fi
@@ -34,4 +35,4 @@ dotnet tool run abp new BomPraTi \
 python3 "$ROOT/scripts/wire-host.py"
 
 echo
-printf 'Host generated and wired. Next: %s\n' "$ROOT/scripts/verify.sh"
+printf 'Host generated and wired.\n'
