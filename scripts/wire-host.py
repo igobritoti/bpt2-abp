@@ -11,13 +11,17 @@ MAIN = ROOT / "main"
 
 MODULE_TYPES = [
     "BomPraTiCatalogModule",
+    "BomPraTiMediaModule",
+    "BomPraTiSellersModule",
     "BomPraTiMarketplaceModule",
     "BomPraTiIngestionModule",
 ]
 MODULE_USINGS = [
     "using BomPraTi.Catalog;",
-    "using BomPraTi.Ingestion;",
+    "using BomPraTi.Media;",
+    "using BomPraTi.Sellers;",
     "using BomPraTi.Marketplace;",
+    "using BomPraTi.Ingestion;",
 ]
 
 
@@ -74,6 +78,8 @@ def main() -> int:
 
     module_projects = [
         ROOT / "modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj",
+        ROOT / "modules/media/src/BomPraTi.Media/BomPraTi.Media.csproj",
+        ROOT / "modules/sellers/src/BomPraTi.Sellers/BomPraTi.Sellers.csproj",
         ROOT / "modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj",
         ROOT / "modules/ingestion/src/BomPraTi.Ingestion/BomPraTi.Ingestion.csproj",
     ]
