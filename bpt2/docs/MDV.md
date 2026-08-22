@@ -23,6 +23,7 @@ Estados: `PASSA`, `NAO_PASSA`, `DECIDIDO`, `NAO_DECIDIDO`, `ADIADO`.
 | LOCK-001 | Distributed lock | ADIADO | introduzir somente com caso real |
 | SEARCH-001 | PostgreSQL vs search externo | NAO_DECIDIDO | benchmark antes de infraestrutura externa |
 | MEDIA-001 | Provider de object storage | NAO_DECIDIDO | não escolher por preferência |
+| MIG-001 | Preservação do BPT1 durante o BPT2 | PASSA / DECIDIDO | BPT1 não é descartado; permanece donor/referência até decisão futura explícita |
 
 ## Regra epistemológica
 
