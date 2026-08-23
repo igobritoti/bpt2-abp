@@ -133,7 +133,7 @@ PY
 )"
 
 status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
-[[ "$status" == "200" ]] || { echo "Owner lead inbox failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+[[ "$status" == "200" ]] || { echo "Owner lead inbox failed: $status $(cat "$RESPONSE")" >&2; cat "$API_LOG" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" "$LISTING_ID" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
@@ -176,7 +176,7 @@ status="$(request_json POST '/api/identity/users' "$TOKEN" "$OTHER_BODY")"
 [[ "$status" == "200" || "$status" == "201" ]] || { echo "Second Seller create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 OTHER_TOKEN="$(get_token "$OTHER_USER" "$OTHER_PASSWORD")"
 status="$(request_json GET '/api/app/seller-lead-query/mine' "$OTHER_TOKEN")"
-[[ "$status" == "200" ]] || { echo "Second Seller inbox failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+[[ "$status" == "200" ]] || { echo "Second Seller inbox failed: $status $(cat "$RESPONSE")" >&2; cat "$API_LOG" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
@@ -190,7 +190,7 @@ echo "SELLER_LEADS_OWNERSHIP: PASS"
 status="$(request_json POST "/api/app/listing-command/pause/$LISTING_ID" "$TOKEN")"
 [[ "$status" == "200" ]] || { echo "Pause failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
-[[ "$status" == "200" ]] || { echo "Owner inbox after Pause failed: $status" >&2; exit 1; }
+[[ "$status" == "200" ]] || { echo "Owner inbox after Pause failed: $status" >&2; cat "$API_LOG" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
