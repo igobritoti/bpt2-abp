@@ -125,7 +125,9 @@ render_id_url() {
 }
 
 get_token() {
-  local username="$1" password="$2" token_file="${TMPDIR:-/tmp}/bpt2-token-${username}.json"
+  local username="$1"
+  local password="$2"
+  local token_file="${TMPDIR:-/tmp}/bpt2-token-${username}.json"
   curl --fail-with-body --silent --show-error \
     -X POST "$BASE/connect/token" \
     -H 'Content-Type: application/x-www-form-urlencoded' \
