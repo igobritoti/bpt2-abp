@@ -5,10 +5,10 @@
 - .NET SDK baseline: `10.0.100`
 - Target frameworks found in project files: `net10.0`
 - ABP framework versions detected: `10.6.0`
-- Project files (`*.csproj`): **12**
-- Test project files under `tests/`: **1**
+- Project files (`*.csproj`): **13**
+- Test project files under `tests/`: **2**
 - Business module directories: **5** — `catalog`, `ingestion`, `marketplace`, `media`, `sellers`
-- GitHub workflow files: **6** — `architecture-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `product-api-gate.yml`
+- GitHub workflow files: **7** — `architecture-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `listing-http-lifecycle-gate.yml`, `product-api-gate.yml`
 - Active execution plans: **1** — `0001-product-baseline.md`
 
 Runtime readiness is intentionally not copied here. Use the checks on the current commit/PR as defined by `docs/QUALITY.md`.
