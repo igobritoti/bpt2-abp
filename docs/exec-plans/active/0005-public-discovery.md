@@ -58,8 +58,8 @@ Classificação:
 
 - [x] Auditar contrato e implementação backend atuais.
 - [x] Confirmar gap de UI na home pública.
-- [ ] Implementar serialização tipada de filtros no cliente HTTP.
-- [ ] Implementar formulário SSR/query string e paginação.
+- [x] Implementar serialização tipada de filtros no cliente HTTP.
+- [x] Implementar formulário SSR/query string e paginação.
 - [ ] Provar filtros/paginação em runtime real.
 - [ ] Atualizar documentação canônica e encerrar o plano.
 
@@ -72,6 +72,20 @@ Classificação:
 ### Contrato de filtros
 
 **DECIDIDO:** não adicionar filtros ao backend neste plano. O frontend consumirá somente `VehicleId`, `Brand`, `Model`, `MinModelYear`, `MaxModelYear`, `MinPrice`, `MaxPrice`, `Query`, `Skip` e `Take`; a primeira UI não precisa necessariamente expor `VehicleId` diretamente.
+
+## Progress log
+
+- 2026-08-23: Plan 0005 selecionado após o merge do Plan 0004 porque o backend de discovery já passava, enquanto a home pública ainda não tinha consumidor interativo do contrato.
+- 2026-08-23: `getPublicListings` passou a serializar o contrato público existente; a home Next passou a ler Query/Brand/Model/ano/preço/Skip/Take pela query string e renderizar formulário GET + paginação SSR.
+- 2026-08-23: adicionado Public Discovery HTTP Gate com dois Listings publicados e um Draft para provar formulário, Query, filtros de catálogo/preço, paginação e range invertido contra API + Next reais.
+- 2026-08-23: Public Web Gate passou lint, typecheck e production build; Harness apontou somente a ausência mecânica das seções `Progress log` e `Decision log`, corrigida neste checkpoint.
+
+## Decision log
+
+- Query string é o estado canônico da primeira experiência de discovery.
+- Reutilizar exclusivamente o `PublicListingSearchInput` já existente; nenhuma expansão de filtro/backend neste plano.
+- Manter SSR e URLs compartilháveis, sem estado React para filtros/paginação.
+- Não introduzir ranking, sort novo, autocomplete, localização ou engine externa sem necessidade comprovada.
 
 ## Gaps futuros
 
