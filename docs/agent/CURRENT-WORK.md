@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Product Baseline 0001 concluído. O próximo outcome é selecionar e formalizar o próximo execution plan de produto a partir das lacunas explícitas do produto-alvo, sem reabrir decisões arquiteturais já comprovadas.
+Executar o primeiro fluxo público real do comprador conforme o Execution Plan 0003:
 
-O baseline comprovado cobre:
+`Public Listing → Public Detail → WhatsApp Contact`
 
-`Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
+O Product Baseline de backend está concluído. O public web deve permanecer independente do host ABP, consumir somente a API HTTP e usar Next.js 16 Active LTS/App Router na primeira implementação conforme ADR-0009.
 
-Próximo acceptance target: escolher o menor próximo fluxo de produto que feche uma lacuna real de usuário, definir seus critérios por evidência e abrir um execution plan específico antes de implementar nova feature. O candidato prioritário é a jornada pública Buyer → contato/lead, porque completa o objetivo central de conectar comprador e vendedor; frontend e contrato exato do primeiro consumidor ainda precisam ser decididos por evidência.
+Próximo acceptance target: materializar a fundação do public web com gate próprio e, em seguida, expor no detalhe o `WhatsAppNumber` que já existe no contrato público de Seller. Não criar Lead persistido, chat ou nova infraestrutura antes que um requisito real exija isso.
 
 ## Active plan
 
-Nenhum execution plan ativo após o fechamento do Product Baseline 0001. O próximo plano deve ser criado somente depois de fechar seu escopo e critérios de aceite.
+[`../exec-plans/active/0003-public-buyer-contact.md`](../exec-plans/active/0003-public-buyer-contact.md)
 
 ## Source of runtime truth
 
@@ -28,7 +28,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. O próximo trabalho depende de selecionar o primeiro gap de produto a fechar; isso é boundary de decisão, não blocker técnico.
+Nenhum blocker de repositório conhecido. O formato exato de normalização/validação do WhatsApp permanece uma decisão local permitida pelo plano e deve ser resolvido apenas antes do CTA real.
 
 ## Update rule
 
