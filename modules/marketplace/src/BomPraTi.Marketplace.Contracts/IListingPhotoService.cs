@@ -1,6 +1,8 @@
+using Volo.Abp.Application.Services;
+
 namespace BomPraTi.Marketplace.Contracts;
 
-public interface IListingPhotoService
+public interface IListingPhotoService : IApplicationService
 {
     Task<IReadOnlyList<ListingPhotoDto>> AttachAsync(
         Guid listingId,
