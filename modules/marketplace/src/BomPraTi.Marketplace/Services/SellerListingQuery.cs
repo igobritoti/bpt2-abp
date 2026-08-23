@@ -1,8 +1,12 @@
+using BomPraTi.Media.Contracts;
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Data;
+using BomPraTi.Marketplace.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace BomPraTi.Marketplace.Services;
@@ -12,11 +16,16 @@ public class SellerListingQuery : ISellerListingQuery, ITransientDependency
 {
     private readonly MarketplaceDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IMediaContentReader _mediaContent;
 
-    public SellerListingQuery(MarketplaceDbContext dbContext, ICurrentUser currentUser)
+    public SellerListingQuery(
+        MarketplaceDbContext dbContext,
+        ICurrentUser currentUser,
+        IMediaContentReader mediaContent)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _mediaContent = mediaContent;
     }
 
     public async Task<IReadOnlyList<ListingDto>> GetMineAsync(CancellationToken cancellationToken = default)
@@ -83,6 +92,37 @@ public class SellerListingQuery : ISellerListingQuery, ITransientDependency
             .ToListAsync(cancellationToken);
 
         return new SellerListingDetailDto(listing, photos);
+    }
+
+    public async Task<IRemoteStreamContent> GetMinePhotoAsync(
+        Guid listingId,
+        Guid photoId,
+        CancellationToken cancellationToken = default)
+    {
+        var sellerId = CurrentSellerId();
+
+        var mediaAssetId = await _dbContext.Listings
+            .AsNoTracking()
+            .Where(listing => listing.Id == listingId && listing.SellerId == sellerId)
+            .Join(
+                _dbContext.ListingPhotos.AsNoTracking().Where(photo => photo.Id == photoId),
+                listing => listing.Id,
+                photo => photo.ListingId,
+                (_, photo) => (Guid?)photo.MediaAssetId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (!mediaAssetId.HasValue)
+        {
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
+        }
+
+        var media = await _mediaContent.OpenReadAsync(mediaAssetId.Value, cancellationToken);
+        if (media is null)
+        {
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
+        }
+
+        return new RemoteStreamContent(media.Content, null, media.ContentType, media.Length);
     }
 
     private Guid CurrentSellerId() =>
