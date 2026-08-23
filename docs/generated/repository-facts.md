@@ -8,7 +8,7 @@
 - Project files (`*.csproj`): **13**
 - Test project files under `tests/`: **2**
 - Business module directories: **5** — `catalog`, `ingestion`, `marketplace`, `media`, `sellers`
-- GitHub workflow files: **10** — `architecture-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `listing-http-lifecycle-gate.yml`, `listing-photo-http-gate.yml`, `product-api-gate.yml`, `public-buyer-http-gate.yml`, `public-web-gate.yml`
+- GitHub workflow files: **11** — `architecture-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `listing-http-lifecycle-gate.yml`, `listing-photo-http-gate.yml`, `product-api-gate.yml`, `public-buyer-http-gate.yml`, `public-web-gate.yml`, `seller-auth-http-gate.yml`
 - Active execution plans: **1** — `0004-seller-self-service.md`
 
 Runtime readiness is intentionally not copied here. Use the checks on the current commit/PR as defined by `docs/QUALITY.md`.
