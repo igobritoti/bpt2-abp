@@ -185,7 +185,7 @@ export async function updateSellerListing(
   input: UpdateListingInput,
 ): Promise<SellerListing> {
   const response = await apiRequest(
-    `/api/app/listing-command/${encodeURIComponent(listingId)}`,
+    `/api/app/listing-command?listingId=${encodeURIComponent(listingId)}`,
     accessToken,
     {
       method: "PUT",
