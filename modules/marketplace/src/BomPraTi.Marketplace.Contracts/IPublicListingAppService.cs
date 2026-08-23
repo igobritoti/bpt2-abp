@@ -1,3 +1,4 @@
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Content;
 
@@ -7,7 +8,7 @@ public interface IPublicListingAppService : IApplicationService
 {
     Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<PublicListingDto>> GetListAsync(
+    Task<PagedResultDto<PublicListingDto>> GetListAsync(
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default);
 

@@ -5,6 +5,7 @@ using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
 using BomPraTi.Sellers.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 
 namespace BomPraTi.Marketplace.Services;
@@ -86,16 +87,24 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default)
     {
+        var page = await SearchPageAsync(input, cancellationToken);
+        return page.Items;
+    }
+
+    public async Task<PagedResultDto<PublicListingDto>> SearchPageAsync(
+        PublicListingSearchInput input,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentNullException.ThrowIfNull(input);
 
         if (input.MinPrice.HasValue && input.MaxPrice.HasValue && input.MinPrice > input.MaxPrice)
         {
-            return Array.Empty<PublicListingDto>();
+            return EmptyPage();
         }
 
         if (input.MinModelYear.HasValue && input.MaxModelYear.HasValue && input.MinModelYear > input.MaxModelYear)
         {
-            return Array.Empty<PublicListingDto>();
+            return EmptyPage();
         }
 
         var listings = ListingVisibility.PublicOnly(_dbContext.Listings.AsNoTracking());
@@ -117,7 +126,7 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
 
             if (vehicleIds.Count == 0)
             {
-                return Array.Empty<PublicListingDto>();
+                return EmptyPage();
             }
 
             listings = listings.Where(x => vehicleIds.Contains(x.VehicleId));
@@ -137,6 +146,12 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
         {
             var normalized = input.Query.Trim().ToLowerInvariant();
             listings = listings.Where(x => x.Title.ToLower().Contains(normalized));
+        }
+
+        var totalCount = await listings.LongCountAsync(cancellationToken);
+        if (totalCount == 0)
+        {
+            return EmptyPage();
         }
 
         var boundedSkip = Math.Max(0, input.Skip);
@@ -160,8 +175,12 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
                 x.StateCode))
             .ToListAsync(cancellationToken);
 
-        return await ProjectRowsAsync(rows, cancellationToken);
+        var items = await ProjectRowsAsync(rows, cancellationToken);
+        return new PagedResultDto<PublicListingDto>(totalCount, items);
     }
+
+    private static PagedResultDto<PublicListingDto> EmptyPage() =>
+        new(0, Array.Empty<PublicListingDto>());
 
     private async Task<IReadOnlyList<PublicListingDto>> ProjectRowsAsync(
         IReadOnlyList<ListingRow> rows,

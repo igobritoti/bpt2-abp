@@ -7,6 +7,7 @@ BASE="http://127.0.0.1:${PORT}"
 LOG="${TMPDIR:-/tmp}/bpt2-product-api.log"
 SWAGGER="${TMPDIR:-/tmp}/bpt2-swagger.json"
 PATHS_ENV="${TMPDIR:-/tmp}/bpt2-api-paths.env"
+PUBLIC_RESPONSE="${TMPDIR:-/tmp}/bpt2-public-list-response.json"
 
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 
@@ -85,7 +86,22 @@ status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
 status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$BASE$CATALOG_LIST")"
 [[ "$status" == "200" ]] || { echo "Expected anonymous Catalog list to return 200, got $status" >&2; exit 1; }
 
-status="$(curl --silent --output /dev/null --write-out '%{http_code}' "$BASE$PUBLIC_LIST")"
+status="$(curl --silent --show-error --output "$PUBLIC_RESPONSE" --write-out '%{http_code}' "$BASE$PUBLIC_LIST")"
 [[ "$status" == "200" ]] || { echo "Expected anonymous public Listing list to return 200, got $status" >&2; exit 1; }
+python3 - "$PUBLIC_RESPONSE" <<'PY'
+import json
+import sys
 
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+
+if not isinstance(data, dict):
+    raise SystemExit(f"Public Listing list must return a paged object, got: {data!r}")
+if data.get("totalCount") != 0:
+    raise SystemExit(f"Fresh public Listing totalCount expected 0, got: {data!r}")
+if data.get("items") != []:
+    raise SystemExit(f"Fresh public Listing items expected [], got: {data!r}")
+PY
+
+echo "PUBLIC_LIST_PAGING_CONTRACT: PASS"
 echo "PRODUCT API SMOKE: PASSED"
