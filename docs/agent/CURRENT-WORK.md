@@ -12,7 +12,9 @@ Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operac
 
 A auditoria inicial confirmou que perfil, My Listings, comandos de Listing, Vehicle search, Media upload e mutações de foto já existem. O gap mínimo de backend já identificado é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio.
 
-Próximo acceptance target: provar a menor fronteira de UI/auth para o Seller usando Authorization Code + PKCE e decidir, por evidência, entre estender o cliente Next.js existente ou usar um cliente autenticado separado.
+A primeira fronteira de UI/auth está decidida por evidência: a implementação inicial reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O Seller Auth HTTP Gate comprovou PKCE obrigatório e redirect ao Account login, e o Public Web Gate comprovou build do cliente.
+
+Próximo acceptance target: concluir o Seller shell mínimo — login/logout de usuário real, leitura/edição do Seller Profile e `Meus anúncios` usando o access token OIDC e as APIs autenticadas já existentes.
 
 ## Active plan
 
