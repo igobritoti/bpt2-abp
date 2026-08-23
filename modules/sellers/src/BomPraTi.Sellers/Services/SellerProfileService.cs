@@ -1,12 +1,14 @@
 using BomPraTi.Sellers.Contracts;
 using BomPraTi.Sellers.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 
 namespace BomPraTi.Sellers.Services;
 
-public sealed class SellerProfileService : ISellerProfileService, ITransientDependency
+[Authorize]
+public class SellerProfileService : ISellerProfileService, ITransientDependency
 {
     private readonly IRepository<SellerProfile, Guid> _profiles;
     private readonly ICurrentUser _currentUser;

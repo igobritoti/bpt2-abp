@@ -11,6 +11,7 @@ on:
       - 'scripts/test-wire-host.py'
       - 'scripts/wire-host.py'
       - '.github/workflows/host-gate.yml'
+      - 'main/**'
 
 permissions:
   contents: read
@@ -31,7 +32,7 @@ jobs:
         run: |
           dotnet msbuild modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
           dotnet msbuild modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
-      - name: Generate and wire ABP 10.6 host
+      - name: Ensure materialized ABP 10.6 host exists
         run: bash scripts/bootstrap-host.sh
-      - name: Build generated host and modules
+      - name: Build host and modules
         run: dotnet build main/BomPraTi/BomPraTi.csproj --configuration Release --nologo

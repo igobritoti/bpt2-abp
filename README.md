@@ -1,16 +1,12 @@
 # BPT2 / Bom Pra Ti
 
-Repositório oficial da reconstrução BPT2 baseada em ABP.
+Repositório oficial da reconstrução do Bom Pra Ti.
 
-Baseline documentado:
-- .NET 10
-- ABP 10.6 `app-nolayers`
-- Entity Framework Core
-- PostgreSQL
-- modular monolith com boundaries de Contracts/implementation
-- frontend público desacoplado
-- sem Redis, broker, search externo, Kubernetes ou microservices por padrão
+## Entrada
 
-Arquitetura e decisões: `ARCHITECTURE.md`, `docs/MDV.md` e `docs/adr/`.
+- Agentes: [`AGENTS.md`](AGENTS.md)
+- Base de conhecimento: [`docs/README.md`](docs/README.md)
+- Arquitetura: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- Estado corrente: [`docs/agent/CURRENT-WORK.md`](docs/agent/CURRENT-WORK.md)
 
-Regra epistemológica: uma decisão só é congelada por documentação oficial/código upstream, standard aplicável ou teste executado no BPT2. Inferência/opinião permanece aberta até evidência suficiente.
+Detalhes de produto, decisões, segurança, qualidade, planos e fatos derivados vivem nas fontes canônicas indexadas em `docs/README.md`. Evite repetir essas regras neste README.

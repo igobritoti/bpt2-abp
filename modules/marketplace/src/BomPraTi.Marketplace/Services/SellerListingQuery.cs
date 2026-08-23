@@ -1,12 +1,14 @@
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
 namespace BomPraTi.Marketplace.Services;
 
-public sealed class SellerListingQuery : ISellerListingQuery, ITransientDependency
+[Authorize]
+public class SellerListingQuery : ISellerListingQuery, ITransientDependency
 {
     private readonly MarketplaceDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
