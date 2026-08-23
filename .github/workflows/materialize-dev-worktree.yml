@@ -1,6 +1,14 @@
 name: Materialize development worktree
 
 on:
+  push:
+    branches:
+      - 'feat/product-implementation'
+    paths:
+      - '.github/workflows/materialize-dev-worktree.yml'
+      - 'modules/**'
+      - 'scripts/bootstrap-host.sh'
+      - 'scripts/wire-host.py'
   pull_request:
     paths:
       - '.github/workflows/materialize-dev-worktree.yml'
