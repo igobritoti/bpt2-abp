@@ -61,7 +61,9 @@ export async function isListingReported(accessToken: string, listingId: string):
 }
 
 export async function reportListing(accessToken: string, listingId: string): Promise<void> {
-  await buyerRequest(`/api/app/listing-report/report?listingId=${encodeURIComponent(listingId)}`, accessToken, {
-    method: "POST",
-  });
+  await buyerRequest(
+    `/api/app/listing-report/report/${encodeURIComponent(listingId)}`,
+    accessToken,
+    { method: "POST" },
+  );
 }
