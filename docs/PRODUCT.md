@@ -23,7 +23,7 @@ Bom Pra Ti é um marketplace/classificados automotivo brasileiro. O núcleo do p
 - administração;
 - ingestão de fontes externas.
 
-Algumas dessas capacidades ainda estão adiadas no plano de implementação atual. Estar no produto-alvo não significa estar no slice corrente.
+Algumas dessas capacidades ainda estão adiadas. Estar no produto-alvo não significa estar no slice corrente.
 
 ## Não objetivos do baseline
 
@@ -51,19 +51,21 @@ Separações conceituais:
 - **Enrichment:** specs, equipamentos, segurança, consumo, preço/mercado, editorial, imagens enriquecidas.
 - **Connectivity/Ingestion:** sources, jobs de importação, APIs, provenance, confidence, reconciliation e validação.
 
-## Slice de implementação ativo
+## Slices concluídos
 
 O Product Baseline de backend foi concluído até:
 
 `Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-O próximo slice fecha o primeiro ciclo real do comprador:
+O primeiro ciclo real do comprador também foi concluído e comprovado por HTTP real:
 
-`Public Listing → Public Detail → WhatsApp Contact`
+`Public Listing → Public Detail → Photo → WhatsApp Contact`
 
 A experiência pública é um cliente independente da API conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary HTTP reversível.
 
-Não há requisito comprovado para persistir um agregado de Lead apenas para abrir o contato inicial: o domínio Sellers já modela `WhatsAppNumber` no contato público. Persistência/analytics de leads será decidida quando houver requisito de registrar, acompanhar ou medir contatos.
+O domínio Sellers já modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Não há requisito comprovado para persistir um agregado de Lead apenas para abrir esse contato inicial. Persistência/analytics de leads será decidida quando houver requisito de registrar, acompanhar ou medir contatos.
+
+Nenhum execution plan de produto está ativo após o fechamento do Plan 0003. O próximo slice deve ser escolhido pelo menor gap real de produto, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -75,6 +77,7 @@ Não há requisito comprovado para persistir um agregado de Lead apenas para abr
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - A primeira implementação do public web usa Next.js 16 Active LTS/App Router sem criar dependência de frontend nos módulos de backend.
+- O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não implica Lead persistido.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
