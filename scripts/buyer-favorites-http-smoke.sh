@@ -36,6 +36,20 @@ PY
 
 ADMIN_TOKEN="$(curl --silent -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode 'username=admin' --data-urlencode 'password=1q2w3E*' --data-urlencode 'scope=BomPraTi' | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
 request(){ local method="$1" path="$2" token="${3:-}" body="${4:-}"; local a=(--silent --show-error --output "$RESPONSE" --write-out '%{http_code}' --request "$method"); [[ -z "$token" ]] || a+=(-H "Authorization: Bearer $token"); [[ -z "$body" ]] || a+=(-H 'Content-Type: application/json' --data "$body"); curl "${a[@]}" "$BASE$path"; }
+get_fixture_token(){
+  local username="$1"
+  local password="$2"
+  local token_file="$TMP/token-${username}.json"
+  local status
+  status="$(curl --silent --show-error --output "$token_file" --write-out '%{http_code}' -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode "username=$username" --data-urlencode "password=$password" --data-urlencode 'scope=BomPraTi')"
+  [[ "$status" == 200 ]] || { echo "Fixture token for $username expected 200 got $status: $(cat "$token_file")" >&2; return 1; }
+  python3 - "$token_file" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1])); token=data.get('access_token')
+if not token: raise SystemExit(f'Missing access_token: {data}')
+print(token)
+PY
+}
 request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Buyer Favorite Fixture","whatsAppNumber":"5511999991111"}' >/dev/null
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
@@ -113,16 +127,53 @@ x=json.load(open(sys.argv[1])); assert len(x)==1 and x[0]['id']==sys.argv[2],x
 PY
 echo 'BUYER_FAVORITE_MINE: PASS'
 status="$(request GET "/api/app/favorite/is-favorite/$LISTING_ID" "$BUYER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == true ]] || exit 1
+
+OTHER_USER="buyer-favorite-$(python3 - <<'PY'
+import uuid
+print(uuid.uuid4().hex[:10])
+PY
+)"
+OTHER_PASSWORD='Bpt2-BuyerFavorite-9!x'
+OTHER_EMAIL="${OTHER_USER}@example.invalid"
+OTHER_BODY="$(python3 - "$OTHER_USER" "$OTHER_EMAIL" "$OTHER_PASSWORD" <<'PY'
+import json,sys
+username,email,password=sys.argv[1:]
+print(json.dumps({'userName':username,'name':'Other','surname':'Buyer','email':email,'password':password,'isActive':True,'lockoutEnabled':True,'roleNames':[]}))
+PY
+)"
+status="$(request POST '/api/identity/users' "$ADMIN_TOKEN" "$OTHER_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Second Buyer create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+OTHER_TOKEN="$(get_fixture_token "$OTHER_USER" "$OTHER_PASSWORD")"
+status="$(request GET '/api/app/favorite/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Second Buyer unexpectedly saw first Buyer's favorite" >&2; cat "$RESPONSE"; exit 1; }
+status="$(request GET "/api/app/favorite/is-favorite/$LISTING_ID" "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == false ]] || { echo "Second Buyer favorite state leaked" >&2; cat "$RESPONSE"; exit 1; }
+status="$(request POST "$FAVORITE_PATH" "$OTHER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || { echo "Second Buyer add failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request GET '/api/app/favorite/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1])); assert len(x)==1 and x[0]['id']==sys.argv[2],x
+PY
+echo 'BUYER_FAVORITE_USER_ISOLATION: PASS'
+
 status="$(request POST "/api/app/listing-command/pause/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
-status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" == 200 ]] || exit 1; [[ "$(cat "$RESPONSE")" == '[]' ]] || { cat "$RESPONSE"; exit 1; }
+for token in "$BUYER_TOKEN" "$OTHER_TOKEN"; do
+  status="$(request GET '/api/app/favorite/mine' "$token")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { cat "$RESPONSE"; exit 1; }
+done
 echo 'BUYER_FAVORITE_PUBLIC_VISIBILITY: PASS'
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
-status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" == 200 ]] || exit 1
-python3 - "$RESPONSE" <<'PY'
+for token in "$BUYER_TOKEN" "$OTHER_TOKEN"; do
+  status="$(request GET '/api/app/favorite/mine' "$token")"; [[ "$status" == 200 ]] || exit 1
+  python3 - "$RESPONSE" <<'PY'
 import json,sys; assert len(json.load(open(sys.argv[1])))==1
 PY
+done
 status="$(request DELETE "$FAVORITE_PATH" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || exit 1
 status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || exit 1
+status="$(request GET '/api/app/favorite/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1])); assert len(x)==1 and x[0]['id']==sys.argv[2],x
+PY
+status="$(request DELETE "$FAVORITE_PATH" "$OTHER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || exit 1
+status="$(request GET '/api/app/favorite/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || exit 1
 echo 'BUYER_FAVORITE_REMOVE: PASS'
 
 pushd "$ROOT/public-web" >/dev/null
