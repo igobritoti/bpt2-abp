@@ -63,7 +63,12 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <p className="eyebrow">Vendedor</p><h2 id="seller-title">{listing.seller.displayName ?? "Vendedor"}</h2><p>Fale diretamente com o responsável por este anúncio.</p>
             <FavoriteButton listingId={listing.id} />
             <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
-            {contactUrl ? <a className="whatsapp-cta" href={contactUrl} rel="noreferrer" target="_blank">Falar no WhatsApp</a> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
+            {contactUrl ? (
+              <form action="/api/contact/whatsapp" method="post" target="_blank">
+                <input name="listingId" type="hidden" value={listing.id} />
+                <button className="whatsapp-cta" type="submit">Falar no WhatsApp</button>
+              </form>
+            ) : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
           </aside>
         </div>
       </article>

@@ -79,13 +79,19 @@ O Plan 0006 concluiu o primeiro ciclo autenticado de Favorites do Buyer:
 
 O Buyer usa `BomPraTi_BuyerWeb`, cliente OpenIddict público dedicado com Authorization Code + PKCE. Marketplace deriva o proprietário do Favorite de `ICurrentUser`; o browser não informa `UserId`. Só Listing atualmente público pode ser adicionado, e `Meus favoritos` reutiliza a projeção pública existente: Pause oculta o item sem apagar a relação, republish o restaura e unfavorite remove a intenção persistida.
 
+O Plan 0007 concluiu a ativação mínima de Lead no contato WhatsApp:
+
+`Public Detail → WhatsApp CTA → persist Lead → abrir conversa`
+
+Marketplace reutiliza o aggregate e a tabela `Lead` já existentes. O servidor aceita contato anônimo, persiste `UserId` apenas quando houver identidade corrente, fixa o canal como `WhatsApp` e só cria Lead quando o Listing continua público no momento do POST. Draft, Pause e Archive são bloqueados pela mesma projeção pública usada pelo restante do produto. O public web envia somente `listingId`; o número de destino continua vindo do contato canônico de Sellers e o redirect ocorre depois da persistência.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Marketplace já possui a estrutura de domínio/persistência de `Lead`, mas o fluxo WhatsApp atual não cria Lead. Ativar registro de contato, analytics ou CRM continua dependente de requisito comprovado.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp agora registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}`. Analytics agregados, CRM, deduplicação, scoring, atribuição e Seller inbox continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0006. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0007. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -102,7 +108,8 @@ Nenhum execution plan está ativo após o fechamento do Plan 0006. O próximo sl
 - Favorite pertence ao usuário autenticado derivado no servidor; o cliente não escolhe `UserId`.
 - Favorite só é criado para Listing atualmente público e a lista do Buyer só projeta Listings que continuam públicos.
 - A primeira experiência de discovery usa somente o contrato público já existente e mantém query string como estado SSR/compartilhável.
-- O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não ativa automaticamente persistência/analytics de Lead.
+- O primeiro contato público Buyer → Seller usa o WhatsApp canônico pertencente a Sellers.
+- O contato WhatsApp persiste Lead no Marketplace somente para Listing atualmente público; `UserId` continua opcional para contato anônimo.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
@@ -110,7 +117,7 @@ O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente, por exemplo:
 
-- ativação/persistência de eventos de contato e analytics/CRM de Leads;
+- analytics agregados, CRM, deduplicação, scoring, atribuição e Seller inbox para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
