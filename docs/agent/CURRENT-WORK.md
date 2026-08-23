@@ -10,11 +10,11 @@ Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operac
 
 `Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
 
-A auditoria inicial confirmou que perfil, My Listings, comandos de Listing, Vehicle search, Media upload e mutações de foto já existem. O gap mínimo de backend já identificado é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio.
+A fronteira de UI/auth e o Seller shell mínimo estão comprovados. A implementação inicial reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O fluxo executado prova login real pelo Account, troca PKCE por access token, leitura/edição do Seller Profile com normalização canônica no backend, `Meus anúncios` filtrado pelo usuário autenticado e logout.
 
-A primeira fronteira de UI/auth está decidida por evidência: a implementação inicial reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O Seller Auth HTTP Gate comprovou PKCE obrigatório e redirect ao Account login, e o Public Web Gate comprovou build do cliente.
+O gap mínimo de backend já identificado para o próximo bloco é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio. `GetMine` continua sendo listagem e não substitui esse read model de edição.
 
-Próximo acceptance target: concluir o Seller shell mínimo — login/logout de usuário real, leitura/edição do Seller Profile e `Meus anúncios` usando o access token OIDC e as APIs autenticadas já existentes.
+Próximo acceptance target: implementar a leitura mínima de edição e o fluxo `Vehicle canônico → criar Draft → reabrir/editar Listing próprio`, preservando ownership server-side e `ConcurrencyStamp`. Fotos/publicação permanecem no checkpoint seguinte.
 
 ## Active plan
 
