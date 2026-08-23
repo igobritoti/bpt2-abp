@@ -11,15 +11,18 @@ on:
       - 'scripts/test-wire-host.py'
       - 'scripts/wire-host.py'
       - '.github/workflows/host-gate.yml'
+      - 'main/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   host:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/product-implementation
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -31,31 +34,26 @@ jobs:
         run: |
           dotnet msbuild modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
           dotnet msbuild modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
-      - name: Generate and wire ABP 10.6 host
+      - name: Ensure ABP 10.6 host exists
         run: bash scripts/bootstrap-host.sh
-      - name: Build generated host and modules
+      - name: Build host and modules
         run: dotnet build main/BomPraTi/BomPraTi.csproj --configuration Release --nologo
-      - name: Sanitize generated development tree
+      - name: Materialize generated host on implementation branch
         shell: bash
         run: |
           set -euo pipefail
           find main -type f \( -name '*.pfx' -o -name '*.p12' -o -name '*.key' -o -name '*.pem' \) -delete
+          rm -f main/BomPraTi/appsettings.secrets.json
+          if ! grep -qxF 'BomPraTi/appsettings.secrets.json' main/.gitignore; then
+            printf '\n# Local secrets\nBomPraTi/appsettings.secrets.json\n' >> main/.gitignore
+          fi
           find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + || true
-      - name: Package development worktree
-        run: |
-          tar \
-            --exclude='.git' \
-            --exclude='**/bin' \
-            --exclude='**/obj' \
-            --exclude='*.pfx' \
-            --exclude='*.p12' \
-            --exclude='*.key' \
-            --exclude='*.pem' \
-            -czf bpt2abp-dev-worktree.tar.gz \
-            .github docs modules scripts tests .config README.md ARCHITECTURE.md global.json main
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bpt2abp-dev-worktree
-          path: bpt2abp-dev-worktree.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          git config user.name 'bpt2-ci'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- main
+          if git diff --cached --quiet; then
+            echo 'Host already materialized.'
+            exit 0
+          fi
+          git commit -m 'build: materialize ABP 10.6 host [skip ci]'
+          git push origin HEAD:feat/product-implementation
