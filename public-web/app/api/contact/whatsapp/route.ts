@@ -1,0 +1,25 @@
+import { NextRequest, NextResponse } from "next/server";
+import { recordWhatsAppLead } from "@/lib/leads";
+import { getPublicListing, whatsAppUrl } from "@/lib/public-listings";
+
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const listingId = formData.get("listingId");
+
+  if (typeof listingId !== "string" || listingId.length === 0) {
+    return new NextResponse("listingId is required", { status: 400 });
+  }
+
+  const listing = await getPublicListing(listingId);
+  if (!listing) {
+    return new NextResponse("Listing not found", { status: 404 });
+  }
+
+  const contactUrl = whatsAppUrl(listing.seller.whatsAppNumber);
+  if (!contactUrl) {
+    return new NextResponse("Contact unavailable", { status: 404 });
+  }
+
+  await recordWhatsAppLead(listing.id);
+  return NextResponse.redirect(contactUrl, 303);
+}
