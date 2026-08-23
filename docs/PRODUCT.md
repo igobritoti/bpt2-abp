@@ -65,7 +65,13 @@ A experiência pública é um cliente independente da API conforme ADR-0004. A p
 
 O domínio Sellers já modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Não há requisito comprovado para persistir um agregado de Lead apenas para abrir esse contato inicial. Persistência/analytics de leads será decidida quando houver requisito de registrar, acompanhar ou medir contatos.
 
-Nenhum execution plan de produto está ativo após o fechamento do Plan 0003. O próximo slice deve ser escolhido pelo menor gap real de produto, sem reabrir decisões já comprovadas.
+## Slice ativo
+
+Execution Plan 0004 fecha a experiência operacional do vendedor sobre APIs e regras já comprovadas:
+
+`Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
+
+A primeira decisão do plano é provar a fronteira de UI/auth do Seller com Authorization Code + PKCE. O password grant permanece restrito aos smokes/fixtures e não será usado como login de produto. O BPT1 continua donor, não chassis; código/UX antigo só será transplantado quando houver fonte concreta auditável e valor demonstrado.
 
 ## Requisitos já congelados
 
