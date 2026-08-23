@@ -21,10 +21,11 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - `VehicleCatalogAppService` já expõe Get/Search de Vehicle canônico; não é necessário criar catálogo paralelo para o formulário Seller.
 - O host já contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelos smokes.
 - Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado em fixtures/smokes legados não deve virar formulário de login do produto.
-- A superfície Seller ainda não possui query dedicada para reabrir um Listing específico com sua galeria atual. `GetMine` é listagem; mutações de foto não substituem uma leitura de edição. Essa é a extensão mínima de backend já identificada.
+- A leitura autenticada de edição foi resolvida pelo contrato mínimo `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` e devolve o Listing com a galeria ordenada atual. Nenhum novo aggregate, regra de domínio ou dependência entre implementações de módulos foi necessário.
 - BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis nesta auditoria nem em busca pública identificável com segurança; portanto nenhuma regra, tela ou componente do BPT1 será presumido. Quando uma fonte real estiver acessível, ela poderá ser auditada como donor sem bloquear este plano.
 - O Seller Auth HTTP Gate comprovou um cliente OpenIddict público dedicado `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP; o Public Web Gate comprovou as rotas Seller no cliente Next existente.
 - O Seller Shell HTTP Gate comprovou em PostgreSQL fresco o fluxo `Account login → Authorization Code + PKCE → SellerWeb access token → Profile → Draft → My Listings → logout`, usando o mesmo cliente OIDC do produto para as APIs autenticadas.
+- O Seller Draft Edit HTTP Gate comprovou Vehicle canônico, criação Draft, leitura apenas do owner, estado/galeria atuais, update com rotação de `ConcurrencyStamp`, conflito stale 409 e reread do estado canônico.
 
 ## Escopo
 
@@ -88,9 +89,9 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 2. [x] A UI Seller continua cliente HTTP da aplicação e não referencia implementação/DbContext dos módulos.
 3. [x] Seller consegue ler e atualizar o próprio perfil, preservando normalização de WhatsApp no backend.
 4. [x] `Meus anúncios` mostra somente Listings do usuário autenticado.
-5. [ ] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
-6. [ ] Seller consegue reabrir e editar um Listing próprio com estado e fotos atuais; o backend expõe apenas o contrato adicional mínimo necessário.
-7. [ ] Edição usa `ConcurrencyStamp`; stale update continua resultando em conflito em vez de overwrite silencioso.
+5. [x] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
+6. [x] Seller consegue reabrir e editar um Listing próprio com estado e fotos atuais; o backend expõe apenas o contrato adicional mínimo necessário.
+7. [x] Edição usa `ConcurrencyStamp`; stale update continua resultando em conflito em vez de overwrite silencioso.
 8. [ ] Upload/attach/remove/reorder de fotos funciona pela UI sem expor storage provider key e respeita ownership.
 9. [ ] Publish torna o anúncio visível no public web; Draft continua invisível e segundo Seller continua impedido de mutar o anúncio.
 10. [ ] Fluxo `login → perfil/meus anúncios → Draft → edição/fotos → Publish → public web` é comprovado por gate reproduzível e documentação canônica é atualizada no fechamento.
@@ -104,7 +105,7 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - [x] Confirmar baseline de autenticação interativa: Authorization Code + PKCE.
 - [x] Provar a menor opção de UI/auth e registrar a decisão antes de construir telas de negócio.
 - [x] Implementar Seller shell mínimo: login/logout, perfil e Meus anúncios.
-- [ ] Implementar query de edição mínima + Draft/Edit/Vehicle.
+- [x] Implementar query de edição mínima + Draft/Edit/Vehicle.
 - [ ] Implementar fotos + Publish/Pause/Archive.
 - [ ] Provar fluxo end-to-end e regressões relevantes.
 - [x] Revisar necessidade de ADR/MDV após a prova — MDV atualizado; nenhum novo ADR necessário porque ADR-0004/0009 continuam descrevendo os boundaries duráveis e a escolha `/vender` é uma composição de cliente reversível.
@@ -132,7 +133,17 @@ A decisão não acopla React/Next aos módulos do backend e permanece reversíve
 
 ### Contrato de leitura para edição
 
-**NÃO DECIDIDO no formato exato.** A necessidade é comprovada; o desenho deve ser mínimo. Candidatos aceitáveis incluem uma query `GetMineById` com fotos/ordem ou composição equivalente que preserve ownership server-side e boundaries existentes.
+**DECIDIDO:** `ISellerListingQuery.GetMineByIdAsync(Guid listingId)` retorna `SellerListingDetailDto(ListingDto Listing, IReadOnlyList<ListingPhotoDto> Photos)`.
+
+A implementação:
+
+- deriva o Seller de `ICurrentUser`;
+- filtra `Listing.Id + SellerId` no servidor;
+- retorna `null` para Listing inexistente ou pertencente a outro Seller, sem expor existência pela query de edição;
+- devolve a galeria do Listing ordenada por `SortOrder` e `Id`;
+- reutiliza `ListingDto` e `ListingPhotoDto`, sem novo aggregate ou referência a outro módulo de implementação.
+
+O Vehicle é selecionado na criação do Draft pela API canônica existente. A edição respeita o contrato atual de `UpdateListingInput`, que não altera `VehicleId`; não foi expandido o comando apenas por conveniência de UI.
 
 ## Evidência externa usada no planejamento
 
@@ -154,6 +165,10 @@ Essas fontes definem a baseline de segurança do login do browser. A escolha esp
 - 2026-08-23: a auditoria do primeiro Seller Shell gate identificou evidência insuficiente porque as APIs eram exercitadas com o password grant do cliente de fixture. O gate foi reforçado para obter token real de `BomPraTi_SellerWeb` via Account login + Authorization Code + PKCE.
 - 2026-08-23: o primeiro reforço do smoke falhou por erro de sintaxe no próprio Bash antes de atingir Profile/My Listings; corrigido o script e adicionado `bash -n` como fail-fast antes do bootstrap de banco.
 - 2026-08-23: Seller Shell HTTP Gate corrigido comprovou `OIDC discovery → Account login → PKCE token → Profile upsert/current → Draft → My Listings → logout`; Public Web, Seller Auth, Harness e Public Buyer permaneceram verdes no mesmo runtime head.
+- 2026-08-23: implementado o read model mínimo `GetMineByIdAsync` e as rotas Seller para escolher Vehicle canônico, criar Draft e reabrir/editar Listing próprio.
+- 2026-08-23: o primeiro Seller Draft Edit gate mostrou que `UpdateAsync` existente é `PUT /api/app/listing-command?listingId=...`, e não uma rota path-param; o cliente foi alinhado ao Swagger real sem mudar o backend.
+- 2026-08-23: o segundo run do gate encontrou um erro no próprio fixture Bash (`local` com expansão sob `set -u`) antes do token; as declarações foram separadas sem alteração de produto.
+- 2026-08-23: Seller Draft Edit HTTP Gate corrigido passou routes, Vehicle canônico, Draft create, owned read, cross-Seller hidden read, update, rotação do `ConcurrencyStamp`, stale 409 e reread do estado atualizado.
 
 ## Decision log
 
@@ -163,4 +178,6 @@ Essas fontes definem a baseline de segurança do login do browser. A escolha esp
 - Login interativo não usará password grant.
 - Primeira UI Seller será implementada no `public-web` existente sob `/vender`, usando cliente OIDC dedicado e Authorization Code + PKCE.
 - Seller shell não exigiu novo serviço, aggregate ou regra de domínio no backend; reutilizou Seller Profile e My Listings existentes.
-- Nenhum ADR novo foi criado para esta composição: ADR-0004 preserva o boundary HTTP e ADR-0009 já fixa o cliente Next inicial; a decisão Seller é reversível e registrada neste plano + MDV.
+- A edição usa um único read contract adicional no Marketplace; ownership permanece server-side e a galeria atual é parte da projeção de edição.
+- Vehicle é escolhido na criação do Draft; o contrato de update não foi ampliado para trocar Vehicle sem necessidade de domínio comprovada.
+- Nenhum ADR novo foi criado para esta composição: ADR-0004 preserva o boundary HTTP e ADR-0009 já fixa o cliente Next inicial; as decisões Seller continuam reversíveis e registradas neste plano + MDV.

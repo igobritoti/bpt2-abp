@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import type { User } from "oidc-client-ts";
 
@@ -169,13 +170,18 @@ export default function SellerEntryPage() {
                 <p className="eyebrow">Marketplace</p>
                 <h2>Meus anúncios</h2>
               </div>
-              <span className="seller-count">{listings.length}</span>
+              <div className="seller-panel-actions">
+                <span className="seller-count">{listings.length}</span>
+                <Link className="primary-action action-link" href="/vender/anuncios/novo">
+                  Novo anúncio
+                </Link>
+              </div>
             </div>
 
             {listings.length === 0 ? (
               <div className="empty-state seller-empty-state">
                 <h3>Nenhum anúncio ainda.</h3>
-                <p>A criação do primeiro Draft entra no próximo checkpoint deste plano.</p>
+                <p>Crie um Draft escolhendo um Vehicle do catálogo canônico.</p>
               </div>
             ) : (
               <div className="seller-listing-list">
@@ -188,7 +194,12 @@ export default function SellerEntryPage() {
                         {listing.city} / {listing.stateCode}
                       </p>
                     </div>
-                    <p className="seller-listing-price">{formatPrice(listing.price)}</p>
+                    <div className="seller-listing-actions">
+                      <p className="seller-listing-price">{formatPrice(listing.price)}</p>
+                      <Link className="secondary-action action-link" href={`/vender/anuncios/${listing.id}`}>
+                        Editar
+                      </Link>
+                    </div>
                   </article>
                 ))}
               </div>

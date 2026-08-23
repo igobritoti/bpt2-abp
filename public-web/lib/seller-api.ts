@@ -25,6 +25,42 @@ export type SellerListing = {
   concurrencyStamp: string;
 };
 
+export type SellerListingPhoto = {
+  id: string;
+  mediaAssetId: string;
+  sortOrder: number;
+};
+
+export type SellerListingDetail = {
+  listing: SellerListing;
+  photos: SellerListingPhoto[];
+};
+
+export type VehicleRef = {
+  id: string;
+  brand: string;
+  model: string;
+  generation: string | null;
+  version: string;
+  modelYear: number | null;
+};
+
+export type CreateListingInput = {
+  vehicleId: string;
+  title: string;
+  price: number;
+  description: string;
+  manufactureYear: number | null;
+  mileageKm: number | null;
+  color: string | null;
+  city: string;
+  stateCode: string;
+};
+
+export type UpdateListingInput = Omit<CreateListingInput, "vehicleId"> & {
+  concurrencyStamp: string;
+};
+
 function apiBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_BPT_API_BASE_URL ??
@@ -54,6 +90,10 @@ async function apiRequest(
     throw new Error("Sua sessão expirou. Entre novamente para continuar.");
   }
 
+  if (response.status === 409) {
+    throw new Error("Este anúncio mudou desde que você o abriu. Recarregue antes de salvar novamente.");
+  }
+
   if (!response.ok) {
     const detail = await response.text();
     throw new Error(
@@ -61,6 +101,17 @@ async function apiRequest(
     );
   }
 
+  return response;
+}
+
+async function publicRequest(path: string): Promise<Response> {
+  const response = await fetch(`${apiBaseUrl()}${path}`, { cache: "no-store" });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(
+      `A API de catálogo respondeu ${response.status}${detail ? `: ${detail}` : "."}`,
+    );
+  }
   return response;
 }
 
@@ -88,4 +139,58 @@ export async function upsertSellerProfile(
 export async function getMyListings(accessToken: string): Promise<SellerListing[]> {
   const response = await apiRequest("/api/app/seller-listing-query/mine", accessToken);
   return (await response.json()) as SellerListing[];
+}
+
+export async function getMyListingDetail(
+  accessToken: string,
+  listingId: string,
+): Promise<SellerListingDetail | null> {
+  const response = await apiRequest(
+    `/api/app/seller-listing-query/mine-by-id/${encodeURIComponent(listingId)}`,
+    accessToken,
+  );
+  if (response.status === 204) {
+    return null;
+  }
+  return (await response.json()) as SellerListingDetail;
+}
+
+export async function getVehicleCatalog(take = 50): Promise<VehicleRef[]> {
+  const response = await publicRequest(`/api/app/vehicle-catalog?take=${take}`);
+  return (await response.json()) as VehicleRef[];
+}
+
+export async function getVehicle(vehicleId: string): Promise<VehicleRef | null> {
+  const response = await publicRequest(`/api/app/vehicle-catalog/${encodeURIComponent(vehicleId)}`);
+  if (response.status === 204) {
+    return null;
+  }
+  return (await response.json()) as VehicleRef;
+}
+
+export async function createSellerListing(
+  accessToken: string,
+  input: CreateListingInput,
+): Promise<SellerListing> {
+  const response = await apiRequest("/api/app/listing-command", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return (await response.json()) as SellerListing;
+}
+
+export async function updateSellerListing(
+  accessToken: string,
+  listingId: string,
+  input: UpdateListingInput,
+): Promise<SellerListing> {
+  const response = await apiRequest(
+    `/api/app/listing-command?listingId=${encodeURIComponent(listingId)}`,
+    accessToken,
+    {
+      method: "PUT",
+      body: JSON.stringify(input),
+    },
+  );
+  return (await response.json()) as SellerListing;
 }

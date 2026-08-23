@@ -10,11 +10,11 @@ Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operac
 
 `Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
 
-A fronteira de UI/auth e o Seller shell mínimo estão comprovados. A implementação inicial reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O fluxo executado prova login real pelo Account, troca PKCE por access token, leitura/edição do Seller Profile com normalização canônica no backend, `Meus anúncios` filtrado pelo usuário autenticado e logout.
+A fronteira de UI/auth, o Seller shell mínimo e o checkpoint Draft/Edit estão comprovados. A experiência Seller reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O Seller escolhe um Vehicle da API canônica, cria um Listing que nasce Draft, reabre apenas Listing próprio pelo read model autenticado e salva alterações usando o `ConcurrencyStamp` devolvido pelo backend; stale update continua resultando em 409.
 
-O gap mínimo de backend já identificado para o próximo bloco é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio. `GetMine` continua sendo listagem e não substitui esse read model de edição.
+A leitura mínima de edição foi resolvida por `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` no servidor e devolve o Listing com a galeria/ordem atual. Não houve nova regra de domínio, aggregate ou dependência entre implementações de módulos.
 
-Próximo acceptance target: implementar a leitura mínima de edição e o fluxo `Vehicle canônico → criar Draft → reabrir/editar Listing próprio`, preservando ownership server-side e `ConcurrencyStamp`. Fotos/publicação permanecem no checkpoint seguinte.
+Próximo acceptance target: concluir o checkpoint de fotos e publicação — `Media upload → attach/remove/reorder ListingPhoto → Publish/Pause/Archive → Public Listing`, preservando ownership, Draft privado e os boundaries já comprovados.
 
 ## Active plan
 
