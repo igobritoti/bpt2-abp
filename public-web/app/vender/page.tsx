@@ -136,7 +136,6 @@ export default function SellerEntryPage() {
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
                   required
-                  maxLength={160}
                   autoComplete="organization"
                 />
               </label>
