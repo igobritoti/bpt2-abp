@@ -4,7 +4,7 @@
 
 - .NET SDK baseline: `10.0.100`
 - Target frameworks found in project files: `net10.0`
-- ABP package versions explicitly referenced: `10.6.0`
+- ABP framework versions detected: `10.6.0`
 - Project files (`*.csproj`): **12**
 - Test project files under `tests/`: **1**
 - Business module directories: **5** — `catalog`, `ingestion`, `marketplace`, `media`, `sellers`
