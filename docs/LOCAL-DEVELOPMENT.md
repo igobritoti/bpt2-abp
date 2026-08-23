@@ -83,7 +83,7 @@ bash scripts/fresh-migration-gate.sh
 )
 ```
 
-O segundo comando segue o mecanismo de database migration/data seed do template single-layer do ABP e cria os dados de Identity/OpenIddict usados no ambiente de desenvolvimento.
+O segundo comando segue o mecanismo de database migration/data seed do template single-layer do ABP e cria os dados de Identity/OpenIddict usados no ambiente de desenvolvimento, incluindo o cliente browser Seller quando configurado.
 
 Depois de um bootstrap bem-sucedido, remova apenas as migrations efêmeras criadas pelo gate:
 
@@ -141,15 +141,19 @@ npm install --no-audit --no-fund
 
 export BPT_API_BASE_URL='http://127.0.0.1:5093'
 export NEXT_PUBLIC_BPT_API_BASE_URL='http://127.0.0.1:5093'
+export NEXT_PUBLIC_BPT_AUTHORITY='http://127.0.0.1:5093'
+export NEXT_PUBLIC_BPT_SELLER_CLIENT_ID='BomPraTi_SellerWeb'
 
 npm run dev
 ```
 
-Abra `http://localhost:3000`.
+Abra `http://localhost:3000` para o comprador ou `http://localhost:3000/vender` para iniciar a experiência autenticada Seller.
 
 - `BPT_API_BASE_URL` é usado pelo Next.js no servidor.
 - `NEXT_PUBLIC_BPT_API_BASE_URL` é o endereço alcançável pelo browser para fotos públicas.
-- Não aponte o public web local para `44350` ou para uma porta arbitrária se estiver tentando reproduzir o fluxo documentado; altere a porta apenas quando a tarefa exigir e mantenha as duas variáveis alinhadas ao backend escolhido.
+- `NEXT_PUBLIC_BPT_AUTHORITY` aponta o browser para o Auth Server/OpenIddict.
+- `NEXT_PUBLIC_BPT_SELLER_CLIENT_ID` identifica o cliente público Seller; o login usa Authorization Code + PKCE e a senha é informada somente ao Auth Server.
+- Não aponte o public web local para `44350` ou para uma porta arbitrária se estiver tentando reproduzir o fluxo documentado; altere a porta apenas quando a tarefa exigir e mantenha as variáveis alinhadas ao backend escolhido.
 
 Antes de enviar mudança no frontend, execute o mesmo conjunto lógico do gate:
 
@@ -180,6 +184,17 @@ bash scripts/public-buyer-http-smoke.sh
 
 Esse smoke inicia host ABP e build de produção do Next.js em portas próprias (`5093`/`3093`) e prova Draft privado, Publish, listagem, detalhe, foto, metadata e CTA de WhatsApp. Não mantenha outra instância ocupando essas portas durante a execução.
 
+## Prova da fronteira Seller/OIDC
+
+Para validar somente o boundary de autenticação Seller contra um database local recém-bootstrapado:
+
+```bash
+export BPT_DB_CONNECTION='Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres'
+bash scripts/seller-auth-http-smoke.sh
+```
+
+O smoke verifica discovery OpenID Connect, exige PKCE para `BomPraTi_SellerWeb` e confirma que uma autorização válida com `code_challenge` é encaminhada para a página de login ABP. Ele não substitui o fluxo Seller end-to-end posterior.
+
 ## Validação proporcional ao risco
 
 Não rode toda a suíte por ritual. Use `docs/QUALITY.md` para selecionar os checks da mudança.
@@ -190,7 +205,7 @@ Para mudança somente no harness/documentação:
 python3 scripts/check-harness.py
 ```
 
-Para frontend público:
+Para frontend público/Seller:
 
 ```bash
 cd public-web
@@ -212,6 +227,10 @@ Confirme que o servidor está ouvindo em `localhost:5432`, que o database existe
 ### O frontend não carrega dados/fotos
 
 Confirme primeiro `http://127.0.0.1:5093/swagger/v1/swagger.json`. Depois reinicie o Next.js com `BPT_API_BASE_URL` e `NEXT_PUBLIC_BPT_API_BASE_URL` definidos antes do `npm run dev`.
+
+### O Seller login volta com redirect URI inválida
+
+Recrie/atualize o database local pelo bootstrap canônico para que `BomPraTi_SellerWeb` seja semeado com `http://localhost:3000/vender/callback`. Não altere redirect URI no browser para contornar o registro do Auth Server.
 
 ### Apareceram migrations `Gate` no `git status`
 
