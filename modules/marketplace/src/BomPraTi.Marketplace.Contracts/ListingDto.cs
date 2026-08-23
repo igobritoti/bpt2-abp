@@ -12,4 +12,5 @@ public sealed record ListingDto(
     string? Color,
     string City,
     string StateCode,
-    string Status);
+    string Status,
+    string ConcurrencyStamp);
