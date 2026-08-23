@@ -7,6 +7,7 @@
 | Assunto | Fonte de verdade |
 |---|---|
 | Estado corrente e próximo acceptance target | [`agent/CURRENT-WORK.md`](agent/CURRENT-WORK.md) |
+| Desenvolvimento local e bootstrap reproduzível | [`LOCAL-DEVELOPMENT.md`](LOCAL-DEVELOPMENT.md) |
 | Produto, escopo e não objetivos | [`PRODUCT.md`](PRODUCT.md) |
 | Arquitetura e ownership de módulos | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | Estado formal de decisões/evidência | [`MDV.md`](MDV.md) |
@@ -36,6 +37,7 @@ docs/
 │   └── repository-facts.md
 ├── references/
 ├── ENGINEERING.md
+├── LOCAL-DEVELOPMENT.md
 ├── MDV.md
 ├── PLANS.md
 ├── PRODUCT.md
@@ -49,6 +51,7 @@ Não crie um novo documento quando uma fonte canônica existente comportar o ass
 
 - Mudou produto: atualize `PRODUCT.md`.
 - Mudou arquitetura: atualize `ARCHITECTURE.md`, `MDV.md` e ADR quando material.
+- Mudou bootstrap, ferramenta, porta ou procedimento local: atualize `LOCAL-DEVELOPMENT.md` no mesmo PR.
 - Mudou processo recorrente: altere a fonte canônica correspondente, não `AGENTS.md` e vários docs ao mesmo tempo.
 - Mudou estado de trabalho: substitua o snapshot em `agent/CURRENT-WORK.md`; não acrescente histórico.
 - Mudou estrutura que alimenta fatos derivados: rode `python3 scripts/generate-repo-facts.py --write`.
