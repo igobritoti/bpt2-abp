@@ -37,7 +37,10 @@ PY
 ADMIN_TOKEN="$(curl --silent -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode 'username=admin' --data-urlencode 'password=1q2w3E*' --data-urlencode 'scope=BomPraTi' | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
 request(){ local method="$1" path="$2" token="${3:-}" body="${4:-}"; local a=(--silent --show-error --output "$RESPONSE" --write-out '%{http_code}' --request "$method"); [[ -z "$token" ]] || a+=(-H "Authorization: Bearer $token"); [[ -z "$body" ]] || a+=(-H 'Content-Type: application/json' --data "$body"); curl "${a[@]}" "$BASE$path"; }
 get_fixture_token(){
-  local username="$1" password="$2" token_file="$TMP/token-${username}.json" status
+  local username="$1"
+  local password="$2"
+  local token_file="$TMP/token-${username}.json"
+  local status
   status="$(curl --silent --show-error --output "$token_file" --write-out '%{http_code}' -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode "username=$username" --data-urlencode "password=$password" --data-urlencode 'scope=BomPraTi')"
   [[ "$status" == 200 ]] || { echo "Fixture token for $username expected 200 got $status: $(cat "$token_file")" >&2; return 1; }
   python3 - "$token_file" <<'PY'
