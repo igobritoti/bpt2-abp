@@ -11,6 +11,7 @@ on:
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/seller-publish-http-smoke.sh'
+      - 'scripts/seller-leads-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/seller-publish-http-gate.yml'
 
@@ -45,8 +46,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.13.0'
-      - name: Syntax check Seller photos/publish smoke
-        run: bash -n scripts/seller-publish-http-smoke.sh
+      - name: Syntax check Seller HTTP smokes
+        run: |
+          bash -n scripts/seller-publish-http-smoke.sh
+          bash -n scripts/seller-leads-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -67,3 +70,5 @@ jobs:
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
       - name: Exercise Seller photos, publication and public web
         run: bash scripts/seller-publish-http-smoke.sh
+      - name: Exercise Seller Lead inbox ownership
+        run: bash scripts/seller-leads-http-smoke.sh

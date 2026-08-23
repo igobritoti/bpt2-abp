@@ -25,6 +25,15 @@ export type SellerListing = {
   concurrencyStamp: string;
 };
 
+export type SellerLead = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  buyerUserId: string | null;
+  channel: string;
+  createdAtUtc: string;
+};
+
 export type SellerListingPhoto = {
   id: string;
   mediaAssetId: string;
@@ -149,6 +158,11 @@ export async function upsertSellerProfile(
 export async function getMyListings(accessToken: string): Promise<SellerListing[]> {
   const response = await apiRequest("/api/app/seller-listing-query/mine", accessToken);
   return (await response.json()) as SellerListing[];
+}
+
+export async function getMyLeads(accessToken: string): Promise<SellerLead[]> {
+  const response = await apiRequest("/api/app/seller-lead-query/mine", accessToken);
+  return (await response.json()) as SellerLead[];
 }
 
 export async function getMyListingDetail(
