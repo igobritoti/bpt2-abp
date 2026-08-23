@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           export ConnectionStrings__Default="$BPT_DB_CONNECTION"
           export ASPNETCORE_ENVIRONMENT=Development
-          cd main
-          dotnet BomPraTi/bin/Release/net10.0/BomPraTi.dll --migrate-database
+          cd main/BomPraTi
+          dotnet run --configuration Release --no-build -- --migrate-database
       - name: Verify real product API surfaces
         run: bash scripts/product-api-smoke.sh
