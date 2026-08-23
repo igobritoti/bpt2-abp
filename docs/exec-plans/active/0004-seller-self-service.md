@@ -20,10 +20,11 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - `MediaUploadAppService` já é autenticado.
 - `VehicleCatalogAppService` já expõe Get/Search de Vehicle canônico; não é necessário criar catálogo paralelo para o formulário Seller.
 - O host já contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelos smokes.
-- Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado nos smokes é ferramenta de teste e não deve virar formulário de login do produto.
+- Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado em fixtures/smokes legados não deve virar formulário de login do produto.
 - A superfície Seller ainda não possui query dedicada para reabrir um Listing específico com sua galeria atual. `GetMine` é listagem; mutações de foto não substituem uma leitura de edição. Essa é a extensão mínima de backend já identificada.
 - BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis nesta auditoria nem em busca pública identificável com segurança; portanto nenhuma regra, tela ou componente do BPT1 será presumido. Quando uma fonte real estiver acessível, ela poderá ser auditada como donor sem bloquear este plano.
-- O Seller Auth HTTP Gate já comprovou um cliente OpenIddict público dedicado `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP; o Public Web Gate comprovou que as rotas `/vender` e `/vender/callback` compilam no cliente Next existente.
+- O Seller Auth HTTP Gate comprovou um cliente OpenIddict público dedicado `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP; o Public Web Gate comprovou as rotas Seller no cliente Next existente.
+- O Seller Shell HTTP Gate comprovou em PostgreSQL fresco o fluxo `Account login → Authorization Code + PKCE → SellerWeb access token → Profile → Draft → My Listings → logout`, usando o mesmo cliente OIDC do produto para as APIs autenticadas.
 
 ## Escopo
 
@@ -83,10 +84,10 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 
 ## Critérios de aceite
 
-1. [ ] Seller consegue entrar e sair da experiência autenticada usando Authorization Code + PKCE; password grant não é usado como login de produto.
-2. [ ] A UI Seller continua cliente HTTP da aplicação e não referencia implementação/DbContext dos módulos.
-3. [ ] Seller consegue ler e atualizar o próprio perfil, preservando normalização de WhatsApp no backend.
-4. [ ] `Meus anúncios` mostra somente Listings do usuário autenticado.
+1. [x] Seller consegue entrar e sair da experiência autenticada usando Authorization Code + PKCE; password grant não é usado como login de produto.
+2. [x] A UI Seller continua cliente HTTP da aplicação e não referencia implementação/DbContext dos módulos.
+3. [x] Seller consegue ler e atualizar o próprio perfil, preservando normalização de WhatsApp no backend.
+4. [x] `Meus anúncios` mostra somente Listings do usuário autenticado.
 5. [ ] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
 6. [ ] Seller consegue reabrir e editar um Listing próprio com estado e fotos atuais; o backend expõe apenas o contrato adicional mínimo necessário.
 7. [ ] Edição usa `ConcurrencyStamp`; stale update continua resultando em conflito em vez de overwrite silencioso.
@@ -102,7 +103,7 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - [x] Verificar disponibilidade do donor BPT1 nas fontes acessíveis — fonte não disponível; não bloquear o plano nem inferir conteúdo.
 - [x] Confirmar baseline de autenticação interativa: Authorization Code + PKCE.
 - [x] Provar a menor opção de UI/auth e registrar a decisão antes de construir telas de negócio.
-- [ ] Implementar Seller shell mínimo: login/logout, perfil e Meus anúncios.
+- [x] Implementar Seller shell mínimo: login/logout, perfil e Meus anúncios.
 - [ ] Implementar query de edição mínima + Draft/Edit/Vehicle.
 - [ ] Implementar fotos + Publish/Pause/Archive.
 - [ ] Provar fluxo end-to-end e regressões relevantes.
@@ -121,8 +122,11 @@ Evidência B reproduzida no CI:
 - PKCE é requisito do cliente no OpenIddict;
 - requisição sem PKCE é recusada;
 - requisição com S256 PKCE é encaminhada ao Account login do ABP;
-- `/vender` e `/vender/callback` passam lint, typecheck e production build;
-- Host, Product API, Listing Lifecycle, Listing Photo e Public Buyer continuaram verdes no head corrigido.
+- o Seller Shell troca o authorization code por token e usa esse access token nas APIs autenticadas;
+- perfil é salvo/lido com WhatsApp canônico devolvido pelo backend;
+- `My Listings` é consultado sem `SellerId` fornecido pelo cliente e o backend continua derivando ownership de `ICurrentUser`;
+- as rotas Seller passam lint, typecheck e production build;
+- regressões públicas continuam exercitadas pelo Public Buyer HTTP Gate.
 
 A decisão não acopla React/Next aos módulos do backend e permanece reversível porque a integração durável continua HTTP/OIDC conforme ADR-0004 e ADR-0009.
 
@@ -143,9 +147,13 @@ Essas fontes definem a baseline de segurança do login do browser. A escolha esp
 - 2026-08-23: auditoria do backend confirmou SellerProfile autenticado, My Listings, Listing commands, Vehicle search, Media upload e photo mutations já existentes.
 - 2026-08-23: auditoria identificou como gap de backend uma leitura autenticada de detalhe/galeria para reabrir edição, não uma nova modelagem de Listing.
 - 2026-08-23: donor BPT1 não estava disponível nas fontes GitHub conectadas nem foi identificado com segurança em busca pública; nenhuma clonagem/adaptação foi presumida.
-- 2026-08-23: documentação atual ABP/OpenIddict confirmou Authorization Code + PKCE como baseline para login interativo; password grant permanece restrito a smokes/fixtures existentes.
+- 2026-08-23: documentação atual ABP/OpenIddict confirmou Authorization Code + PKCE como baseline para login interativo; password grant permanece restrito a fixtures/smokes existentes.
 - 2026-08-23: primeiro Seller Auth CI detectou que um novo `[UnitOfWork]` contributor `sealed` não podia ser interceptado pelo ABP/Autofac; a correção mínima tornou a classe proxyable e o método interceptado `virtual`.
-- 2026-08-23: Seller Auth HTTP Gate corrigido passou `SELLER_AUTH_DISCOVERY`, `SELLER_AUTH_PKCE_REQUIRED`, `SELLER_AUTH_LOGIN_REDIRECT` e `SELLER AUTH HTTP SPIKE`; as sete regressões disparadas no mesmo head também passaram.
+- 2026-08-23: Seller Auth HTTP Gate corrigido passou discovery, PKCE obrigatório e redirect ao Account login; as regressões diretamente afetadas também passaram.
+- 2026-08-23: Seller shell implementado no `/vender` usando o access token OIDC para carregar Seller Profile e `Meus anúncios`; o frontend não recebe `SellerId` nem normaliza WhatsApp por conta própria.
+- 2026-08-23: a auditoria do primeiro Seller Shell gate identificou evidência insuficiente porque as APIs eram exercitadas com o password grant do cliente de fixture. O gate foi reforçado para obter token real de `BomPraTi_SellerWeb` via Account login + Authorization Code + PKCE.
+- 2026-08-23: o primeiro reforço do smoke falhou por erro de sintaxe no próprio Bash antes de atingir Profile/My Listings; corrigido o script e adicionado `bash -n` como fail-fast antes do bootstrap de banco.
+- 2026-08-23: Seller Shell HTTP Gate corrigido comprovou `OIDC discovery → Account login → PKCE token → Profile upsert/current → Draft → My Listings → logout`; Public Web, Seller Auth, Harness e Public Buyer permaneceram verdes no mesmo runtime head.
 
 ## Decision log
 
@@ -154,4 +162,5 @@ Essas fontes definem a baseline de segurança do login do browser. A escolha esp
 - BPT1 só será donor quando houver fonte concreta auditável; indisponibilidade do donor não bloqueia o desenvolvimento do Seller Self-Service.
 - Login interativo não usará password grant.
 - Primeira UI Seller será implementada no `public-web` existente sob `/vender`, usando cliente OIDC dedicado e Authorization Code + PKCE.
+- Seller shell não exigiu novo serviço, aggregate ou regra de domínio no backend; reutilizou Seller Profile e My Listings existentes.
 - Nenhum ADR novo foi criado para esta composição: ADR-0004 preserva o boundary HTTP e ADR-0009 já fixa o cliente Next inicial; a decisão Seller é reversível e registrada neste plano + MDV.
