@@ -5,7 +5,7 @@ using Volo.Abp.DependencyInjection;
 namespace BomPraTi.Catalog.Services;
 
 [AllowAnonymous]
-public sealed class VehicleCatalogAppService : IVehicleCatalogAppService, ITransientDependency
+public class VehicleCatalogAppService : IVehicleCatalogAppService, ITransientDependency
 {
     private readonly IVehicleCatalogReader _reader;
 

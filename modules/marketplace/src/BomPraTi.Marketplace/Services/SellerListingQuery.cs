@@ -8,7 +8,7 @@ using Volo.Abp.Users;
 namespace BomPraTi.Marketplace.Services;
 
 [Authorize]
-public sealed class SellerListingQuery : ISellerListingQuery, ITransientDependency
+public class SellerListingQuery : ISellerListingQuery, ITransientDependency
 {
     private readonly MarketplaceDbContext _dbContext;
     private readonly ICurrentUser _currentUser;

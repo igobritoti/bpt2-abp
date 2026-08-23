@@ -5,7 +5,7 @@ using Volo.Abp.DependencyInjection;
 namespace BomPraTi.Marketplace.Services;
 
 [AllowAnonymous]
-public sealed class PublicListingAppService : IPublicListingAppService, ITransientDependency
+public class PublicListingAppService : IPublicListingAppService, ITransientDependency
 {
     private readonly IPublicListingQuery _query;
 

@@ -8,7 +8,7 @@ using Volo.Abp.Users;
 namespace BomPraTi.Sellers.Services;
 
 [Authorize]
-public sealed class SellerProfileService : ISellerProfileService, ITransientDependency
+public class SellerProfileService : ISellerProfileService, ITransientDependency
 {
     private readonly IRepository<SellerProfile, Guid> _profiles;
     private readonly ICurrentUser _currentUser;
