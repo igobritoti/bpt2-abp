@@ -1,6 +1,6 @@
 # Execution Plan 0011 — Buyer Listing Report
 
-Status: ATIVO
+Status: **ATIVO**
 
 ## Objetivo
 
@@ -47,6 +47,14 @@ Fluxo:
 - [ ] Public Web compila com a ação de sinalizar;
 - [ ] todos os workflows aplicáveis ficam verdes.
 
-## Decisão inicial
+## Progress log
 
-O primeiro sinal de moderação não recebe motivo nem efeito automático. Isso evita elevar preferências de taxonomia/política a requisito antes de existir evidência operacional. O registro é uma intenção autenticada e imutável por este slice.
+- 2026-08-23: slice aberto a partir do menor gap central ainda ausente: moderação.
+- 2026-08-23: implementados aggregate, service, UI e smoke HTTP; aguardando evidência de CI.
+- 2026-08-23: primeiro Harness Gate falhou apenas por formato obrigatório deste plan; produto não foi alterado por essa falha.
+
+## Decision log
+
+- 2026-08-23: o primeiro sinal de moderação não recebe motivo nem efeito automático. Isso evita elevar preferências de taxonomia/política a requisito antes de existir evidência operacional.
+- 2026-08-23: o sinal é autenticado, pertence ao `ICurrentUser` e é idempotente por Buyer+Listing.
+- 2026-08-23: criação exige Listing atualmente público; sinal já persistido é histórico e não é apagado quando a publicação muda.
