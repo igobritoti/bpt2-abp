@@ -25,7 +25,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | PASSA / DECIDIDO no Plan 0003; boundary HTTP reversível |
 | UI-003 | Primeira UI Seller no `public-web` existente sob `/vender` | PASSA / DECIDIDO no Plan 0004; composição reversível atrás de HTTP/OIDC |
 | SELLER-001 | Seller Profile + My Listings + Draft/Edit/Vehicle | PASSA no Plan 0004 |
-| SELLER-002 | Upload/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
+| SELLER-002 | Upload/preview privado/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; estrutura de Lead existe, mas o fluxo WhatsApp não ativa registro/analytics/CRM |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
@@ -77,6 +77,8 @@ Classe da evidência do boundary Seller: **B — observado/reproduzido no CI do 
 - O Seller Draft Edit HTTP Gate comprovou Vehicle canônico, criação Draft, owned read, ocultação para segundo Seller, update com rotação de `ConcurrencyStamp`, stale 409 e reread do estado canônico.
 - O Seller Photos Publish HTTP Gate executa PostgreSQL fresco, host ABP real, login `BomPraTi_SellerWeb` por Authorization Code + PKCE e Next.js de produção.
 - Media upload, attach, reorder e remove passaram; o gate valida que o retorno de Media não expõe storage key/provider e que a ordem remanescente é normalizada pelo backend.
+- A galeria Seller carrega bytes da foto por leitura autenticada e ownership-safe; `SELLER_PUBLISH_PRIVATE_PHOTO: PASS` comparou a foto Draft do owner byte a byte com o upload, enquanto o segundo Seller recebeu 404 para a mesma leitura privada.
+- A rota HTTP observada no Swagger para essa leitura é `GET /api/app/seller-listing-query/mine-photo?listingId=...&photoId=...`; o cliente foi alinhado ao contrato gerado, sem criar rota artificial no backend.
 - Segundo Seller recebeu 403 ao tentar Publish e attach no Listing do owner.
 - Draft permaneceu ausente da API pública e do Next; Publish tornou o anúncio e a foto visíveis; Pause ocultou; republish restaurou; Archive ocultou novamente.
 - A foto pública foi comparada byte a byte com o upload original.
