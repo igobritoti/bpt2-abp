@@ -4,6 +4,7 @@ using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -30,10 +31,10 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
     public Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         _query.GetAsync(id, cancellationToken);
 
-    public Task<IReadOnlyList<PublicListingDto>> GetListAsync(
+    public Task<PagedResultDto<PublicListingDto>> GetListAsync(
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default) =>
-        _query.SearchAsync(input, cancellationToken);
+        _query.SearchPageAsync(input, cancellationToken);
 
     public async Task<IRemoteStreamContent> GetPhotoAsync(
         Guid id,

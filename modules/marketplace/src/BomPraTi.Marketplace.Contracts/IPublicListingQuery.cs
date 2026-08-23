@@ -1,3 +1,5 @@
+using Volo.Abp.Application.Dtos;
+
 namespace BomPraTi.Marketplace.Contracts;
 
 public interface IPublicListingQuery
@@ -16,6 +18,10 @@ public interface IPublicListingQuery
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<PublicListingDto>> SearchAsync(
+        PublicListingSearchInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<PagedResultDto<PublicListingDto>> SearchPageAsync(
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default);
 }
