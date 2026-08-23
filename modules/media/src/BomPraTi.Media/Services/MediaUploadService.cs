@@ -5,6 +5,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 
 namespace BomPraTi.Media.Services;
 
@@ -48,7 +49,7 @@ public sealed class MediaUploadService : IMediaUploadService, ITransientDependen
 
             if (buffer.Length + read > MaxUploadBytes)
             {
-                throw new ArgumentException("Media upload exceeds the 20 MiB limit.", nameof(content));
+                throw new AbpValidationException("Media upload exceeds the 20 MiB limit.");
             }
 
             await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
@@ -56,14 +57,14 @@ public sealed class MediaUploadService : IMediaUploadService, ITransientDependen
 
         if (buffer.Length == 0)
         {
-            throw new ArgumentException("Media upload is empty.", nameof(content));
+            throw new AbpValidationException("Media upload is empty.");
         }
 
         var detected = DetectImage(buffer.GetBuffer().AsSpan(0, (int)Math.Min(buffer.Length, 12)));
         var declared = NormalizeContentType(declaredContentType);
         if (declared is not null && declared != detected.ContentType)
         {
-            throw new ArgumentException("Declared content type does not match the uploaded image bytes.", nameof(declaredContentType));
+            throw new AbpValidationException("Declared content type does not match the uploaded image bytes.");
         }
 
         var id = _guidGenerator.Create();
@@ -118,7 +119,7 @@ public sealed class MediaUploadService : IMediaUploadService, ITransientDependen
             return new DetectedImage("image/webp", ".webp");
         }
 
-        throw new ArgumentException("Only JPEG, PNG and WebP image uploads are accepted.", nameof(bytes));
+        throw new AbpValidationException("Only JPEG, PNG and WebP image uploads are accepted.");
     }
 
     private sealed record DetectedImage(string ContentType, string Extension);
