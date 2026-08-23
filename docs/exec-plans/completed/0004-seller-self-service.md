@@ -22,11 +22,12 @@ O plano prova a experiência Seller sem duplicar regras de domínio no frontend 
 - O host contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelo produto e pelos smokes.
 - Para browser interativo, a baseline é Authorization Code + PKCE. O password grant usado em fixtures legados não virou formulário de login do produto.
 - A leitura autenticada de edição foi resolvida pelo contrato mínimo `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` e devolve o Listing com a galeria ordenada atual.
+- A visualização de fotos privadas do próprio anúncio foi resolvida por `SellerListingQuery.GetMinePhotoAsync`, que valida Listing + Seller no Marketplace e lê os bytes por `IMediaContentReader` de Media.Contracts; o frontend não recebe storage key/provider.
 - BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis durante o plano; nenhuma regra, tela ou componente do BPT1 foi presumido.
 - O Seller Auth HTTP Gate comprovou o cliente público `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP.
 - O Seller Shell HTTP Gate comprovou em PostgreSQL fresco `Account login → Authorization Code + PKCE → SellerWeb access token → Profile → Draft → My Listings → logout`.
 - O Seller Draft Edit HTTP Gate comprovou Vehicle canônico, criação Draft, leitura apenas do owner, estado/galeria atuais, update com rotação de `ConcurrencyStamp`, conflito stale 409 e reread do estado canônico.
-- O Seller Photos Publish HTTP Gate comprovou upload/attach/reorder/remove, ownership negativo, Draft privado, Publish público, Pause privado, republish público e Archive privado contra host real + PostgreSQL fresco + Next de produção.
+- O Seller Photos Publish HTTP Gate comprovou upload/preview privado/attach/reorder/remove, ownership negativo, Draft privado, Publish público, Pause privado, republish público e Archive privado contra host real + PostgreSQL fresco + Next de produção.
 
 ## Escopo executado
 
@@ -56,6 +57,7 @@ O plano prova a experiência Seller sem duplicar regras de domínio no frontend 
 ### Fase 3 — fotos e publicação
 
 - [x] upload via Media autenticado existente;
+- [x] preview autenticado das fotos do próprio Listing, inclusive em Draft, sem tornar mídia privada pública;
 - [x] attach/remove/reorder via Marketplace existente;
 - [x] primeira foto/capa derivada da ordenação modelada, sem novo campo e sem provider key no frontend;
 - [x] Publish/Pause/Archive apenas pelos commands existentes;
@@ -64,7 +66,7 @@ O plano prova a experiência Seller sem duplicar regras de domínio no frontend 
 ### Fase 4 — prova operacional
 
 - [x] gate reproduzível com autenticação real SellerWeb/PKCE e chamadas HTTP reais;
-- [x] ownership negativo com segundo usuário;
+- [x] ownership negativo com segundo usuário, inclusive leitura privada de foto ocultada com 404;
 - [x] stale concurrency na edição;
 - [x] Draft privado antes de Publish e anúncio público depois de Publish;
 - [x] regressões Seller/Public diretamente afetadas verdes.
@@ -93,8 +95,8 @@ O plano prova a experiência Seller sem duplicar regras de domínio no frontend 
 5. [x] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
 6. [x] Seller consegue reabrir e editar um Listing próprio com estado e fotos atuais; o backend expõe apenas o contrato adicional mínimo necessário.
 7. [x] Edição usa `ConcurrencyStamp`; stale update continua resultando em conflito em vez de overwrite silencioso.
-8. [x] Upload/attach/remove/reorder de fotos funciona pela UI sem expor storage provider key e respeita ownership.
-9. [x] Publish torna o anúncio visível no public web; Draft continua invisível e segundo Seller continua impedido de mutar o anúncio.
+8. [x] Upload/preview/attach/remove/reorder de fotos funciona pela UI sem expor storage provider key e respeita ownership.
+9. [x] Publish torna o anúncio visível no public web; Draft continua invisível e segundo Seller continua impedido de mutar ou ler foto privada do anúncio.
 10. [x] Fluxo `login → perfil/meus anúncios → Draft → edição/fotos → Publish → public web` é comprovado por gate reproduzível e documentação canônica atualizada no fechamento.
 
 ## Checkpoints
@@ -135,11 +137,13 @@ A implementação deriva o Seller de `ICurrentUser`, filtra `Listing.Id + Seller
 - a galeria é ordenada pelo `SortOrder` já modelado;
 - a primeira posição é a capa derivada da galeria, sem novo campo de domínio;
 - o frontend não recebe storage key/provider;
+- fotos de Listing privado são visualizadas pelo owner via `SellerListingQuery.GetMinePhotoAsync`, com ownership verificado no Marketplace e bytes lidos via Media.Contracts;
+- o Swagger expõe essa leitura como `GET /api/app/seller-listing-query/mine-photo?listingId=...&photoId=...`; cliente e gate seguem o contrato observado em vez de introduzir rota artificial;
 - Publish/Pause/Archive são commands do backend; o React não replica regras de transição.
 
 ## Evidência executada
 
-O Seller Photos Publish HTTP Gate usa PostgreSQL fresco, host ABP real, Node 22.13.0 e Next.js de produção. No primeiro run funcional completo passaram:
+O Seller Photos Publish HTTP Gate usa PostgreSQL fresco, host ABP real, Node 22.13.0 e Next.js de produção. No run final do checkpoint passaram:
 
 - `SELLER_PUBLISH_ROUTES: PASS`;
 - `SELLER_PUBLISH_PKCE_LOGIN: PASS`;
@@ -148,6 +152,7 @@ O Seller Photos Publish HTTP Gate usa PostgreSQL fresco, host ABP real, Node 22.
 - `SELLER_PUBLISH_EDIT: PASS`;
 - `SELLER_PUBLISH_UPLOAD: PASS`;
 - `SELLER_PUBLISH_REORDER: PASS`;
+- `SELLER_PUBLISH_PRIVATE_PHOTO: PASS`;
 - `SELLER_PUBLISH_REMOVE: PASS`;
 - `SELLER_PUBLISH_OWNERSHIP: PASS`;
 - `SELLER_PUBLISH_DRAFT_PRIVATE_API: PASS`;
@@ -158,7 +163,7 @@ O Seller Photos Publish HTTP Gate usa PostgreSQL fresco, host ABP real, Node 22.
 - `SELLER_PUBLISH_ARCHIVE: PASS`;
 - `SELLER PHOTOS PUBLISH HTTP: PASSED`.
 
-O gate também valida via Swagger os endpoints usados pelo frontend, inclusive multipart de Media e `DELETE /api/app/listing-photo` com `listingId`/`photoId` como query parameters. A foto pública retornada depois de Publish é comparada byte a byte com o upload.
+O gate valida via Swagger os endpoints usados pelo frontend, inclusive multipart de Media, `DELETE /api/app/listing-photo` com `listingId`/`photoId` em query e a leitura privada Seller com os mesmos parâmetros em query. A foto Draft do owner e a foto pública após Publish são comparadas byte a byte com o upload; o segundo Seller recebe 404 ao tentar ler a foto privada.
 
 Classe da evidência: **B — comportamento reproduzido em CI contra a aplicação real**.
 
@@ -174,7 +179,10 @@ Classe da evidência: **B — comportamento reproduzido em CI contra a aplicaç�
 - 2026-08-23: Draft/Edit comprovou Vehicle canônico, Draft, owned read, cross-Seller hidden, rotação de stamp e stale 409.
 - 2026-08-23: checkpoint final reutilizou Media, ListingPhoto e ListingCommand existentes; nenhum novo aggregate, serviço de domínio ou regra de transição foi adicionado.
 - 2026-08-23: UI Seller passou a enviar imagens multipart, anexar/remover/reordenar galeria e chamar Publish/Pause/Archive; upload evita `Content-Type: application/json` quando o corpo é `FormData`.
-- 2026-08-23: Seller Photos Publish HTTP Gate passou no primeiro run funcional e comprovou o ciclo completo até o public web de produção.
+- 2026-08-23: auto-revisão detectou que IDs de mídia não eram UX suficiente para ordenar/remover com segurança; foi adicionada leitura privada ownership-safe de foto para thumbnails do Seller em Draft.
+- 2026-08-23: React 19 lint e TypeScript detectaram dois problemas locais na implementação de object URLs; ambos foram corrigidos sem mudança de contrato de produto.
+- 2026-08-23: o gate detectou que o Swagger convencional gerou `mine-photo` com `listingId`/`photoId` em query; cliente e smoke foram alinhados ao runtime real sem criar rota artificial.
+- 2026-08-23: Seller Photos Publish HTTP Gate final passou, incluindo preview privado byte a byte para owner, 404 cross-Seller e todo o ciclo até o public web de produção.
 
 ## Resultado
 
