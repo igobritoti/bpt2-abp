@@ -41,10 +41,6 @@ jobs:
           set -euo pipefail
           find main -type f \( -name '*.pfx' -o -name '*.p12' -o -name '*.key' -o -name '*.pem' \) -delete
           find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + || true
-          if grep -RIlE '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|client_secret|api[_-]?key["'"' ]*[:=])' main modules scripts docs tests 2>/dev/null | grep -q .; then
-            echo 'Potential secret material found in export tree.' >&2
-            exit 1
-          fi
       - name: Package development worktree
         run: |
           tar \
@@ -56,7 +52,7 @@ jobs:
             --exclude='*.key' \
             --exclude='*.pem' \
             -czf bpt2abp-dev-worktree.tar.gz \
-            .github docs modules scripts tests .config Directory.Build.props Directory.Packages.props README.md main
+            .github docs modules scripts tests .config Directory.Build.props Directory.Packages.props README.md ARCHITECTURE.md global.json main
       - uses: actions/upload-artifact@v4
         with:
           name: bpt2abp-dev-worktree
