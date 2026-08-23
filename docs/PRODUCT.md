@@ -57,21 +57,23 @@ O Product Baseline de backend foi concluído até:
 
 `Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-O primeiro ciclo real do comprador também foi concluído e comprovado por HTTP real:
+O primeiro ciclo real do comprador foi concluído e comprovado por HTTP real:
 
 `Public Listing → Public Detail → Photo → WhatsApp Contact`
 
-A experiência pública é um cliente independente da API conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary HTTP reversível.
+O primeiro ciclo operacional real do vendedor também foi concluído no Plan 0004:
 
-O domínio Sellers já modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Não há requisito comprovado para persistir um agregado de Lead apenas para abrir esse contato inicial. Persistência/analytics de leads será decidida quando houver requisito de registrar, acompanhar ou medir contatos.
+`Seller login → Seller profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish → Public Listing`
+
+A prova Seller usa Authorization Code + PKCE com o cliente `BomPraTi_SellerWeb`, mantém ownership no servidor, usa `ConcurrencyStamp` na edição, reutiliza Media/ListingPhoto para galeria e chama Publish/Pause/Archive somente pelos commands do backend. O gate final comprovou Draft privado, bloqueio de segundo Seller, publicação real no Next, Pause/Archive removendo visibilidade pública e republish restaurando-a.
+
+A experiência pública e a experiência Seller continuam clientes independentes da aplicação por HTTP conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary reversível.
+
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Marketplace já possui a estrutura de domínio/persistência de `Lead`, mas o fluxo WhatsApp atual não cria Lead. Ativar registro de contato, analytics ou CRM continua dependente de requisito comprovado.
 
 ## Slice ativo
 
-Execution Plan 0004 fecha a experiência operacional do vendedor sobre APIs e regras já comprovadas:
-
-`Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
-
-A primeira decisão do plano é provar a fronteira de UI/auth do Seller com Authorization Code + PKCE. O password grant permanece restrito aos smokes/fixtures e não será usado como login de produto. O BPT1 continua donor, não chassis; código/UX antigo só será transplantado quando houver fonte concreta auditável e valor demonstrado.
+Nenhum execution plan está ativo após o fechamento do Plan 0004. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -83,7 +85,8 @@ A primeira decisão do plano é provar a fronteira de UI/auth do Seller com Auth
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - A primeira implementação do public web usa Next.js 16 Active LTS/App Router sem criar dependência de frontend nos módulos de backend.
-- O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não implica Lead persistido.
+- A primeira experiência Seller usa o mesmo cliente Next sob `/vender`, isolada por HTTP/OIDC e autenticada por Authorization Code + PKCE.
+- O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não ativa automaticamente persistência/analytics de Lead.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
@@ -91,7 +94,7 @@ O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente, por exemplo:
 
-- persistência/analytics/CRM de Leads;
+- ativação/persistência de eventos de contato e analytics/CRM de Leads;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;
