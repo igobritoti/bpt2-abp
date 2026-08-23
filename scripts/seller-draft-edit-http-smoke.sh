@@ -58,7 +58,9 @@ PY
 echo "SELLER_DRAFT_EDIT_ROUTES: PASS"
 
 get_token() {
-  local username="$1" password="$2" token_file="${TMPDIR:-/tmp}/bpt2-draft-token-${username}.json"
+  local username="$1"
+  local password="$2"
+  local token_file="${TMPDIR:-/tmp}/bpt2-draft-token-${username}.json"
   local status
   status="$(curl --silent --show-error --output "$token_file" --write-out '%{http_code}' \
     -X POST "$BASE/connect/token" \
