@@ -10,6 +10,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<ListingPhoto> ListingPhotos => Set<ListingPhoto>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Lead> Leads => Set<Lead>();
+    public DbSet<ListingReport> ListingReports => Set<ListingReport>();
 
     public MarketplaceDbContext(DbContextOptions<MarketplaceDbContext> options) : base(options) { }
 
@@ -47,6 +48,13 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
         {
             b.ToTable("MarketplaceLeads");
             b.Property(x => x.Channel).HasMaxLength(64).IsRequired();
+            b.HasIndex(x => new { x.ListingId, x.CreatedAtUtc });
+        });
+
+        builder.Entity<ListingReport>(b =>
+        {
+            b.ToTable("MarketplaceListingReports");
+            b.HasIndex(x => new { x.UserId, x.ListingId }).IsUnique();
             b.HasIndex(x => new { x.ListingId, x.CreatedAtUtc });
         });
     }

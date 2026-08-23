@@ -31,6 +31,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-004 | Seller Lead inbox com ownership server-side e histórico de contatos dos próprios Listings | PASSA / DECIDIDO no Plan 0009 |
 | SELLER-005 | Seller owner marca Lead próprio como atendido por `ContactedAtUtc`, com ownership server-side e ação idempotente | PASSA / DECIDIDO no Plan 0010 |
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
+| MODERATION-001 | Buyer autenticado sinaliza Listing público com ownership server-side, idempotência por Buyer+Listing e histórico preservado | PASSA / DECIDIDO no Plan 0011 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
 | CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
 | CONTACT-003 | Sessão Buyer existente pode atribuir o Lead WhatsApp ao `UserId` autenticado sem tornar login obrigatório | PASSA / DECIDIDO no Plan 0008 |
@@ -154,6 +155,21 @@ Classe da evidência da Seller Lead Inbox: **B — observado/reproduzido no CI d
 - O Fresh Migration Gate passou com o novo scalar nullable e o Public Web/Seller Shell Gate passou com a ação Novo/Atendido no `/vender`.
 
 Classe da evidência do Seller Lead Follow-up: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência de Buyer Listing Report
+
+- `ListingReport` pertence ao Marketplace e persiste somente `UserId`, `ListingId` e `CreatedAtUtc`; não há taxonomia, texto livre, scoring, fila administrativa ou efeito automático.
+- `IListingReportAppService` exige autenticação e deriva o Buyer exclusivamente de `ICurrentUser.Id`; nenhum endpoint aceita owner informado pelo browser.
+- A criação reutiliza `IPublicListingQuery.GetAsync`, portanto Draft/private, Pause e Archive não aceitam novo sinal.
+- Há índice único por `UserId + ListingId`; o application service torna repetição do mesmo Buyer idempotente e `GetIsReportedAsync` é isolado por Buyer.
+- A rota convencional observada no Swagger é `POST /api/app/listing-report/report/{listingId}` e a consulta é `GET /api/app/listing-report/is-reported/{listingId}`; cliente e smoke foram alinhados ao contrato gerado sem controller customizado.
+- O Buyer Favorites HTTP Gate em PostgreSQL fresco comprovou `BUYER_REPORT_ROUTES`, `BUYER_REPORT_ANONYMOUS_BLOCKED`, `BUYER_REPORT_DRAFT_BLOCKED`, `BUYER_REPORT_IDEMPOTENT`, `BUYER_REPORT_PERSISTED`, `BUYER_REPORT_USER_ISOLATION`, `BUYER_REPORT_HISTORY_PRESERVED` e `BUYER LISTING REPORT HTTP` como PASS.
+- O mesmo run manteve integralmente verde o fluxo Buyer Favorites, Authorization Code + PKCE e o build de produção do Next.js.
+- No head funcional `e18c951f35e600fa1e0a86c944390ce112250acc`, todos os 16 workflows aplicáveis passaram.
+- Dois runs intermediários foram informativos sem ampliar escopo: o Harness exigia o formato canônico do execution plan; depois o primeiro smoke funcional revelou que o ABP gerou o parâmetro `listingId` como segmento de rota. Ambos foram corrigidos sem mudar a regra de domínio.
+- O sinal já ocorrido permanece persistido e consultável pelo mesmo Buyer depois de Pause; esse histórico é distinto da regra de criação, que exige Listing atualmente público.
+
+Classe da evidência de Buyer Listing Report: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 

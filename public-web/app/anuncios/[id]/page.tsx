@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import FavoriteButton from "./FavoriteButton";
+import ReportButton from "./ReportButton";
 import WhatsAppContactButton from "./WhatsAppContactButton";
 import {
   formatPrice,
@@ -65,6 +66,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <FavoriteButton listingId={listing.id} />
             <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
             {contactUrl ? <WhatsAppContactButton listingId={listing.id} /> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
+            <ReportButton listingId={listing.id} />
           </aside>
         </div>
       </article>
