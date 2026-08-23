@@ -20,19 +20,21 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - `MediaUploadAppService` já é autenticado.
 - `VehicleCatalogAppService` já expõe Get/Search de Vehicle canônico; não é necessário criar catálogo paralelo para o formulário Seller.
 - O host já contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelos smokes.
-- Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado nos smokes é ferramenta de teste e não deve virar formulário de login do produto.
+- Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado nos smokes antigos é ferramenta de teste e não deve virar formulário de login do produto.
 - A superfície Seller ainda não possui query dedicada para reabrir um Listing específico com sua galeria atual. `GetMine` é listagem; mutações de foto não substituem uma leitura de edição. Essa é a extensão mínima de backend já identificada.
 - BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis nesta auditoria nem em busca pública identificável com segurança; portanto nenhuma regra, tela ou componente do BPT1 será presumido. Quando uma fonte real estiver acessível, ela poderá ser auditada como donor sem bloquear este plano.
 
 ## Escopo
 
-### Fase 0 — provar a fronteira autenticada do Seller
+### Fase 0 — provar a fronteira autenticada do Seller — CONCLUÍDA
 
-- decidir, por prova mínima, onde vive a UI Seller: extensão do cliente Next.js existente ou cliente autenticado separado;
-- registrar cliente OpenIddict/redirects necessários;
-- provar login/logout por Authorization Code + PKCE contra o Auth Server BPT2;
-- manter senha fora do frontend BPT2 e não usar ROPC/password grant como UX do produto;
-- preservar o boundary HTTP/API: frontend não referencia assemblies, DbContexts ou implementação dos módulos.
+- UI Seller vive inicialmente no `public-web`, sob `/vender`, preservando as páginas públicas SSR existentes;
+- cliente OpenIddict dedicado `BomPraTi_SellerWeb` é público, permite apenas Authorization Code e exige PKCE;
+- login retorna por `/auth/callback`; logout usa o end-session endpoint e `/auth/logout-callback`;
+- `oidc-client-ts` executa o fluxo browser sem expor senha ao frontend BPT2;
+- password grant não é permitido para `BomPraTi_SellerWeb`;
+- boundary HTTP/API permanece intacto: frontend não referencia assemblies, DbContexts ou implementação dos módulos;
+- `BPT2 Seller Auth PKCE Gate` reproduz o protocolo real contra host ABP e PostgreSQL frescos.
 
 ### Fase 1 — Seller shell mínimo
 
@@ -81,8 +83,8 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 
 ## Critérios de aceite
 
-1. [ ] Seller consegue entrar e sair da experiência autenticada usando Authorization Code + PKCE; password grant não é usado como login de produto.
-2. [ ] A UI Seller continua cliente HTTP da aplicação e não referencia implementação/DbContext dos módulos.
+1. [ ] Seller consegue entrar e sair da experiência autenticada usando Authorization Code + PKCE; password grant não é usado como login de produto. A fronteira/protocolo já está provada por HTTP real; o critério permanece aberto até a prova operacional final da UX completa.
+2. [x] A UI Seller continua cliente HTTP da aplicação e não referencia implementação/DbContext dos módulos.
 3. [ ] Seller consegue ler e atualizar o próprio perfil, preservando normalização de WhatsApp no backend.
 4. [ ] `Meus anúncios` mostra somente Listings do usuário autenticado.
 5. [ ] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
@@ -99,21 +101,28 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - [x] Identificar o gap mínimo de leitura para tela de edição/galeria.
 - [x] Verificar disponibilidade do donor BPT1 nas fontes acessíveis — fonte não disponível; não bloquear o plano nem inferir conteúdo.
 - [x] Confirmar baseline de autenticação interativa: Authorization Code + PKCE.
-- [ ] Provar a menor opção de UI/auth e registrar a decisão antes de construir telas de negócio.
+- [x] Provar a menor opção de UI/auth e registrar a decisão antes de construir telas de negócio.
 - [ ] Implementar Seller shell mínimo: login/logout, perfil e Meus anúncios.
 - [ ] Implementar query de edição mínima + Draft/Edit/Vehicle.
 - [ ] Implementar fotos + Publish/Pause/Archive.
 - [ ] Provar fluxo end-to-end e regressões relevantes.
-- [ ] Revisar necessidade de ADR/MDV após a prova, não antes.
+- [x] Revisar necessidade de ADR/MDV após a prova da fronteira de UI/auth — nenhum novo ADR necessário; a decisão é uma implementação reversível dentro do boundary já congelado no ADR-0004.
 - [ ] Encerrar o plano com resultado, evidência e gaps futuros explícitos.
 
 ## Decisões abertas necessárias
 
 ### UI Seller: mesmo `public-web` ou cliente separado
 
-**NÃO DECIDIDO.** A opção deve ser resolvida por um spike mínimo de autenticação/roteamento, considerando complexidade operacional, segurança, isolamento e reaproveitamento do cliente já existente. Preferência não é evidência.
+**DECIDIDO: usar o mesmo `public-web` no primeiro Seller Self-Service.**
 
-Não criar um terceiro frontend ou mover administração para Next.js sem prova de necessidade.
+Evidência executada:
+
+- o Next.js existente compilou `/vender`, `/auth/callback` e `/auth/logout-callback` sem alterar as páginas públicas SSR;
+- o novo gate realizou Authorization Code + PKCE contra o Auth Server real e usou o access token em uma API Seller autenticada;
+- Public Web Gate e Public Buyer HTTP Gate permaneceram verdes, portanto o acréscimo da área autenticada não regrediu o consumidor público existente;
+- criar outro frontend agora adicionaria segunda toolchain/deploy sem necessidade demonstrada.
+
+A decisão é reversível porque o boundary durável continua HTTP/API conforme ADR-0004. Separar a UI Seller futuramente continua permitido se isolamento, escala de equipe, deploy ou segurança produzirem evidência concreta.
 
 ### Contrato de leitura para edição
 
@@ -121,10 +130,10 @@ Não criar um terceiro frontend ou mover administração para Next.js sem prova 
 
 ## Evidência externa usada no planejamento
 
-- ABP React UI atual documenta Authorization Code + PKCE como o fluxo do browser e configura Auth Server/OpenIddict, route guards e cliente OIDC para aplicações React modernas.
-- OpenIddict recomenda Authorization Code para aplicações com usuário final e suporta PKCE; resource owner password credentials não é recomendado para novas aplicações interativas.
+- ABP React UI atual documenta Authorization Code + PKCE como o fluxo recomendado para browser e usa `oidc-client-ts` como implementação OIDC subjacente: https://abp.io/docs/10.4/framework/ui/react/authorization
+- OpenIddict recomenda Authorization Code para fluxos interativos e documenta enforcement de PKCE por cliente: https://documentation.openiddict.com/guides/choosing-the-right-flow.html e https://documentation.openiddict.com/configuration/proof-key-for-code-exchange
 
-Essas fontes definem a baseline de segurança do login do browser. A escolha específica do container de UI do BPT2 continua sendo decisão empírica do plano.
+Essas fontes definem a baseline de segurança. A escolha de manter a UI Seller no `public-web` foi decidida pela prova do BPT2, não pela preferência de framework.
 
 ## Progress log
 
@@ -133,10 +142,15 @@ Essas fontes definem a baseline de segurança do login do browser. A escolha esp
 - 2026-08-23: auditoria identificou como gap de backend uma leitura autenticada de detalhe/galeria para reabrir edição, não uma nova modelagem de Listing.
 - 2026-08-23: donor BPT1 não estava disponível nas fontes GitHub conectadas nem foi identificado com segurança em busca pública; nenhuma clonagem/adaptação foi presumida.
 - 2026-08-23: documentação atual ABP/OpenIddict confirmou Authorization Code + PKCE como baseline para login interativo; password grant permanece restrito a smokes/fixtures existentes.
+- 2026-08-23: spike implementou `/vender` no `public-web`, cliente `BomPraTi_SellerWeb` público/Authorization Code-only, PKCE obrigatório e callbacks de login/logout.
+- 2026-08-23: `BPT2 Seller Auth PKCE Gate` provou discovery S256, login via ABP Account, code exchange com verifier, bearer Seller API, rejeição sem PKCE, rejeição do password grant e end-session endpoint.
+- 2026-08-23: Host, Public Web, Listing Lifecycle, Listing Photo, Product API e Public Buyer regressions permaneceram verdes no mesmo head da prova inicial.
 
 ## Decision log
 
 - Plan 0004 selecionado como próximo slice de produto.
 - Reutilizar as regras e APIs BPT2 existentes antes de criar qualquer backend novo.
 - BPT1 só será donor quando houver fonte concreta auditável; indisponibilidade do donor não bloqueia o desenvolvimento do Seller Self-Service.
-- Login interativo não usará password grant. A fronteira exata da UI Seller será decidida pelo primeiro spike do plano.
+- Login interativo não usará password grant.
+- A primeira UI Seller vive no `public-web` existente sob `/vender`; essa escolha é reversível e não altera o boundary HTTP/API.
+- Nenhum ADR novo é necessário para esta decisão porque ADR-0004 já congela o desacoplamento por HTTP e não separa Buyer/Seller em deploys obrigatórios.
