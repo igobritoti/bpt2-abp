@@ -3,6 +3,7 @@ namespace BomPraTi.Marketplace.Contracts;
 public sealed record UpdateListingInput(
     string Title,
     decimal Price,
+    string ConcurrencyStamp,
     string? Description = null,
     int? ManufactureYear = null,
     int? MileageKm = null,
