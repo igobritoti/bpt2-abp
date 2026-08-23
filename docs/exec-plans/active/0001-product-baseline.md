@@ -81,7 +81,7 @@ Media/fotos entra imediatamente depois que o fluxo principal estiver consolidado
 - [x] Consolidar API real Seller/Catalog/Listing.
 - [x] Executar regressões focadas de ownership/public/concurrency pelo caminho HTTP/application service final.
 - [x] Integrar Media/ListingPhoto.
-- [ ] Validar detalhe/listagem pública mínima.
+- [x] Validar detalhe/listagem pública mínima.
 - [ ] Atualizar MDV/ADRs apenas se surgir decisão arquitetural nova.
 - [ ] Encerrar plano com resultado e pendências explícitas.
 
@@ -102,8 +102,10 @@ Nenhuma dessas decisões autoriza automaticamente mudança de chassis, busca ext
 - 2026-08-23: API real Seller/Catalog/Listing/Public Listing comprovada no host; endpoints protegidos retornam 401/403 em `/api/**` e superfícies públicas permanecem anônimas.
 - 2026-08-23: lifecycle autenticado de Listing comprovado por HTTP real: password-grant/Identity seed, criação em Draft, Draft invisível, ownership negado com 403, Publish público, update válido com rotação de `ConcurrencyStamp` e update stale rejeitado com 409. O teste também revelou e corrigiu a configuração HTTP de OpenIddict somente em Development e a exceção de ownership que antes vazava como 500.
 - 2026-08-23: Media/ListingPhoto comprovado pelo caminho HTTP real: upload autenticado, validação do tipo real pelos bytes, criação de MediaAsset sem vazamento de storage internals, ownership negado com 403, reorder com capa mínima em `SortOrder == 0`, foto de Draft rejeitada com 404, projeção pública ordenada após Publish e conteúdo público servido byte-for-byte com `Content-Type: image/png`.
+- 2026-08-23: Fase 3 validada no backend: o contrato HTTP gerado para `PublicListingDto` contém fatos de Seller + Vehicle + Photos; a listagem pública retorna envelope paginado `totalCount/items` via `PagedResultDto`, preservando `Skip/Take` e ordenação determinística. Product API, Listing lifecycle, Listing Photo, migration, host e architecture gates permaneceram verdes.
 
 ## Decision log
 
 - Nenhuma decisão arquitetural nova neste checkpoint. A configuração de transport security segue a opção documentada do ABP/OpenIddict apenas para Development quando `AuthServer:RequireHttpsMetadata=false`; produção continua exigindo HTTPS.
+- A paginação pública usa o DTO padrão `PagedResultDto<T>` do ABP para expor itens e total; não foram adicionados filtros, sorting ou infraestrutura de busca.
 - Decisões arquiteturais anteriores permanecem em `../../MDV.md` e `../../adr/`.
