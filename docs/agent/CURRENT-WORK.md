@@ -10,9 +10,9 @@ Executar o primeiro fluxo público real do comprador conforme o Execution Plan 0
 
 `Public Listing → Public Detail → WhatsApp Contact`
 
-O Product Baseline de backend está concluído. O public web deve permanecer independente do host ABP, consumir somente a API HTTP e usar Next.js 16 Active LTS/App Router na primeira implementação conforme ADR-0009.
+A fundação independente do public web já foi materializada e comprovada por CI com Next.js 16 Active LTS/App Router, TypeScript, ESLint e production build. O cliente continua desacoplado do host ABP e sua fronteira durável é a API HTTP.
 
-Próximo acceptance target: materializar a fundação do public web com gate próprio e, em seguida, expor no detalhe o `WhatsAppNumber` que já existe no contrato público de Seller. Não criar Lead persistido, chat ou nova infraestrutura antes que um requisito real exija isso.
+Próximo acceptance target: expor na projeção pública de Listing o `WhatsAppNumber` que já existe e é normalizado no domínio Sellers, comprovando o contrato HTTP sem criar Lead persistido. Depois disso, conectar listagem/detalhe/CTA no public web.
 
 ## Active plan
 
@@ -28,7 +28,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. O formato exato de normalização/validação do WhatsApp permanece uma decisão local permitida pelo plano e deve ser resolvido apenas antes do CTA real.
+Nenhum blocker de repositório conhecido. A normalização de WhatsApp deixou de ser decisão aberta: `SellerProfile` já persiste somente 8–15 dígitos incluindo country code.
 
 ## Update rule
 

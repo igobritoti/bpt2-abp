@@ -21,4 +21,6 @@ npm run build
 npm run dev
 ```
 
+`BPT2 Public Web Gate` executes lint, typecheck and production build in GitHub Actions for public-web changes.
+
 Runtime API configuration is introduced only when the first API-consuming page lands.
