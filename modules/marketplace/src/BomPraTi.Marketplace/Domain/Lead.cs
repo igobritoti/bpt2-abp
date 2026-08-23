@@ -8,6 +8,7 @@ public sealed class Lead : AggregateRoot<Guid>
     public Guid? UserId { get; private set; }
     public string Channel { get; private set; } = null!;
     public DateTime CreatedAtUtc { get; private set; }
+    public DateTime? ContactedAtUtc { get; private set; }
 
     private Lead() { }
 
@@ -18,5 +19,11 @@ public sealed class Lead : AggregateRoot<Guid>
         UserId = userId;
         Channel = channel.Trim();
         CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
+    }
+
+    public void MarkContacted(DateTime contactedAtUtc)
+    {
+        if (ContactedAtUtc.HasValue) return;
+        ContactedAtUtc = DateTime.SpecifyKind(contactedAtUtc, DateTimeKind.Utc);
     }
 }

@@ -32,6 +32,7 @@ export type SellerLead = {
   buyerUserId: string | null;
   channel: string;
   createdAtUtc: string;
+  contactedAtUtc: string | null;
 };
 
 export type SellerListingPhoto = {
@@ -163,6 +164,14 @@ export async function getMyListings(accessToken: string): Promise<SellerListing[
 export async function getMyLeads(accessToken: string): Promise<SellerLead[]> {
   const response = await apiRequest("/api/app/seller-lead-query/mine", accessToken);
   return (await response.json()) as SellerLead[];
+}
+
+export async function markSellerLeadContacted(accessToken: string, leadId: string): Promise<void> {
+  await apiRequest(
+    `/api/app/seller-lead-command/mark-contacted/${encodeURIComponent(leadId)}`,
+    accessToken,
+    { method: "POST" },
+  );
 }
 
 export async function getMyListingDetail(

@@ -39,7 +39,8 @@ public class SellerLeadQuery : ISellerLeadQuery, ITransientDependency
                 item.ListingTitle,
                 item.Lead.UserId,
                 item.Lead.Channel,
-                item.Lead.CreatedAtUtc))
+                item.Lead.CreatedAtUtc,
+                item.Lead.ContactedAtUtc))
             .ToListAsync(cancellationToken);
     }
 }
