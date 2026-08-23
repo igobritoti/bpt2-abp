@@ -73,13 +73,19 @@ O Plan 0005 concluiu a primeira experiência interativa de descoberta pública s
 
 A home pública usa query string como estado da descoberta e oferece Query, Brand, Model, faixas de ano/preço e paginação anterior/próxima. O gate real comprovou filtros, total/paginação, preservação do estado na URL, range invertido retornando vazio e Draft permanecendo invisível. Ranking, novos filtros e engine externa continuam fora do slice.
 
-A experiência pública e a experiência Seller continuam clientes independentes da aplicação por HTTP conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary reversível.
+O Plan 0006 concluiu o primeiro ciclo autenticado de Favorites do Buyer:
+
+`Public Detail → Buyer login → Favorite/Unfavorite → Meus favoritos`
+
+O Buyer usa `BomPraTi_BuyerWeb`, cliente OpenIddict público dedicado com Authorization Code + PKCE. Marketplace deriva o proprietário do Favorite de `ICurrentUser`; o browser não informa `UserId`. Só Listing atualmente público pode ser adicionado, e `Meus favoritos` reutiliza a projeção pública existente: Pause oculta o item sem apagar a relação, republish o restaura e unfavorite remove a intenção persistida.
+
+A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
 O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Marketplace já possui a estrutura de domínio/persistência de `Lead`, mas o fluxo WhatsApp atual não cria Lead. Ativar registro de contato, analytics ou CRM continua dependente de requisito comprovado.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0005. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0006. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -92,6 +98,9 @@ Nenhum execution plan está ativo após o fechamento do Plan 0005. O próximo sl
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - A primeira implementação do public web usa Next.js 16 Active LTS/App Router sem criar dependência de frontend nos módulos de backend.
 - A primeira experiência Seller usa o mesmo cliente Next sob `/vender`, isolada por HTTP/OIDC e autenticada por Authorization Code + PKCE.
+- A primeira experiência autenticada Buyer usa cliente OIDC público dedicado `BomPraTi_BuyerWeb`, também com Authorization Code + PKCE.
+- Favorite pertence ao usuário autenticado derivado no servidor; o cliente não escolhe `UserId`.
+- Favorite só é criado para Listing atualmente público e a lista do Buyer só projeta Listings que continuam públicos.
 - A primeira experiência de discovery usa somente o contrato público já existente e mantém query string como estado SSR/compartilhável.
 - O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não ativa automaticamente persistência/analytics de Lead.
 
@@ -102,6 +111,7 @@ O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente, por exemplo:
 
 - ativação/persistência de eventos de contato e analytics/CRM de Leads;
+- perfil Buyer, alertas e extensões de Favorites;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;

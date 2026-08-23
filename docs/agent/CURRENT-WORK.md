@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0005 concluído. A experiência pública do Buyer agora consome o contrato de discovery existente sem ampliar o backend:
+Execution Plan 0006 concluído. O primeiro ciclo autenticado de Favorite do Buyer está fechado:
 
-`Public Listings → busca/filtros → paginação → detalhe → WhatsApp`
+`Public Detail → Buyer login → Favorite/Unfavorite → Meus favoritos`
 
-A home Next usa query string como estado canônico, mantém SSR/URLs compartilháveis e expõe Query, Brand, Model, faixas de ano/preço e paginação anterior/próxima. O Public Discovery HTTP Gate comprovou em PostgreSQL fresco + host ABP + Next de produção: dois Listings publicados e um Draft, filtros de Query/preço/catálogo, paginação preservando estado, range invertido retornando vazio e Draft permanecendo oculto.
+O Buyer usa o cliente OIDC público dedicado `BomPraTi_BuyerWeb` com Authorization Code + PKCE, sem alterar `BomPraTi_SellerWeb`. A API deriva `UserId` de `ICurrentUser`, só aceita add para Listing atualmente público e projeta `Meus favoritos` pela mesma autoridade pública de Listing. Pause oculta sem apagar a relação; republish restaura; unfavorite remove.
 
-O princípio transversal ADR-0010 também já está integrado em `main`: nova capacidade de infraestrutura exige primeiro necessidade comprovada e avaliação de soluções maduras aplicáveis; adoção ou construção deve deixar decisão durável documentada.
+O Buyer Favorites HTTP Gate comprovou o fluxo em PostgreSQL fresco + host ABP + Account/OIDC real + Next de produção. O head de produto também manteve verdes todos os workflows aplicáveis.
 
-Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0006 é presumido apenas porque o Plan 0005 terminou.
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0007 é presumido apenas porque o Plan 0006 terminou.
 
 ## Active plan
 
@@ -25,14 +25,14 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do Buyer Favorites: [`../exec-plans/completed/0006-buyer-favorites.md`](../exec-plans/completed/0006-buyer-favorites.md).
 - Histórico do Public Discovery: [`../exec-plans/completed/0005-public-discovery.md`](../exec-plans/completed/0005-public-discovery.md).
-- Histórico do Seller Self-Service: [`../exec-plans/completed/0004-seller-self-service.md`](../exec-plans/completed/0004-seller-self-service.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e passam a seguir ADR-0010 quando forem abertas.
+Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e seguem ADR-0010 quando forem abertas.
 
 ## Update rule
 
