@@ -128,21 +128,28 @@ get_token() {
   local username="$1"
   local password="$2"
   local token_file="${TMPDIR:-/tmp}/bpt2-token-${username}.json"
-  curl --fail-with-body --silent --show-error \
+  local status
+  status="$(curl --silent --show-error \
+    --output "$token_file" \
+    --write-out '%{http_code}' \
     -X POST "$BASE/connect/token" \
     -H 'Content-Type: application/x-www-form-urlencoded' \
     --data-urlencode 'grant_type=password' \
     --data-urlencode 'client_id=BomPraTi_App' \
     --data-urlencode "username=$username" \
     --data-urlencode "password=$password" \
-    --data-urlencode 'scope=BomPraTi' \
-    -o "$token_file"
+    --data-urlencode 'scope=BomPraTi')"
+  if [[ "$status" != "200" ]]; then
+    echo "Token request for $username expected 200, got $status: $(cat "$token_file")" >&2
+    return 1
+  fi
   python3 - "$token_file" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
-    value = json.load(handle).get("access_token")
+    data = json.load(handle)
+value = data.get("access_token")
 if not value:
-    raise SystemExit("Token response did not contain access_token")
+    raise SystemExit(f"Token response did not contain access_token: {data}")
 print(value)
 PY
 }
