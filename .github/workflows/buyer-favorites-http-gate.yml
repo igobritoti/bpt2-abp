@@ -1,0 +1,63 @@
+name: BPT2 Buyer Favorites HTTP Gate
+
+on:
+  pull_request:
+    paths:
+      - 'modules/marketplace/**'
+      - 'main/BomPraTi/Data/**'
+      - 'main/BomPraTi/appsettings.json'
+      - 'public-web/**'
+      - 'scripts/buyer-favorites-http-smoke.sh'
+      - 'scripts/fresh-migration-gate.sh'
+      - 'tests/BomPraTi.HttpLifecycleFixture/**'
+      - '.github/workflows/buyer-favorites-http-gate.yml'
+
+jobs:
+  buyer-favorites-http:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: BomPraTi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d BomPraTi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Syntax check Buyer Favorites smoke
+        run: bash -n scripts/buyer-favorites-http-smoke.sh
+      - name: Apply fresh database
+        run: bash scripts/fresh-migration-gate.sh
+      - name: Seed host identity and OpenIddict data
+        shell: bash
+        run: |
+          set -euo pipefail
+          export ConnectionStrings__Default="$BPT_DB_CONNECTION"
+          export ASPNETCORE_ENVIRONMENT=Development
+          export OpenIddict__Applications__BomPraTi_BuyerWeb__RootUrl=http://127.0.0.1:3100
+          cd main/BomPraTi
+          dotnet run --configuration Release --no-build -- --migrate-database
+      - name: Seed canonical Vehicle fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          vehicle_id="$(dotnet run --project tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj --configuration Release | tail -n 1)"
+          test -n "$vehicle_id"
+          echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
+      - name: Exercise Buyer Favorites over HTTP
+        run: bash scripts/buyer-favorites-http-smoke.sh

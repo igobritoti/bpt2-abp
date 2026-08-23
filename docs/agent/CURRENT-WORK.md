@@ -6,19 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0005 concluído. A experiência pública do Buyer agora consome o contrato de discovery existente sem ampliar o backend:
+Execution Plan 0006 ativo. O objetivo corrente é fechar o menor ciclo autenticado restante do Buyer:
 
-`Public Listings → busca/filtros → paginação → detalhe → WhatsApp`
+`Public Detail → Buyer login → Favorite/Unfavorite → Meus favoritos`
 
-A home Next usa query string como estado canônico, mantém SSR/URLs compartilháveis e expõe Query, Brand, Model, faixas de ano/preço e paginação anterior/próxima. O Public Discovery HTTP Gate comprovou em PostgreSQL fresco + host ABP + Next de produção: dois Listings publicados e um Draft, filtros de Query/preço/catálogo, paginação preservando estado, range invertido retornando vazio e Draft permanecendo oculto.
+A auditoria de `main` confirmou que `Favorite` e `MarketplaceFavorites` já existem com unicidade `(UserId, ListingId)`, mas não existe Contract/AppService/UI. O cliente OIDC atual é deliberadamente Seller; o Buyer usará cliente público dedicado com Authorization Code + PKCE sem alterar essa fronteira.
 
-O princípio transversal ADR-0010 também já está integrado em `main`: nova capacidade de infraestrutura exige primeiro necessidade comprovada e avaliação de soluções maduras aplicáveis; adoção ou construção deve deixar decisão durável documentada.
-
-Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0006 é presumido apenas porque o Plan 0005 terminou.
+Próximo acceptance target: provar em runtime que identidade é derivada no servidor, Draft não pode ser favoritado, Published pode, duplicata é idempotente, Pause oculta da lista sem perder a relação, republish restaura e unfavorite remove.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0006-buyer-favorites.md`](../exec-plans/active/0006-buyer-favorites.md)
 
 ## Source of runtime truth
 
@@ -26,13 +24,10 @@ Nenhum execution plan ativo.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Histórico do Public Discovery: [`../exec-plans/completed/0005-public-discovery.md`](../exec-plans/completed/0005-public-discovery.md).
-- Histórico do Seller Self-Service: [`../exec-plans/completed/0004-seller-self-service.md`](../exec-plans/completed/0004-seller-self-service.md).
-
-Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e passam a seguir ADR-0010 quando forem abertas.
+Nenhum blocker conhecido. O plano não requer infraestrutura nova; ADR-0010 não abre avaliação de fornecedor sem necessidade infra.
 
 ## Update rule
 
