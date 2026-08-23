@@ -14,15 +14,13 @@ on:
       - 'main/**'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   host:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feat/product-implementation
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -34,26 +32,7 @@ jobs:
         run: |
           dotnet msbuild modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
           dotnet msbuild modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj -getProperty:TargetFramework -getProperty:TargetFrameworks
-      - name: Ensure ABP 10.6 host exists
+      - name: Ensure materialized ABP 10.6 host exists
         run: bash scripts/bootstrap-host.sh
       - name: Build host and modules
         run: dotnet build main/BomPraTi/BomPraTi.csproj --configuration Release --nologo
-      - name: Materialize generated host on implementation branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          find main -type f \( -name '*.pfx' -o -name '*.p12' -o -name '*.key' -o -name '*.pem' \) -delete
-          rm -f main/BomPraTi/appsettings.secrets.json
-          if ! grep -qxF 'BomPraTi/appsettings.secrets.json' main/.gitignore; then
-            printf '\n# Local secrets\nBomPraTi/appsettings.secrets.json\n' >> main/.gitignore
-          fi
-          find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + || true
-          git config user.name 'bpt2-ci'
-          git config user.email 'actions@users.noreply.github.com'
-          git add -- main
-          if git diff --cached --quiet; then
-            echo 'Host already materialized.'
-            exit 0
-          fi
-          git commit -m 'build: materialize ABP 10.6 host [skip ci]'
-          git push origin HEAD:feat/product-implementation
