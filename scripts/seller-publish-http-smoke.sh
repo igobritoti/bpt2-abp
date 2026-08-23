@@ -136,7 +136,7 @@ required = [
     ("/api/app/listing-command/pause/{listingId}", "post"),
     ("/api/app/listing-command/archive/{listingId}", "post"),
     ("/api/app/seller-listing-query/mine-by-id/{listingId}", "get"),
-    ("/api/app/seller-listing-query/mine-photo/{listingId}/{photoId}", "get"),
+    ("/api/app/seller-listing-query/mine-photo", "get"),
     ("/api/app/public-listing/{id}", "get"),
 ]
 missing = [f"{verb.upper()} {path}" for path, verb in required if verb not in paths.get(path, {})]
@@ -146,6 +146,10 @@ remove = paths["/api/app/listing-photo"]["delete"]
 query = {(item.get("name", "").lower(), item.get("in")) for item in remove.get("parameters", [])}
 if ("listingid", "query") not in query or ("photoid", "query") not in query:
     raise SystemExit(f"Photo remove must expose listingId/photoId query params: {remove.get('parameters', [])}")
+private_photo = paths["/api/app/seller-listing-query/mine-photo"]["get"]
+private_photo_query = {(item.get("name", "").lower(), item.get("in")) for item in private_photo.get("parameters", [])}
+if ("listingid", "query") not in private_photo_query or ("photoid", "query") not in private_photo_query:
+    raise SystemExit(f"Private photo must expose listingId/photoId query params: {private_photo.get('parameters', [])}")
 media = paths["/api/app/media-upload/upload"]["post"].get("requestBody", {}).get("content", {})
 if not any(key.lower().startswith("multipart/form-data") for key in media):
     raise SystemExit(f"Media upload must be multipart/form-data: {sorted(media)}")
@@ -398,7 +402,7 @@ if ids != expected or [item.get("sortOrder") for item in data] != [0, 1]:
 PY
 echo "SELLER_PUBLISH_REORDER: PASS"
 
-PRIVATE_PATH="/api/app/seller-listing-query/mine-photo/$LISTING_ID/$PHOTO_2"
+PRIVATE_PATH="/api/app/seller-listing-query/mine-photo?listingId=$LISTING_ID&photoId=$PHOTO_2"
 status="$(curl --silent --show-error --output "$PRIVATE_PHOTO" --write-out '%{http_code}' \
   -H "Authorization: Bearer $TOKEN" "$API_BASE$PRIVATE_PATH")"
 [[ "$status" == "200" ]] || { echo "Owned Draft photo expected 200, got $status" >&2; exit 1; }
