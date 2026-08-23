@@ -165,6 +165,18 @@ export async function getMyListingDetail(
   return (await response.json()) as SellerListingDetail;
 }
 
+export async function getSellerPhotoBlob(
+  accessToken: string,
+  listingId: string,
+  photoId: string,
+): Promise<Blob> {
+  const response = await apiRequest(
+    `/api/app/seller-listing-query/mine-photo/${encodeURIComponent(listingId)}/${encodeURIComponent(photoId)}`,
+    accessToken,
+  );
+  return response.blob();
+}
+
 export async function getVehicleCatalog(take = 50): Promise<VehicleRef[]> {
   const response = await publicRequest(`/api/app/vehicle-catalog?take=${take}`);
   return (await response.json()) as VehicleRef[];
