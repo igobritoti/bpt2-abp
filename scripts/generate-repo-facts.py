@@ -9,12 +9,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs/generated/repository-facts.md"
-ABP_FRAMEWORK_PACKAGES = (
+ABP_FRAMEWORK_EXACT = {
     "Volo.Abp.Core",
     "Volo.Abp.AspNetCore.Mvc",
+}
+ABP_FRAMEWORK_PREFIXES = (
     "Volo.Abp.Ddd.",
     "Volo.Abp.EntityFrameworkCore",
 )
+
+
+def is_abp_framework_package(name: str) -> bool:
+    return name in ABP_FRAMEWORK_EXACT or any(name.startswith(prefix) for prefix in ABP_FRAMEWORK_PREFIXES)
 
 
 def xml_values(path: Path) -> tuple[set[str], set[str]]:
@@ -32,7 +38,7 @@ def xml_values(path: Path) -> tuple[set[str], set[str]]:
         if tag in {"PackageReference", "PackageVersion"}:
             include = element.attrib.get("Include", "")
             version = element.attrib.get("Version")
-            if version and any(include == marker or include.startswith(marker) for marker in ABP_FRAMEWORK_PACKAGES):
+            if version and is_abp_framework_package(include):
                 abp_versions.add(version)
     return frameworks, abp_versions
 
