@@ -12,6 +12,8 @@ RESPONSE="${TMPDIR:-/tmp}/bpt2-public-buyer-response.json"
 HOME_HTML="${TMPDIR:-/tmp}/bpt2-public-buyer-home.html"
 DETAIL_HTML="${TMPDIR:-/tmp}/bpt2-public-buyer-detail.html"
 PHOTO_RESPONSE="${TMPDIR:-/tmp}/bpt2-public-buyer-photo.bin"
+CONTACT_HEADERS="${TMPDIR:-/tmp}/bpt2-public-buyer-contact-headers.txt"
+SWAGGER="${TMPDIR:-/tmp}/bpt2-public-buyer-swagger.json"
 PNG="${TMPDIR:-/tmp}/bpt2-public-buyer.png"
 
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
@@ -74,7 +76,7 @@ dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$API_LOG" 2>&1 &
 BACKEND_PID=$!
 
 for _ in $(seq 1 60); do
-  if curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" >/dev/null; then
+  if curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" -o "$SWAGGER"; then
     break
   fi
   if ! kill -0 "$BACKEND_PID" >/dev/null 2>&1; then
@@ -83,7 +85,16 @@ for _ in $(seq 1 60); do
   fi
   sleep 1
 done
-curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" >/dev/null || { cat "$API_LOG" >&2; exit 1; }
+curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" -o "$SWAGGER" || { cat "$API_LOG" >&2; exit 1; }
+python3 - "$SWAGGER" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+operations = data.get("paths", {}).get("/api/app/lead", {})
+if "post" not in operations:
+    raise SystemExit(f"Expected conventional POST /api/app/lead route, got: {operations}")
+PY
+echo "PUBLIC_LEAD_ROUTE: PASS"
 
 ADMIN_TOKEN="$(get_token)"
 EXPECTED_WHATSAPP="5511999998877"
@@ -139,6 +150,10 @@ print(data["id"])
 PY
 )"
 
+status="$(request_json POST "$API_BASE/api/app/lead?listingId=$LISTING_ID")"
+[[ "$status" == "404" ]] || { echo "Draft Lead create expected 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+echo "PUBLIC_LEAD_DRAFT_BLOCKED: PASS"
+
 ATTACH_BODY="$(python3 - "$MEDIA_ID" <<'PY'
 import json, sys
 print(json.dumps({"mediaAssetId": sys.argv[1]}))
@@ -188,6 +203,23 @@ echo "PUBLIC_WEB_DRAFT_PRIVATE: PASS"
 status="$(request_json POST "$API_BASE/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"
 [[ "$status" == "200" ]] || { echo "Listing publish expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 
+status="$(request_json POST "$API_BASE/api/app/lead?listingId=$LISTING_ID")"
+[[ "$status" == "200" || "$status" == "201" ]] || { echo "Published Lead create expected 200/201, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+if str(data.get("listingId", "")).lower() != sys.argv[2].lower():
+    raise SystemExit(f"Lead ListingId mismatch: {data}")
+if data.get("channel") != "WhatsApp":
+    raise SystemExit(f"Lead channel mismatch: {data}")
+if data.get("userId") is not None:
+    raise SystemExit(f"Anonymous Lead unexpectedly has UserId: {data}")
+if not data.get("id") or not data.get("createdAtUtc"):
+    raise SystemExit(f"Persisted Lead result incomplete: {data}")
+PY
+echo "PUBLIC_LEAD_PERSISTED: PASS"
+
 curl --fail --silent --show-error "$WEB_BASE" -o "$HOME_HTML"
 grep -Fq "$LISTING_TITLE" "$HOME_HTML" || { echo "Published Listing missing from public web list." >&2; exit 1; }
 grep -Fq "/anuncios/$LISTING_ID" "$HOME_HTML" || { echo "Published Listing detail link missing from public web list." >&2; exit 1; }
@@ -200,16 +232,36 @@ grep -Fq "$LISTING_TITLE" "$DETAIL_HTML" || { echo "Detail title missing." >&2; 
 grep -Fq "$SELLER_NAME" "$DETAIL_HTML" || { echo "Seller display name missing." >&2; exit 1; }
 grep -Fq "HTTP Lifecycle Model" "$DETAIL_HTML" || { echo "Vehicle model missing." >&2; exit 1; }
 grep -Fq "HTTP Lifecycle Version" "$DETAIL_HTML" || { echo "Vehicle version missing." >&2; exit 1; }
-grep -Fq "https://wa.me/$EXPECTED_WHATSAPP" "$DETAIL_HTML" || { echo "Canonical WhatsApp CTA missing." >&2; exit 1; }
+grep -Fq 'action="/api/contact/whatsapp"' "$DETAIL_HTML" || { echo "Lead-capturing WhatsApp form missing." >&2; exit 1; }
+grep -Fq "value=\"$LISTING_ID\"" "$DETAIL_HTML" || { echo "WhatsApp form ListingId missing." >&2; exit 1; }
 grep -Fq "/api/app/public-listing/$LISTING_ID/photo/$PHOTO_ID" "$DETAIL_HTML" || { echo "Public photo URL missing from detail." >&2; exit 1; }
 grep -Fq "<title>$LISTING_TITLE | Bom Pra Ti</title>" "$DETAIL_HTML" || { echo "Listing metadata title missing." >&2; exit 1; }
 echo "PUBLIC_WEB_DETAIL: PASS"
-echo "PUBLIC_WEB_WHATSAPP: PASS"
 echo "PUBLIC_WEB_METADATA: PASS"
+
+status="$(curl --silent --show-error --output "$RESPONSE" --dump-header "$CONTACT_HEADERS" --write-out '%{http_code}' \
+  -X POST "$WEB_BASE/api/contact/whatsapp" \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode "listingId=$LISTING_ID")"
+[[ "$status" == "303" ]] || { echo "WhatsApp contact route expected 303, got $status: $(cat "$RESPONSE")" >&2; cat "$CONTACT_HEADERS" >&2; exit 1; }
+grep -Eqi "^location: https://wa.me/$EXPECTED_WHATSAPP\r?$" "$CONTACT_HEADERS" || { echo "WhatsApp contact route did not redirect to canonical Seller number." >&2; cat "$CONTACT_HEADERS" >&2; exit 1; }
+echo "PUBLIC_WEB_WHATSAPP_LEAD: PASS"
 
 status="$(curl --silent --show-error --output "$PHOTO_RESPONSE" --write-out '%{http_code}' "$API_BASE/api/app/public-listing/$LISTING_ID/photo/$PHOTO_ID")"
 [[ "$status" == "200" ]] || { echo "Public photo expected 200, got $status" >&2; exit 1; }
 cmp -s "$PNG" "$PHOTO_RESPONSE" || { echo "Public web photo target differs from uploaded bytes." >&2; exit 1; }
 echo "PUBLIC_WEB_PHOTO: PASS"
+
+status="$(request_json POST "$API_BASE/api/app/listing-command/pause/$LISTING_ID" "$ADMIN_TOKEN")"
+[[ "$status" == "200" ]] || { echo "Listing pause expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json POST "$API_BASE/api/app/lead?listingId=$LISTING_ID")"
+[[ "$status" == "404" ]] || { echo "Paused Lead create expected 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+echo "PUBLIC_LEAD_PAUSED_BLOCKED: PASS"
+
+status="$(request_json POST "$API_BASE/api/app/listing-command/archive/$LISTING_ID" "$ADMIN_TOKEN")"
+[[ "$status" == "200" ]] || { echo "Listing archive expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json POST "$API_BASE/api/app/lead?listingId=$LISTING_ID")"
+[[ "$status" == "404" ]] || { echo "Archived Lead create expected 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+echo "PUBLIC_LEAD_ARCHIVED_BLOCKED: PASS"
 
 echo "PUBLIC BUYER HTTP FLOW: PASSED"
