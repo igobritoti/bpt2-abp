@@ -34,7 +34,7 @@ O objetivo deste plano é provar o primeiro consumidor público e fechar o ciclo
 ### Fase 2 — contato por WhatsApp
 
 - expor `WhatsAppNumber` já existente no contrato público de Seller pela projeção pública de Listing;
-- validar/normalizar o formato necessário ao link de WhatsApp sem inventar um novo agregado de Lead;
+- usar o formato canônico já imposto por `SellerProfile`: somente dígitos, entre 8 e 15, incluindo country code;
 - renderizar CTA de contato no detalhe público;
 - não expor contato por associação a Draft/private.
 
@@ -61,8 +61,8 @@ O objetivo deste plano é provar o primeiro consumidor público e fechar o ciclo
 
 ## Critérios de aceite
 
-1. [ ] Public web é projeto independente e não adiciona dependência de frontend aos módulos de domínio/backend.
-2. [ ] Build, typecheck/lint e gate do public web passam em CI no commit integrável.
+1. [x] Public web é projeto independente e não adiciona dependência de frontend aos módulos de domínio/backend.
+2. [x] Build, typecheck/lint e gate do public web passam em CI no commit integrável.
 3. [ ] Página pública de listagem consome a API real e apresenta somente anúncios publicáveis.
 4. [ ] Página pública de detalhe consome a API real e apresenta Seller + Vehicle + fotos + fatos do anúncio.
 5. [ ] Contato WhatsApp vem do contrato público de Seller existente e chega ao detalhe sem expor storage internals nem dados privados adicionais.
@@ -77,7 +77,7 @@ O objetivo deste plano é provar o primeiro consumidor público e fechar o ciclo
 - [x] Selecionar o menor gap de usuário após o Product Baseline.
 - [x] Confirmar boundary do frontend público contra ADR-0004.
 - [x] Confirmar que contato público de Seller/WhatsApp já existe em `Sellers.Contracts`.
-- [ ] Materializar public web e gate próprio.
+- [x] Materializar public web e gate próprio.
 - [ ] Expor WhatsApp na projeção pública mínima.
 - [ ] Implementar listagem/detalhe/CTA.
 - [ ] Provar fluxo real contra backend.
@@ -88,7 +88,6 @@ O objetivo deste plano é provar o primeiro consumidor público e fechar o ciclo
 
 Resolver somente quando bloquearem um critério de aceite:
 
-- formato exato de normalização/validação do WhatsApp;
 - URL/shape final de navegação pública do anúncio;
 - conjunto mínimo de filtros e sorting exigido pelo primeiro consumidor;
 - estratégia de cache/revalidation somente se o primeiro fluxo demonstrar necessidade.
@@ -101,9 +100,12 @@ Não decidir neste plano Lead persistido, busca externa, object storage, broker 
 - 2026-08-23: auditoria do repositório confirmou ausência de public web versionado e confirmou `SellerPublicContactDto`/`ISellerPublicReader` com WhatsApp público já modelado.
 - 2026-08-23: ADR-0004 confirmou que o public web deve permanecer independente do host ABP; Razor/MVC dentro do host não é candidato para a experiência pública.
 - 2026-08-23: documentação oficial atual de Next.js/ABP revisada para a primeira implementação; Next.js 16 Active LTS/App Router selecionado mantendo a fronteira HTTP reversível.
+- 2026-08-23: fundação independente `public-web/` materializada com Next.js 16.2.12, React 19, TypeScript e ESLint. O primeiro `BPT2 Public Web Gate` instalou dependências e passou lint, typecheck e production build; Harness permaneceu verde.
+- 2026-08-23: inspeção do aggregate `SellerProfile` confirmou que `WhatsAppNumber` já é persistido canonicamente como 8–15 dígitos, incluindo country code; o frontend não deve duplicar essa normalização.
 
 ## Decision log
 
 - O primeiro ciclo de contato será WhatsApp direto usando o contato público já modelado; não criar Lead persistido até existir requisito de armazenamento/medição do contato.
 - O primeiro public web usa Next.js 16 Active LTS/App Router conforme ADR-0009. A decisão é de implementação do cliente público, não de arquitetura dos módulos de domínio.
 - O frontend não acessa DbContext, assemblies internos nem Contracts .NET diretamente; sua dependência é a API HTTP pública.
+- O CTA deve usar diretamente o `WhatsAppNumber` canônico fornecido pelo backend no formato `https://wa.me/{digits}`; não há segunda normalização de domínio no cliente.
