@@ -43,6 +43,7 @@ try
     var versionId = Guid.NewGuid();
     var vehicleId = Guid.NewGuid();
     Guid listingId = Guid.Empty;
+    string listingConcurrencyStamp = string.Empty;
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
@@ -73,8 +74,10 @@ try
             "Porto Alegre",
             "RS"));
         listingId = created.Id;
+        listingConcurrencyStamp = created.ConcurrencyStamp;
         Require(created.SellerId == sellerA, "CreateListing did not bind ownership to the authenticated seller.");
         Require(created.Status == nameof(ListingStatus.Draft), "New listing was not Draft.");
+        Require(!string.IsNullOrWhiteSpace(created.ConcurrencyStamp), "CreateListing did not return a concurrency stamp.");
     });
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
@@ -105,7 +108,8 @@ try
     {
         using var principal = ChangeUser(services, sellerA);
         var commands = services.GetRequiredService<IListingCommandService>();
-        await commands.PublishAsync(listingId);
+        var published = await commands.PublishAsync(listingId);
+        listingConcurrencyStamp = published.ConcurrencyStamp;
     });
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
@@ -114,37 +118,36 @@ try
         Require(await publicQuery.GetAsync(listingId) is not null, "Published listing was not returned publicly.");
     });
 
-    using (var staleScope = application.ServiceProvider.CreateScope())
+    var staleStamp = listingConcurrencyStamp;
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
-        var staleUowManager = staleScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
-        using var staleUow = staleUowManager.Begin(requiresNew: true, isTransactional: true);
-        var staleRepository = staleScope.ServiceProvider.GetRequiredService<IRepository<Listing, Guid>>();
-        var stale = await staleRepository.GetAsync(listingId);
-        var staleStamp = stale.ConcurrencyStamp;
+        using var principal = ChangeUser(services, sellerA);
+        var commands = services.GetRequiredService<IListingCommandService>();
+        var updated = await commands.UpdateAsync(
+            listingId,
+            new UpdateListingInput("Gate 01 Listing updated", 101_000m, staleStamp));
+        Require(updated.ConcurrencyStamp != staleStamp, "Application update did not rotate the concurrency stamp.");
+        listingConcurrencyStamp = updated.ConcurrencyStamp;
+    });
 
+    var conflict = false;
+    try
+    {
         await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
         {
-            var freshRepository = services.GetRequiredService<IRepository<Listing, Guid>>();
-            var fresh = await freshRepository.GetAsync(listingId);
-            fresh.ChangePrice(fresh.Price + 1_000m);
-            await freshRepository.UpdateAsync(fresh, autoSave: true);
-            Require(fresh.ConcurrencyStamp != staleStamp, "Concurrency stamp did not rotate after update.");
+            using var principal = ChangeUser(services, sellerA);
+            var commands = services.GetRequiredService<IListingCommandService>();
+            await commands.UpdateAsync(
+                listingId,
+                new UpdateListingInput("Gate 01 stale update", 102_000m, staleStamp));
         });
-
-        stale.ChangePrice(stale.Price + 2_000m);
-        var conflict = false;
-        try
-        {
-            await staleRepository.UpdateAsync(stale, autoSave: true);
-            await staleUow.CompleteAsync();
-        }
-        catch (AbpDbConcurrencyException)
-        {
-            conflict = true;
-        }
-
-        Require(conflict, "Stale concurrent Listing update was accepted.");
     }
+    catch (AbpDbConcurrencyException)
+    {
+        conflict = true;
+    }
+
+    Require(conflict, "Stale application-service Listing update was accepted.");
     Console.WriteLine("G01_CONCURRENCY: PASS");
 
     var rollbackBrandId = Guid.NewGuid();
