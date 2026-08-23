@@ -1,65 +1,64 @@
-# Qualidade — definição de pronto e validação proporcional ao risco
+# Qualidade — validação, evidência executada e Definition of Done
+
+Esta é a fonte canônica para **como provar que uma mudança está pronta**.
 
 ## Princípio
 
-Qualidade deve ser **verificável**. Documentação descreve intenção e regras; checks executáveis provam comportamento quando isso for possível.
+Validação deve ser proporcional ao risco e, quando possível, mecânica. Prosa descreve intenção; testes, linters, builds, migrations e CI comprovam invariantes executáveis.
 
-Não rodar suites ou criar infraestrutura de teste por ritual. Rodar o conjunto mínimo que demonstra que a mudança não quebrou o fluxo relevante e que decisões caras continuam verdadeiras.
+Não crie suites por ritual e não pule um check relevante por conveniência.
 
-## Checks por tipo de mudança
+## Matriz mínima
 
-| Mudança | Validação mínima esperada |
+| Mudança | Validação mínima |
 |---|---|
-| documentação apenas | links/caminhos coerentes; nenhuma afirmação contradiz decisão/código conhecido |
-| código de domínio/aplicação | build + teste focado do comportamento alterado |
-| boundary/dependência modular | architecture checker + ataque negativo relevante |
-| schema/persistência | migration gerável/aplicável + fresh database quando o baseline for afetado |
-| auth/ownership | teste positivo + negativo de acesso indevido |
-| visibilidade pública | teste de estado permitido + rejeição/invisibilidade de estado proibido |
-| optimistic concurrency | update válido + tentativa stale rejeitada explicitamente |
-| upload/media | casos válidos + input malformado/tipo declarado falso conforme risco |
-| side effect externo | falha entre persistência e efeito + retry/idempotência/recuperação |
-| bug corrigido | regressão que falhava antes e passa depois, quando economicamente viável |
+| harness/documentação | `python3 scripts/check-harness.py` |
+| domínio/aplicação | build + teste focado |
+| boundary/dependência modular | `python3 scripts/check-boundaries.py` + ataque negativo relevante |
+| schema/persistência | migration aplicável + fresh database quando afetar baseline |
+| auth/ownership | caso permitido + caso negado |
+| visibilidade pública | estado publicável + estado proibido invisível |
+| optimistic concurrency | update válido + stale explicitamente rejeitado |
+| upload/media | válido + bytes/tipo inválido conforme risco |
+| side effect externo | falha intermediária + retry/idempotência/recuperação |
+| bug | regressão que falha antes e passa depois, quando viável |
 
-## Gate 01 — regressões fundacionais
+## Evidência executada
 
-O Gate 01 já provou:
-
-- boundaries arquiteturais;
-- host ABP 10.6 + módulos + build;
-- fresh PostgreSQL migration;
-- Draft invisível ao público;
-- ownership Seller A/B;
-- optimistic concurrency por application service;
-- rollback multi-módulo no mesmo PostgreSQL/ABP UoW.
-
-Não é necessário rerodar todo o Gate 01 para qualquer alteração. Rerodar os checks afetados pelo risco da mudança. O CI completo pode continuar funcionando como rede adicional, mas não deve justificar testes irrelevantes no desenvolvimento local.
+- Resultado de CI/comando no commit corrente é evidência; descrição manual de que “está verde” não é fonte persistente de readiness.
+- Runtime readiness é derivada dos checks aplicáveis ao commit/PR atual.
+- Contagens de projetos, módulos, workflows, planos e versões detectáveis são geradas em `generated/repository-facts.md`.
+- Não manter counters científicos ou inventários computáveis em `CURRENT-WORK`, `AGENTS.md` ou prompts.
+- Se um número de performance virar requisito, registrar workload, ambiente, método e resultado do benchmark.
 
 ## Definition of Done
 
 Uma mudança está pronta quando, conforme seu risco:
 
-1. comportamento e critério de aceite estão claros;
-2. build relevante passa;
-3. testes focados relevantes passam;
-4. boundary/security/concurrency/migration foram verificados quando afetados;
-5. nenhuma decisão documentada foi contradita silenciosamente;
-6. documentação/ADR/MDV foram atualizados se a verdade do projeto mudou;
-7. dívida ou decisão aberta ficou explícita em vez de escondida em TODO ambíguo;
-8. não há segredo novo ou artefato sensível versionado.
+1. outcome e acceptance criterion foram satisfeitos;
+2. checks relevantes passam no estado que será integrado;
+3. self-review não encontrou mudança fora de escopo, segredo ou weakening de guardrail;
+4. arquitetura/segurança/concurrency/migration foram verificadas quando afetadas;
+5. docs canônicos refletem a nova verdade;
+6. plano/estado/dívida foram atualizados quando necessário;
+7. PR/CI está pronto para integração segundo `ENGINEERING.md`.
 
-## Performance
+## Falhas
 
-- Não congelar SLA, throughput, latência ou volume por estimativa sem medição/requisito real.
-- Benchmark deve representar workload do BPT e registrar ambiente/entrada/resultado.
-- Engine de busca externo, cache distribuído e outras otimizações só entram quando benchmark/requisito demonstrar necessidade.
+- Corrija a causa; não remova o check para obter verde.
+- Diferencie falha de código, falha de teste e falha externa.
+- Flake confirmado é dívida do sistema de verificação.
+- Se um check não mede mais um requisito válido, altere o requisito e o check de forma explícita e rastreável.
 
-## Falhas de CI
+## Harness
 
-- Corrigir a causa; não remover o check para obter verde sem uma decisão explícita.
-- Diferenciar falha do código, falha do teste e falha de infraestrutura.
-- Flake confirmado deve ser tratado como defeito do sistema de verificação, não como evidência de comportamento de produto.
+`python3 scripts/check-harness.py` valida, entre outros:
 
-## Evidência
+- `AGENTS.md` curto e com função de mapa;
+- documentos/diretórios obrigatórios;
+- links Markdown locais;
+- freshness de estado/referências operacionais;
+- forma mínima de execution plans;
+- fatos gerados sincronizados com o repositório.
 
-Resultados executados no CI do BPT2 podem ser classificados como evidência B quando reproduzem diretamente o comportamento em questão. Capacidade documentada sem teste específico continua sendo evidência de mecanismo, não necessariamente decisão de adoção.
+O gate do harness não substitui os gates de arquitetura, build, migration ou produto; ele garante que agentes consigam descobrir corretamente quais deles usar.

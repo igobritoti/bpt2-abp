@@ -1,52 +1,38 @@
-# Planos de execução
+# Execution plans
 
-## Por que versionar planos
+Planos são artefatos versionados para trabalho complexo. Este documento define **a política**; o estado corrente fica em `agent/CURRENT-WORK.md`.
 
-Trabalho complexo acumula decisões, descobertas e mudanças de direção. Se isso vive apenas em chat, memória ou comentário solto, o próximo agente/colaborador perde contexto e repete investigação.
+## Quando usar
 
-Planos relevantes são artefatos do repositório.
+Crie execution plan quando a tarefa atravessa vários módulos/camadas, tem checkpoints ou decisões abertas, envolve migration/segurança/integração/refatoração material, ou precisa sobreviver a mais de uma sessão.
 
-## Quando criar execution plan
-
-Criar plano versionado quando a tarefa:
-
-- atravessa vários módulos ou camadas;
-- deve durar mais de uma mudança pequena;
-- possui decisões ainda abertas que serão resolvidas durante execução;
-- envolve migration, rollout, segurança, integrações ou refatoração material;
-- precisa de critérios de aceite e checkpoints explícitos.
-
-Mudança local trivial não precisa gerar burocracia; pode usar plano efêmero da ferramenta/agente.
+Mudança local trivial pode usar plano efêmero.
 
 ## Estrutura
 
-- `exec-plans/active/` — planos em execução.
-- `exec-plans/completed/` — planos concluídos preservados como histórico quando existirem.
+- `exec-plans/active/` — trabalho em execução.
+- `exec-plans/completed/` — histórico concluído.
+- `exec-plans/tech-debt-tracker.md` — dívida conhecida que precisa permanecer visível.
 
-## Conteúdo mínimo de um plano
+## Conteúdo mínimo
 
-1. **Objetivo** — resultado observável.
-2. **Contexto** — decisões já congeladas que limitam o trabalho.
-3. **Escopo** — o que entra.
-4. **Não escopo** — o que não será puxado por conveniência.
-5. **Critérios de aceite** — como saber que terminou.
-6. **Etapas/checkpoints** — sequência revisável.
-7. **Decisões abertas** — apenas as necessárias para o plano.
-8. **Progress log** — estado factual, não narrativa longa.
-9. **Decision log** — decisões tomadas durante execução com link para ADR/MDV quando material.
-10. **Resultado** — ao concluir, o que mudou e quais pendências sobraram.
+Um plano ativo contém:
+
+1. objetivo/outcome;
+2. contexto congelado;
+3. escopo e não escopo;
+4. critérios de aceite;
+5. checkpoints;
+6. decisões abertas necessárias;
+7. `Progress log` factual;
+8. `Decision log`.
+
+Ao concluir, registrar resultado e evidência final, marcar `Status: **CONCLUÍDO**` e mover para `completed/`.
 
 ## Regras
 
-- Planos descrevem **execução**, não substituem ADR nem `PRODUCT.md`.
-- Se uma hipótese do plano for invalidada, atualizar o plano em vez de continuar por sunk cost.
-- Não congelar tecnologia apenas porque apareceu como passo de um plano.
-- Ao concluir, mover para `completed/` quando o histórico tiver valor; atualizar fontes canônicas antes de considerar o plano encerrado.
-
-## Plano ativo
-
-- `exec-plans/active/0001-product-baseline.md` — transformar a fundação validada pelo Gate 01 em primeiro baseline funcional do produto.
-
-## Fundamentação
-
-A OpenAI descreve planos como artefatos de primeira classe em seu fluxo agent-first, mantendo planos ativos, concluídos e dívida técnica no repositório para evitar dependência de contexto externo. O BPT2 adota o princípio, não necessariamente a estrutura exata usada internamente pela OpenAI.
+- Plano não substitui `PRODUCT.md`, `ARCHITECTURE.md`, ADR ou `MDV.md`.
+- Hipótese invalidada deve atualizar o plano; não continuar por sunk cost.
+- Não usar plano como diário infinito.
+- `agent/CURRENT-WORK.md` aponta para o plano ativo relevante; não replica o progress log.
+- Não manter uma lista manual de “planos ativos” aqui; a árvore `exec-plans/active/` e `CURRENT-WORK` são as fontes.

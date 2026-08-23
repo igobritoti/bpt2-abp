@@ -78,7 +78,7 @@ Media/fotos entra imediatamente depois que o fluxo principal estiver consolidado
 
 - [x] Gate 01 arquitetural/comportamental concluído.
 - [x] Host ABP 10.6 materializado/versionado na branch de implementação.
-- [ ] Consolidar API real Seller/Catalog/Listing.
+- [x] Consolidar API real Seller/Catalog/Listing.
 - [ ] Executar regressões focadas de ownership/public/concurrency pelo caminho HTTP/application service final.
 - [ ] Integrar Media/ListingPhoto.
 - [ ] Validar detalhe/listagem pública mínima.
@@ -99,6 +99,7 @@ Nenhuma dessas decisões autoriza automaticamente mudança de chassis, busca ext
 ## Progress log
 
 - 2026-08-22: chassis e Gate 01 validados; documentação operacional formalizada antes de continuar feature work.
+- 2026-08-23: API real Seller/Catalog/Listing/Public Listing comprovada no host; endpoints protegidos retornam 401/403 em `/api/**` e superfícies públicas permanecem anônimas. Próximo alvo é lifecycle autenticado pelo caminho HTTP.
 
 ## Decision log
 
