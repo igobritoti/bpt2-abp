@@ -31,6 +31,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
 | CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
+| CONTACT-003 | Sessão Buyer existente pode atribuir o Lead WhatsApp ao `UserId` autenticado sem tornar login obrigatório | PASSA / DECIDIDO no Plan 0008 |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | INFRA-001 | Antes de experimentar/construir nova capacidade de infraestrutura, avaliar soluções maduras aplicáveis | DECIDIDO em ADR-0010 |
 | INFRA-002 | Adoção de solução existente ou construção customizada de infraestrutura exige decisão durável documentada | DECIDIDO em ADR-0010 |
@@ -113,6 +114,20 @@ Classe da evidência do fluxo Favorites: **B — observado/reproduzido no CI do 
 - Um run intermediário falhou por uma expressão de teste que tratava CRLF do header `Location` incorretamente; o próprio log mostrava `303` e o `wa.me` canônico. A asserção foi corrigida sem alteração de produto e o run seguinte passou.
 
 Classe da evidência do Lead capture: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência de atribuição do Lead ao Buyer autenticado
+
+- O backend do Plan 0007 já usa `ICurrentUser.Id`; o Plan 0008 não alterou domínio, persistência nem rota backend.
+- O CTA preserva o `<form>` anônimo/sem-JS e o redirect 303, mas com JavaScript reutiliza a sessão `BomPraTi_BuyerWeb` existente via `getCurrentBuyerUser()` sem iniciar login.
+- Quando há `access_token`, o browser envia o Bearer somente ao route handler same-origin; o handler o encaminha apenas ao POST de Lead. O token não integra o payload e nunca compõe o URL externo.
+- O destino `wa.me` continua calculado server-side a partir do contato canônico do Listing público.
+- No head `d684db735f448381c340356d090880988e561eb2`, os 9 workflows disparados passaram, incluindo Public Web, Buyer Favorites e Public Buyer.
+- O Public Buyer Gate manteve o fluxo real PostgreSQL + ABP + Next do Plan 0007 integralmente verde e, em step adicional, `AUTHENTICATED_LEAD_FORWARDING: PASS` comprovou com upstream controlado que o route handler encaminha o Bearer ao Lead API e devolve somente o URL canônico ao cliente.
+- O Buyer Favorites Gate, separadamente no mesmo head, manteve verde a prova real de Authorization Code + PKCE e access token do `BomPraTi_BuyerWeb`.
+
+A composição acima prova os boundaries executados, mas não é apresentada como um único E2E no qual um token obtido por PKCE foi encaminhado ao Lead API real. Essa distinção permanece explícita para não elevar a força da evidência.
+
+Classe: **B para os comportamentos executados individualmente; C apenas para a composição entre as provas separadas**.
 
 ## Princípio de seleção de infraestrutura
 
