@@ -21,8 +21,8 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | AUTH-001 | Seller ownership enforcement | PASSA / DECIDIDO no Gate 01 |
 | AUTH-002 | Público nunca vê Draft/private | PASSA / DECIDIDO no Gate 01 |
 | UI-001 | Public frontend desacoplado do host ABP | PASSA / DECIDIDO em ADR-0004 |
-| UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | DECIDIDO em ADR-0009; boundary HTTP reversível |
-| CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | DECIDIDO no Plan 0003; Lead persistido ainda não exigido |
+| UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | PASSA / DECIDIDO no Plan 0003; boundary HTTP reversível |
+| CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; Lead persistido ainda não exigido |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | LOCK-001 | Distributed locking | ADIADO até caso real |
 | JOB-001 | Background jobs | ADIADO até caso real |
@@ -46,10 +46,14 @@ A decisão TX-002 vale para múltiplos DbContexts participantes do mesmo ABP Uni
 
 ## Evidência do primeiro consumidor público
 
-- ADR-0004 já fixava a separação entre public web e host ABP.
-- O repositório não possuía public web versionado ao iniciar o Plan 0003.
-- `Sellers.Contracts` já expõe `SellerPublicContactDto` com `DisplayName` + `WhatsAppNumber`, e `ISellerPublicReader` já é consumido pela projeção pública de Listing.
-- Documentação oficial atual, verificada em 2026-08-23, classifica Next.js 16 como Active LTS e documenta App Router, metadata e self-hosting adequados ao primeiro cliente público.
+- ADR-0004 fixa a separação entre public web e host ABP.
+- `Sellers.Contracts` expõe `SellerPublicContactDto` com `DisplayName` + `WhatsAppNumber`; a projeção pública de Listing preserva esse contrato.
+- `SellerProfile` normaliza WhatsApp para 8–15 dígitos incluindo country code, e o lifecycle HTTP comprovou a propagação do valor canônico até a resposta pública.
+- O Public Web Gate comprovou lint, typecheck e production build do cliente independente.
+- O Public Buyer HTTP Gate sobe banco vazio, host ABP e Next.js e comprovou Draft invisível, Publish, listagem, detalhe com Seller/Vehicle, foto pública, metadata e CTA `wa.me` para o número canônico.
+- O primeiro run end-to-end revelou HTTP 204 para detalhe não publicável; o cliente foi corrigido para tratar 204/404 como ausência pública e o run subsequente passou.
+
+Classe da evidência comportamental do fluxo Buyer: **B — observado/reproduzido no CI do BPT2**.
 
 UI-002 é uma decisão de implementação do cliente público, isolada pela fronteira HTTP. Não altera os boundaries dos módulos do backend nem classifica outros frameworks SSR como tecnicamente incapazes.
 
