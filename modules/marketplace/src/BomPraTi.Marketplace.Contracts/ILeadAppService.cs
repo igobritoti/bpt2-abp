@@ -4,5 +4,5 @@ namespace BomPraTi.Marketplace.Contracts;
 
 public interface ILeadAppService : IApplicationService
 {
-    Task CreateAsync(Guid listingId, CancellationToken cancellationToken = default);
+    Task<LeadDto> CreateAsync(Guid listingId, CancellationToken cancellationToken = default);
 }
