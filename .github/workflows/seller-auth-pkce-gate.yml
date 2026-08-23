@@ -1,0 +1,57 @@
+name: BPT2 Seller Auth PKCE Gate
+
+on:
+  pull_request:
+    paths:
+      - 'public-web/**'
+      - 'main/BomPraTi/**'
+      - 'modules/sellers/**'
+      - 'scripts/seller-auth-pkce-smoke.sh'
+      - 'scripts/fresh-migration-gate.sh'
+      - '.github/workflows/seller-auth-pkce-gate.yml'
+      - 'docs/exec-plans/active/0004-seller-self-service.md'
+
+permissions:
+  contents: read
+
+jobs:
+  seller-auth-pkce:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: BomPraTi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d BomPraTi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
+      SELLER_WEB_ROOT: http://127.0.0.1:3094
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+      - name: Apply fresh database
+        run: bash scripts/fresh-migration-gate.sh
+      - name: Seed host identity and Seller Web OpenIddict client
+        shell: bash
+        run: |
+          set -euo pipefail
+          export ConnectionStrings__Default="$BPT_DB_CONNECTION"
+          export ASPNETCORE_ENVIRONMENT=Development
+          export OpenIddict__Applications__BomPraTi_SellerWeb__RootUrl="$SELLER_WEB_ROOT"
+          cd main/BomPraTi
+          dotnet run --configuration Release --no-build -- --migrate-database
+      - name: Exercise Seller Authorization Code plus PKCE flow
+        run: bash scripts/seller-auth-pkce-smoke.sh
