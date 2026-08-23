@@ -22,7 +22,7 @@ async function buyerRequest(path: string, accessToken: string, init?: RequestIni
   }
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`A API de favoritos respondeu ${response.status}${detail ? `: ${detail}` : "."}`);
+    throw new Error(`A API Buyer respondeu ${response.status}${detail ? `: ${detail}` : "."}`);
   }
   return response;
 }
@@ -49,5 +49,19 @@ export async function addFavorite(accessToken: string, listingId: string): Promi
 export async function removeFavorite(accessToken: string, listingId: string): Promise<void> {
   await buyerRequest(`/api/app/favorite?listingId=${encodeURIComponent(listingId)}`, accessToken, {
     method: "DELETE",
+  });
+}
+
+export async function isListingReported(accessToken: string, listingId: string): Promise<boolean> {
+  const response = await buyerRequest(
+    `/api/app/listing-report/is-reported/${encodeURIComponent(listingId)}`,
+    accessToken,
+  );
+  return (await response.json()) as boolean;
+}
+
+export async function reportListing(accessToken: string, listingId: string): Promise<void> {
+  await buyerRequest(`/api/app/listing-report/report?listingId=${encodeURIComponent(listingId)}`, accessToken, {
+    method: "POST",
   });
 }
