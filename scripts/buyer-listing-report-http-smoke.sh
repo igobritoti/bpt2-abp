@@ -19,7 +19,7 @@ for _ in $(seq 1 60); do curl --fail --silent "$BASE/swagger/v1/swagger.json" -o
 python3 - "$SWAGGER" <<'PY'
 import json,sys
 paths=json.load(open(sys.argv[1],encoding='utf-8'))['paths']
-expected={'/api/app/listing-report/report':'post','/api/app/listing-report/is-reported/{listingId}':'get'}
+expected={'/api/app/listing-report/report/{listingId}':'post','/api/app/listing-report/is-reported/{listingId}':'get'}
 for path,verb in expected.items():
     if path not in paths or verb not in paths[path]:
         raise SystemExit(f'Missing {verb.upper()} {path}; report routes={[(p,list(v)) for p,v in paths.items() if "report" in p]}')
@@ -40,7 +40,7 @@ LISTING_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys; print(json.load(open(sys.argv[1]))['id'])
 PY
 )"
-REPORT_PATH="/api/app/listing-report/report?listingId=$LISTING_ID"
+REPORT_PATH="/api/app/listing-report/report/$LISTING_ID"
 
 status="$(request POST "$REPORT_PATH")"; [[ "$status" == 401 ]] || { echo "Anonymous report expected 401 got $status" >&2; exit 1; }
 echo 'BUYER_REPORT_ANONYMOUS_BLOCKED: PASS'
