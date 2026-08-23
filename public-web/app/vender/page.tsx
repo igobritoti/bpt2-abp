@@ -6,8 +6,10 @@ import type { User } from "oidc-client-ts";
 
 import { formatPrice } from "../../lib/public-listings";
 import {
+  getMyLeads,
   getMyListings,
   getSellerProfile,
+  type SellerLead,
   type SellerListing,
   type SellerProfile,
   upsertSellerProfile,
@@ -18,6 +20,7 @@ export default function SellerEntryPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [listings, setListings] = useState<SellerListing[]>([]);
+  const [leads, setLeads] = useState<SellerLead[]>([]);
   const [displayName, setDisplayName] = useState("");
   const [whatsAppNumber, setWhatsAppNumber] = useState("");
   const [loading, setLoading] = useState(true);
@@ -34,13 +37,15 @@ export default function SellerEntryPage() {
           return;
         }
 
-        const [currentProfile, currentListings] = await Promise.all([
+        const [currentProfile, currentListings, currentLeads] = await Promise.all([
           getSellerProfile(currentUser.access_token),
           getMyListings(currentUser.access_token),
+          getMyLeads(currentUser.access_token),
         ]);
 
         setProfile(currentProfile);
         setListings(currentListings);
+        setLeads(currentLeads);
         setDisplayName(currentProfile?.displayName ?? "");
         setWhatsAppNumber(currentProfile?.whatsAppNumber ?? "");
       } catch (reason: unknown) {
@@ -95,7 +100,7 @@ export default function SellerEntryPage() {
           <p className="eyebrow">Área do vendedor</p>
           <h1>Seus anúncios.</h1>
           <p className="lede">
-            Perfil e anúncios são carregados pelas APIs autenticadas do BPT2. Ownership e normalização continuam no backend.
+            Perfil, anúncios e contatos são carregados pelas APIs autenticadas do BPT2. Ownership e normalização continuam no backend.
           </p>
         </div>
         {user ? (
@@ -198,6 +203,45 @@ export default function SellerEntryPage() {
                       <p className="seller-listing-price">{formatPrice(listing.price)}</p>
                       <Link className="secondary-action action-link" href={`/vender/anuncios/${listing.id}`}>
                         Editar
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="seller-panel seller-listings-panel">
+            <div className="seller-panel-heading">
+              <div>
+                <p className="eyebrow">Contatos</p>
+                <h2>Leads de WhatsApp</h2>
+              </div>
+              <span className="seller-count">{leads.length}</span>
+            </div>
+
+            {leads.length === 0 ? (
+              <div className="empty-state seller-empty-state">
+                <h3>Nenhum contato ainda.</h3>
+                <p>Quando alguém iniciar um contato pelo WhatsApp de um anúncio seu, ele aparecerá aqui.</p>
+              </div>
+            ) : (
+              <div className="seller-listing-list">
+                {leads.map((lead) => (
+                  <article className="seller-listing-row" key={lead.id}>
+                    <div>
+                      <p className="seller-listing-status">{lead.channel}</p>
+                      <h3>{lead.listingTitle}</h3>
+                      <p className="seller-listing-location">
+                        {new Date(lead.createdAtUtc).toLocaleString("pt-BR")}
+                      </p>
+                    </div>
+                    <div className="seller-listing-actions">
+                      <p className="seller-form-help">
+                        {lead.buyerUserId ? "Buyer autenticado" : "Contato anônimo"}
+                      </p>
+                      <Link className="secondary-action action-link" href={`/vender/anuncios/${lead.listingId}`}>
+                        Ver anúncio
                       </Link>
                     </div>
                   </article>
