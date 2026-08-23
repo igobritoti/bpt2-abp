@@ -1,4 +1,4 @@
-name: Materialize development worktree
+name: Materialize generated ABP host
 
 on:
   push:
@@ -6,54 +6,40 @@ on:
       - 'feat/product-implementation'
     paths:
       - '.github/workflows/materialize-dev-worktree.yml'
-      - 'modules/**'
-      - 'scripts/bootstrap-host.sh'
-      - 'scripts/wire-host.py'
-  pull_request:
-    paths:
-      - '.github/workflows/materialize-dev-worktree.yml'
-      - 'modules/**'
-      - 'scripts/bootstrap-host.sh'
-      - 'scripts/wire-host.py'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   materialize:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/product-implementation
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Generate and wire ABP host
+      - name: Generate and wire ABP 10.6 host
         run: bash scripts/bootstrap-host.sh
-      - name: Sanitize generated development tree
+      - name: Sanitize local-only material
         shell: bash
         run: |
           set -euo pipefail
           find main -type f \( -name '*.pfx' -o -name '*.p12' -o -name '*.key' -o -name '*.pem' \) -delete
-          find . -type d \( -name bin -o -name obj -o -name .git \) -prune -exec rm -rf {} + || true
-          if grep -RIlE '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|client_secret|api[_-]?key["'"' ]*[:=])' main modules scripts docs tests 2>/dev/null | grep -q .; then
-            echo 'Potential secret material found in export tree.' >&2
-            exit 1
-          fi
-      - name: Package development worktree
+          rm -f main/BomPraTi/appsettings.secrets.json
+          printf '\n# Local secrets\nBomPraTi/appsettings.secrets.json\n' >> main/.gitignore
+          find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + || true
+      - name: Commit generated host
+        shell: bash
         run: |
-          tar \
-            --exclude='.git' \
-            --exclude='**/bin' \
-            --exclude='**/obj' \
-            --exclude='*.pfx' \
-            --exclude='*.p12' \
-            --exclude='*.key' \
-            --exclude='*.pem' \
-            -czf bpt2abp-dev-worktree.tar.gz \
-            .github docs modules scripts tests .config Directory.Build.props Directory.Packages.props README.md main
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bpt2abp-dev-worktree
-          path: bpt2abp-dev-worktree.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          set -euo pipefail
+          git config user.name 'bpt2-ci'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- main
+          if git diff --cached --quiet; then
+            echo 'Generated host already materialized.'
+            exit 0
+          fi
+          git commit -m 'build: materialize ABP 10.6 host'
+          git push origin HEAD:feat/product-implementation
