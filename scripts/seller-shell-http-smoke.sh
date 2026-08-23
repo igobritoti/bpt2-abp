@@ -161,7 +161,7 @@ if "error" in query:
     raise SystemExit(f"Authorization error: {query}")
 print(query["code"][0], query["state"][0])
 PY
-)"
+)
 [[ "$RETURNED_STATE" == "$STATE" ]] || { echo "OIDC state mismatch" >&2; exit 1; }
 
 echo "SELLER_SHELL_ACCOUNT_LOGIN: PASS"
