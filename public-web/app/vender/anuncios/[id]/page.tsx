@@ -108,14 +108,16 @@ export default function EditSellerListingPage() {
       return;
     }
 
+    const accessToken = user.access_token;
+    const photos = currentPhotos;
     let cancelled = false;
     const createdUrls: string[] = [];
 
     async function loadPhotoUrls() {
       try {
         const entries = await Promise.all(
-          currentPhotos.map(async (photo) => {
-            const blob = await getSellerPhotoBlob(user.access_token, listingId, photo.id);
+          photos.map(async (photo) => {
+            const blob = await getSellerPhotoBlob(accessToken, listingId, photo.id);
             const url = URL.createObjectURL(blob);
             createdUrls.push(url);
             return [photo.id, url] as const;
@@ -404,28 +406,13 @@ export default function EditSellerListingPage() {
                       <span>Posição {index + 1} da galeria</span>
                     </div>
                     <div className="seller-photo-actions">
-                      <button
-                        type="button"
-                        className="secondary-action compact-action"
-                        disabled={photoBusy || index === 0}
-                        onClick={() => void movePhoto(index, -1)}
-                      >
+                      <button type="button" className="secondary-action compact-action" disabled={photoBusy || index === 0} onClick={() => void movePhoto(index, -1)}>
                         Subir
                       </button>
-                      <button
-                        type="button"
-                        className="secondary-action compact-action"
-                        disabled={photoBusy || index === detail.photos.length - 1}
-                        onClick={() => void movePhoto(index, 1)}
-                      >
+                      <button type="button" className="secondary-action compact-action" disabled={photoBusy || index === detail.photos.length - 1} onClick={() => void movePhoto(index, 1)}>
                         Descer
                       </button>
-                      <button
-                        type="button"
-                        className="secondary-action compact-action"
-                        disabled={photoBusy}
-                        onClick={() => void removePhoto(photo.id)}
-                      >
+                      <button type="button" className="secondary-action compact-action" disabled={photoBusy} onClick={() => void removePhoto(photo.id)}>
                         Remover
                       </button>
                     </div>
@@ -445,28 +432,13 @@ export default function EditSellerListingPage() {
             </div>
 
             <div className="seller-transition-actions">
-              <button
-                type="button"
-                className="primary-action"
-                disabled={transitionBusy !== null}
-                onClick={() => void runTransition("publish")}
-              >
+              <button type="button" className="primary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("publish")}>
                 {transitionBusy === "publish" ? "Publicando…" : "Publicar"}
               </button>
-              <button
-                type="button"
-                className="secondary-action"
-                disabled={transitionBusy !== null}
-                onClick={() => void runTransition("pause")}
-              >
+              <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("pause")}>
                 {transitionBusy === "pause" ? "Pausando…" : "Pausar"}
               </button>
-              <button
-                type="button"
-                className="secondary-action"
-                disabled={transitionBusy !== null}
-                onClick={() => void runTransition("archive")}
-              >
+              <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("archive")}>
                 {transitionBusy === "archive" ? "Arquivando…" : "Arquivar"}
               </button>
               {detail.listing.status === "Published" ? (
