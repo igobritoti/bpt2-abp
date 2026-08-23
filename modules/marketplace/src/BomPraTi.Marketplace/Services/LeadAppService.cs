@@ -27,16 +27,17 @@ public class LeadAppService : ILeadAppService, ITransientDependency
         _publicListings = publicListings;
     }
 
-    public async Task CreateAsync(Guid listingId, CancellationToken cancellationToken = default)
+    public async Task<LeadDto> CreateAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
         if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
         {
             throw new EntityNotFoundException<Listing>(listingId);
         }
 
-        await _dbContext.Leads.AddAsync(
-            new Lead(Guid.NewGuid(), listingId, _currentUser.Id, WhatsAppChannel, DateTime.UtcNow),
-            cancellationToken);
+        var lead = new Lead(Guid.NewGuid(), listingId, _currentUser.Id, WhatsAppChannel, DateTime.UtcNow);
+        await _dbContext.Leads.AddAsync(lead, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new LeadDto(lead.Id, lead.ListingId, lead.UserId, lead.Channel, lead.CreatedAtUtc);
     }
 }
