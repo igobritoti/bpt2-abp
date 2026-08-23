@@ -171,7 +171,7 @@ export async function getSellerPhotoBlob(
   photoId: string,
 ): Promise<Blob> {
   const response = await apiRequest(
-    `/api/app/seller-listing-query/mine-photo/${encodeURIComponent(listingId)}/${encodeURIComponent(photoId)}`,
+    `/api/app/seller-listing-query/mine-photo?listingId=${encodeURIComponent(listingId)}&photoId=${encodeURIComponent(photoId)}`,
     accessToken,
   );
   return response.blob();
