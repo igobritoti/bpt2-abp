@@ -40,16 +40,20 @@ python3 - "$RESPONSE" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     paths = json.load(handle).get("paths", {})
-required = {
-    "/api/app/vehicle-catalog": "get",
-    "/api/app/listing-command": "post",
-    "/api/app/listing-command/{listingId}": "put",
-    "/api/app/seller-listing-query/mine-by-id/{listingId}": "get",
-    "/api/identity/users": "post",
-}
-missing = [f"{verb.upper()} {path}" for path, verb in required.items() if verb not in paths.get(path, {})]
+required = [
+    ("/api/app/vehicle-catalog", "get"),
+    ("/api/app/listing-command", "post"),
+    ("/api/app/listing-command", "put"),
+    ("/api/app/seller-listing-query/mine-by-id/{listingId}", "get"),
+    ("/api/identity/users", "post"),
+]
+missing = [f"{verb.upper()} {path}" for path, verb in required if verb not in paths.get(path, {})]
 if missing:
     raise SystemExit(f"Seller Draft/Edit frontend contract does not match Swagger: {missing}; available={sorted(paths)}")
+update = paths["/api/app/listing-command"]["put"]
+parameters = update.get("parameters", [])
+if not any(p.get("in") == "query" and p.get("name", "").lower() == "listingid" for p in parameters):
+    raise SystemExit(f"Listing update must expose listingId as query parameter: {parameters}")
 PY
 echo "SELLER_DRAFT_EDIT_ROUTES: PASS"
 
@@ -196,7 +200,8 @@ print(json.dumps({
 }))
 PY
 )"
-status="$(request_json PUT "/api/app/listing-command/$LISTING_ID" "$OWNER_TOKEN" "$UPDATE_BODY")"
+UPDATE_PATH="/api/app/listing-command?listingId=$LISTING_ID"
+status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$UPDATE_BODY")"
 [[ "$status" == "200" ]] || { echo "Owner edit expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 NEW_STAMP="$(python3 - "$RESPONSE" "$ORIGINAL_STAMP" <<'PY'
 import json, sys
@@ -227,7 +232,7 @@ print(json.dumps({
 }))
 PY
 )"
-status="$(request_json PUT "/api/app/listing-command/$LISTING_ID" "$OWNER_TOKEN" "$STALE_BODY")"
+status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$STALE_BODY")"
 [[ "$status" == "409" ]] || { echo "Stale edit expected 409, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo "SELLER_DRAFT_EDIT_STALE_CONCURRENCY: PASS"
 
