@@ -6,19 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0004 concluído. O primeiro ciclo operacional real do Seller está comprovado sobre a mesma fronteira HTTP/OIDC do produto:
+Execution Plan 0005 ativo. O objetivo corrente é transformar a listagem pública já comprovada em uma experiência mínima de descoberta do Buyer:
 
-`Seller login → Seller profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish → Public Listing`
+`Public Listings → busca/filtros → paginação → detalhe → WhatsApp`
 
-A experiência Seller reutiliza o `public-web` sob `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. Ownership permanece server-side, edição usa `ConcurrencyStamp`, Media valida uploads, ListingPhoto controla galeria/ordem e Publish/Pause/Archive continuam regras do backend.
+A auditoria de `main` confirmou que o backend já implementa `VehicleId`, `Brand`, `Model`, `MinModelYear`, `MaxModelYear`, `MinPrice`, `MaxPrice`, `Query`, `Skip` e `Take` sob `ListingVisibility.PublicOnly`. O gap é de consumidor: a home Next atual fixa `Skip=0`/`Take=24` e não oferece busca, filtros ou navegação de páginas.
 
-O gate final comprovou em PostgreSQL fresco e Next.js de produção: login PKCE, Profile, Draft/My Listings, edição, upload/attach/reorder/remove, bloqueio de segundo Seller, Draft privado, Publish público, Pause privado, republish público e Archive privado.
-
-Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0005 é presumido apenas porque o Plan 0004 terminou.
+Próximo acceptance target: ligar o contrato existente à query string SSR da home, preservar filtros na paginação e provar o fluxo contra API + Next reais sem adicionar filtro ou infraestrutura nova.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0005-public-discovery.md`](../exec-plans/active/0005-public-discovery.md)
 
 ## Source of runtime truth
 
@@ -31,7 +29,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. O código donor do BPT1 continua indisponível nas fontes GitHub acessíveis; isso limita transplante auditável de UX/código antigo, mas não bloqueia os fluxos BPT2 já comprovados.
+Nenhum blocker de repositório conhecido. O Plan 0005 não depende de novo backend nem de donor externo para começar.
 
 ## Update rule
 
