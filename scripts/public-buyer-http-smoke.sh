@@ -244,7 +244,7 @@ status="$(curl --silent --show-error --output "$RESPONSE" --dump-header "$CONTAC
   -H 'Content-Type: application/x-www-form-urlencoded' \
   --data-urlencode "listingId=$LISTING_ID")"
 [[ "$status" == "303" ]] || { echo "WhatsApp contact route expected 303, got $status: $(cat "$RESPONSE")" >&2; cat "$CONTACT_HEADERS" >&2; exit 1; }
-grep -Eqi "^location: https://wa.me/$EXPECTED_WHATSAPP\r?$" "$CONTACT_HEADERS" || { echo "WhatsApp contact route did not redirect to canonical Seller number." >&2; cat "$CONTACT_HEADERS" >&2; exit 1; }
+tr -d '\r' < "$CONTACT_HEADERS" | grep -Fqi "location: https://wa.me/$EXPECTED_WHATSAPP" || { echo "WhatsApp contact route did not redirect to canonical Seller number." >&2; cat "$CONTACT_HEADERS" >&2; exit 1; }
 echo "PUBLIC_WEB_WHATSAPP_LEAD: PASS"
 
 status="$(curl --silent --show-error --output "$PHOTO_RESPONSE" --write-out '%{http_code}' "$API_BASE/api/app/public-listing/$LISTING_ID/photo/$PHOTO_ID")"
