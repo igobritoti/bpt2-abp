@@ -9,6 +9,7 @@ import { getCurrentSellerUser } from "../../../../lib/seller-auth";
 import {
   attachSellerPhoto,
   getMyListingDetail,
+  getSellerPhotoBlob,
   getVehicle,
   removeSellerPhoto,
   reorderSellerPhotos,
@@ -34,12 +35,6 @@ function vehicleLabel(vehicle: VehicleRef | null): string {
     .join(" · ");
 }
 
-function assetLabel(mediaAssetId: string): string {
-  return mediaAssetId.length > 16
-    ? `${mediaAssetId.slice(0, 8)}…${mediaAssetId.slice(-6)}`
-    : mediaAssetId;
-}
-
 export default function EditSellerListingPage() {
   const params = useParams<{ id: string }>();
   const listingId = params.id;
@@ -47,6 +42,7 @@ export default function EditSellerListingPage() {
   const [user, setUser] = useState<User | null>(null);
   const [detail, setDetail] = useState<SellerListingDetail | null>(null);
   const [vehicle, setVehicle] = useState<VehicleRef | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -62,6 +58,7 @@ export default function EditSellerListingPage() {
   const [color, setColor] = useState("");
   const [city, setCity] = useState("");
   const [stateCode, setStateCode] = useState("");
+  const currentPhotos = detail?.photos ?? null;
 
   async function reloadOwnedDetail(accessToken: string): Promise<SellerListingDetail | null> {
     const currentDetail = await getMyListingDetail(accessToken, listingId);
@@ -102,6 +99,47 @@ export default function EditSellerListingPage() {
 
     void load();
   }, [listingId]);
+
+  useEffect(() => {
+    if (!user || !currentPhotos) {
+      setPhotoUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    const createdUrls: string[] = [];
+
+    async function loadPhotoUrls() {
+      try {
+        const entries = await Promise.all(
+          currentPhotos.map(async (photo) => {
+            const blob = await getSellerPhotoBlob(user.access_token, listingId, photo.id);
+            const url = URL.createObjectURL(blob);
+            createdUrls.push(url);
+            return [photo.id, url] as const;
+          }),
+        );
+
+        if (cancelled) {
+          createdUrls.forEach((url) => URL.revokeObjectURL(url));
+          return;
+        }
+
+        setPhotoUrls(Object.fromEntries(entries));
+      } catch (reason: unknown) {
+        if (!cancelled) {
+          setError(reason instanceof Error ? reason.message : "Não foi possível carregar as fotos atuais.");
+        }
+      }
+    }
+
+    void loadPhotoUrls();
+
+    return () => {
+      cancelled = true;
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [currentPhotos, listingId, user]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -351,9 +389,17 @@ export default function EditSellerListingPage() {
               <ol className="seller-photo-list">
                 {detail.photos.map((photo, index) => (
                   <li key={photo.id} className="seller-photo-row">
-                    <div>
+                    <div className="seller-photo-preview">
+                      {photoUrls[photo.id] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photoUrls[photo.id]} alt={`Foto ${index + 1} do anúncio`} />
+                      ) : (
+                        <span>Carregando foto…</span>
+                      )}
+                    </div>
+                    <div className="seller-photo-meta">
                       <strong>Foto {index + 1}{index === 0 ? " · capa" : ""}</strong>
-                      <span>MediaAsset {assetLabel(photo.mediaAssetId)}</span>
+                      <span>Posição {index + 1} da galeria</span>
                     </div>
                     <div className="seller-photo-actions">
                       <button
