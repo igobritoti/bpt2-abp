@@ -42,7 +42,10 @@ public class Program
             {
                 builder.Services.AddDataMigrationEnvironment();
             }
+
             await builder.AddApplicationAsync<BomPraTiModule>();
+            ConfigureApiCookieChallenges(builder.Services);
+
             var app = builder.Build();
             await app.InitializeApplicationAsync();
 
@@ -70,6 +73,36 @@ public class Program
         {
             Log.CloseAndFlush();
         }
+    }
+
+    private static void ConfigureApiCookieChallenges(IServiceCollection services)
+    {
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                }
+
+                context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+            };
+
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return Task.CompletedTask;
+                }
+
+                context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
+            };
+        });
     }
 
     private static bool IsMigrateDatabase(string[] args)
