@@ -225,6 +225,6 @@ As decisões específicas do BPT2 vêm do código e CI versionados. As práticas
 - Microsoft — `global.json` e seleção do SDK .NET: https://learn.microsoft.com/dotnet/core/tools/global-json
 - PostgreSQL — documentação oficial da série 17: https://www.postgresql.org/docs/17/
 - Node.js / OpenJS Foundation — política de releases e LTS: https://nodejs.org/en/about/previous-releases
-- ABP — single-layer database migrator e `dotnet run --migrate-database`: https://abp.io/docs/10.6/solution-templates/single-layer-web-application/db-migrator
+- ABP — single-layer solution structure, database creation e seed por `dotnet run --migrate-database`: https://abp.io/docs/latest/solution-templates/single-layer-web-application/solution-structure
 
 Essas referências não substituem o comportamento executado pelo repositório. Se uma recomendação externa mudar sem alterar o BPT2, reavalie antes de atualizar este guia mecanicamente.
