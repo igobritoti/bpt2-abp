@@ -6,32 +6,33 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operacional real do Seller sobre a superfície autenticada já existente:
+Execution Plan 0004 concluído. O primeiro ciclo operacional real do Seller está comprovado sobre a mesma fronteira HTTP/OIDC do produto:
 
-`Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
+`Seller login → Seller profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish → Public Listing`
 
-A fronteira de UI/auth, o Seller shell mínimo e o checkpoint Draft/Edit estão comprovados. A experiência Seller reutiliza o `public-web` em `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. O Seller escolhe um Vehicle da API canônica, cria um Listing que nasce Draft, reabre apenas Listing próprio pelo read model autenticado e salva alterações usando o `ConcurrencyStamp` devolvido pelo backend; stale update continua resultando em 409.
+A experiência Seller reutiliza o `public-web` sob `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. Ownership permanece server-side, edição usa `ConcurrencyStamp`, Media valida uploads, ListingPhoto controla galeria/ordem e Publish/Pause/Archive continuam regras do backend.
 
-A leitura mínima de edição foi resolvida por `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` no servidor e devolve o Listing com a galeria/ordem atual. Não houve nova regra de domínio, aggregate ou dependência entre implementações de módulos.
+O gate final comprovou em PostgreSQL fresco e Next.js de produção: login PKCE, Profile, Draft/My Listings, edição, upload/attach/reorder/remove, bloqueio de segundo Seller, Draft privado, Publish público, Pause privado, republish público e Archive privado.
 
-Próximo acceptance target: concluir o checkpoint de fotos e publicação — `Media upload → attach/remove/reorder ListingPhoto → Publish/Pause/Archive → Public Listing`, preservando ownership, Draft privado e os boundaries já comprovados.
+Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0005 é presumido apenas porque o Plan 0004 terminou.
 
 ## Active plan
 
-[`../exec-plans/active/0004-seller-self-service.md`](../exec-plans/active/0004-seller-self-service.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do Seller Self-Service: [`../exec-plans/completed/0004-seller-self-service.md`](../exec-plans/completed/0004-seller-self-service.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. O código donor do BPT1 não está disponível nas fontes GitHub acessíveis nesta auditoria; isso limita transplantar UX/código antigo, mas não bloqueia o Plan 0004 porque o backend BPT2 necessário já está majoritariamente exposto.
+Nenhum blocker de repositório conhecido. O código donor do BPT1 continua indisponível nas fontes GitHub acessíveis; isso limita transplante auditável de UX/código antigo, mas não bloqueia os fluxos BPT2 já comprovados.
 
 ## Update rule
 
-Atualize este snapshot somente quando mudar o outcome ativo, plano ativo, próximo acceptance target ou blocker real. História vai para o execution plan concluído/ADR, não para baixo deste arquivo.
+Atualize este snapshot somente quando mudar o outcome ativo, plano ativo, próximo acceptance target ou blocker real. História vai para execution plan concluído/ADR, não para baixo deste arquivo.
