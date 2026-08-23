@@ -103,6 +103,30 @@ publish_listing() {
   [[ "$status" == "200" ]] || { echo "Listing publish failed: $status $(cat "$RESPONSE")" >&2; return 1; }
 }
 
+assert_visible_text() {
+  local html_file="$1" expected="$2"
+  python3 - "$html_file" "$expected" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class VisibleText(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+
+    def handle_data(self, data):
+        self.parts.append(data)
+
+parser = VisibleText()
+with open(sys.argv[1], encoding="utf-8") as handle:
+    parser.feed(handle.read())
+visible = "".join(parser.parts)
+expected = sys.argv[2]
+if expected not in visible:
+    raise SystemExit(f"Visible HTML text missing {expected!r}; text={visible!r}")
+PY
+}
+
 dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nologo
 
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$API_LOG" 2>&1 &
@@ -178,7 +202,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'take=1' \
   -o "$PAGE_ONE"
 
-grep -Fq '2 anúncio(s)' "$PAGE_ONE" || { echo "Discovery total expected 2 published listings" >&2; exit 1; }
+assert_visible_text "$PAGE_ONE" '2 anúncio(s)'
 if grep -Fq "$HIDDEN_TITLE" "$PAGE_ONE"; then
   echo "Draft leaked into discovery" >&2
   exit 1
@@ -234,7 +258,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'query=Alpha' \
   --data-urlencode 'take=1' \
   -o "$FILTERED"
-grep -Fq '1 anúncio(s)' "$FILTERED" || { echo "Query filter expected one result" >&2; exit 1; }
+assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$ALPHA_TITLE" "$FILTERED" || { echo "Query filter missing Alpha" >&2; exit 1; }
 if grep -Fq "$BETA_TITLE" "$FILTERED"; then echo "Query filter leaked Beta" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_QUERY: PASS"
@@ -243,7 +267,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'minPrice=150000' \
   --data-urlencode 'maxPrice=250000' \
   -o "$FILTERED"
-grep -Fq '1 anúncio(s)' "$FILTERED" || { echo "Price filter expected one result" >&2; exit 1; }
+assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Price filter missing Beta" >&2; exit 1; }
 if grep -Fq "$ALPHA_TITLE" "$FILTERED"; then echo "Price filter leaked Alpha" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_PRICE: PASS"
@@ -254,7 +278,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode "minModelYear=$VEHICLE_YEAR" \
   --data-urlencode "maxModelYear=$VEHICLE_YEAR" \
   -o "$FILTERED"
-grep -Fq '2 anúncio(s)' "$FILTERED" || { echo "Catalog filters expected two published results" >&2; exit 1; }
+assert_visible_text "$FILTERED" '2 anúncio(s)'
 if grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then echo "Catalog filters leaked Draft" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_CATALOG: PASS"
 
@@ -262,7 +286,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'minPrice=250000' \
   --data-urlencode 'maxPrice=150000' \
   -o "$FILTERED"
-grep -Fq '0 anúncio(s)' "$FILTERED" || { echo "Inverted price range expected empty result" >&2; exit 1; }
+assert_visible_text "$FILTERED" '0 anúncio(s)'
 grep -Fq 'Nenhum anúncio encontrado.' "$FILTERED" || { echo "Filtered empty state missing" >&2; exit 1; }
 echo "PUBLIC_DISCOVERY_INVALID_RANGE: PASS"
 
