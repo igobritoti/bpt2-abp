@@ -11,6 +11,7 @@ on:
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/public-buyer-http-smoke.sh'
+      - 'scripts/whatsapp-auth-forwarding-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/public-buyer-http-gate.yml'
 
@@ -63,3 +64,5 @@ jobs:
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
       - name: Exercise public Buyer flow over HTTP
         run: bash scripts/public-buyer-http-smoke.sh
+      - name: Prove authenticated Lead forwarding through public web
+        run: bash scripts/whatsapp-auth-forwarding-smoke.sh

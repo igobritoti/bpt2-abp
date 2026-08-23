@@ -20,6 +20,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse("Contact unavailable", { status: 404 });
   }
 
-  await recordWhatsAppLead(listing.id);
+  await recordWhatsAppLead(listing.id, request.headers.get("authorization"));
+  if (request.headers.get("accept")?.includes("application/json")) {
+    return NextResponse.json({ url: contactUrl });
+  }
   return NextResponse.redirect(contactUrl, 303);
 }
