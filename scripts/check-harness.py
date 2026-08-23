@@ -13,6 +13,7 @@ REQUIRED_FILES = [
     "AGENTS.md",
     "ARCHITECTURE.md",
     "docs/README.md",
+    "docs/LOCAL-DEVELOPMENT.md",
     "docs/agent/CURRENT-WORK.md",
     "docs/PRODUCT.md",
     "docs/MDV.md",
