@@ -43,8 +43,8 @@ Alinhar o harness do BPT2 ao padrão oficial atual da OpenAI para Codex/harness 
 ## Checkpoints
 
 - [x] Auditoria documental e normativa.
-- [ ] Refatorar knowledge base.
-- [ ] Adicionar tooling e CI.
+- [x] Refatorar knowledge base.
+- [x] Adicionar tooling e CI.
 - [ ] Executar self-review/validação.
 - [ ] Integrar e mover este plano para `completed/`.
 
@@ -55,6 +55,7 @@ Nenhuma decisão arquitetural de produto. Ajustes do harness devem preferir a es
 ## Progress log
 
 - 2026-08-23: auditados AGENTS, docs canônicos, ADRs, scripts, workflows e fontes oficiais atuais da OpenAI.
+- 2026-08-23: knowledge base refatorada; gerador de fatos e harness checker adicionados; próximo passo é validação no CI.
 
 ## Decision log
 

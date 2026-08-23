@@ -1,0 +1,36 @@
+name: BPT2 Harness Gate
+
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'ARCHITECTURE.md'
+      - 'docs/**'
+      - 'scripts/check-harness.py'
+      - 'scripts/generate-repo-facts.py'
+      - '.github/workflows/harness-gate.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'ARCHITECTURE.md'
+      - 'docs/**'
+      - 'scripts/check-harness.py'
+      - 'scripts/generate-repo-facts.py'
+      - '.github/workflows/harness-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check harness tooling
+        run: python3 -m py_compile scripts/check-harness.py scripts/generate-repo-facts.py
+      - name: Validate knowledge base and generated facts
+        run: python3 scripts/check-harness.py
