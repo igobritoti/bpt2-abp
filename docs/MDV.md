@@ -28,6 +28,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-001 | Seller Profile + My Listings + Draft/Edit/Vehicle | PASSA no Plan 0004 |
 | SELLER-002 | Upload/preview privado/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
+| SELLER-004 | Seller Lead inbox com ownership server-side e histórico de contatos dos próprios Listings | PASSA / DECIDIDO no Plan 0009 |
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
 | CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
@@ -128,6 +129,18 @@ Classe da evidência do Lead capture: **B — observado/reproduzido no CI do BPT
 A composição acima prova os boundaries executados, mas não é apresentada como um único E2E no qual um token obtido por PKCE foi encaminhado ao Lead API real. Essa distinção permanece explícita para não elevar a força da evidência.
 
 Classe: **B para os comportamentos executados individualmente; C apenas para a composição entre as provas separadas**.
+
+## Evidência de Seller Lead Inbox
+
+- `ISellerLeadQuery` é um application service autenticado e a rota convencional observada no Swagger é `GET /api/app/seller-lead-query/mine`; nenhum controller customizado foi criado.
+- A query deriva o Seller exclusivamente de `ICurrentUser.Id` e faz JOIN entre `Lead` e `Listing` já filtrado por `Listing.SellerId`; não existe parâmetro de owner controlável pelo browser.
+- A projeção retorna somente `Lead.Id`, `ListingId`, título do Listing, `BuyerUserId?`, canal e `CreatedAtUtc`; o slice não resolve perfil/PII Buyer.
+- O Seller Photos Publish HTTP Gate em PostgreSQL fresco e host ABP real comprovou `SELLER_LEADS_ROUTE`, `SELLER_LEADS_ANONYMOUS_BLOCKED`, `SELLER_LEADS_OWNER_VISIBLE`, `SELLER_LEADS_OWNERSHIP`, `SELLER_LEADS_HISTORY_PRESERVED` e `SELLER LEADS HTTP` como PASS.
+- O mesmo run preservou integralmente verde o fluxo anterior de Seller photos/publication e o build de produção do Next.js. No head funcional `2a0dc550086bb2716a4f28dbdcc8b31f88d363f5`, todos os 16 workflows aplicáveis passaram.
+- Runs intermediários revelaram três fronteiras sem ampliar escopo: a interface precisava herdar `IApplicationService` para conventional controllers; uma fixture Bash tinha declaração local incompatível com `set -u`; e EF Core não traduzia `OrderBy` aplicado após construir `SellerLeadDto`. A forma final ordena colunas do `Lead` antes da projeção e passou em runtime.
+- Pause não apaga nem oculta o Lead já ocorrido da inbox do Seller; a inbox é histórico de contato, distinta da regra que só permite criar novo Lead enquanto o Listing está público.
+
+Classe da evidência da Seller Lead Inbox: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 
