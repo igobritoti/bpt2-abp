@@ -574,6 +574,27 @@ h3 {
   border-top: 0;
 }
 
+.seller-photo-preview {
+  display: grid;
+  flex: 0 0 128px;
+  aspect-ratio: 4 / 3;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e7e7e2;
+  color: #666;
+}
+
+.seller-photo-preview span {
+  padding: 8px;
+  text-align: center;
+}
+
+.seller-photo-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .seller-photo-row span {
   display: block;
   margin-top: 5px;
@@ -651,5 +672,11 @@ h3 {
   .seller-edit-summary {
     align-items: start;
     flex-direction: column;
+  }
+
+  .seller-photo-preview {
+    width: 100%;
+    max-width: 320px;
+    flex-basis: auto;
   }
 }
