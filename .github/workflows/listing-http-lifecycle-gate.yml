@@ -56,17 +56,5 @@ jobs:
           vehicle_id="$(dotnet run --project tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj --configuration Release | tail -n 1)"
           test -n "$vehicle_id"
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
-      - name: Expose token endpoint diagnostic on failure
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/listing-http-lifecycle-smoke.sh')
-          text = path.read_text()
-          text = text.replace('curl --fail-with-body --silent --show-error \\\n', 'curl --silent --show-error \\\n')
-          text = text.replace('    value = json.load(handle).get("access_token")', '    data = json.load(handle)\n    value = data.get("access_token")')
-          text = text.replace('    raise SystemExit("Token response did not contain access_token")', '    raise SystemExit(f"Token response did not contain access_token: {data}")')
-          path.write_text(text)
-          PY
       - name: Exercise authenticated Listing lifecycle over HTTP
         run: bash scripts/listing-http-lifecycle-smoke.sh
