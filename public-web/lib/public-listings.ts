@@ -90,7 +90,7 @@ export async function getPublicListing(id: string): Promise<PublicListing | null
     },
   );
 
-  if (response.status === 404) {
+  if (response.status === 404 || response.status === 204) {
     return null;
   }
 
