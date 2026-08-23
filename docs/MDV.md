@@ -1,0 +1,48 @@
+# MDV — Matriz de Decisão e Verificação
+
+Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
+
+| ID | Questão | Estado |
+|---|---|---|
+| ARCH-001 | ABP 10.6 baseline | DECIDIDO |
+| ARCH-002 | Modular Monolith | DECIDIDO |
+| ARCH-003 | app-nolayers / evitar classic layered | DECIDIDO |
+| MOD-001 | Cross-module via Contracts/events | PASSA / DECIDIDO |
+| MOD-002 | Implementation-to-implementation entre módulos | NÃO PASSA / PROIBIDO |
+| DATA-001 | PostgreSQL | PASSA / DECIDIDO |
+| DATA-002 | DbContext por módulo, sem merged host DbContext no baseline | PASSA / DECIDIDO no Gate 01 |
+| DATA-003 | Fresh database -> migrations atuais | PASSA / DECIDIDO |
+| DATA-004 | Schema PostgreSQL separado por módulo | NÃO DECIDIDO |
+| DATA-005 | FK física cross-module | NÃO DECIDIDO |
+| TX-001 | ABP Unit of Work como mecanismo | PASSA / DECIDIDO |
+| TX-002 | Atomicidade multi-módulo no mesmo PostgreSQL/UoW | PASSA / DECIDIDO no Gate 01 |
+| CON-001 | Optimistic concurrency disponível | DECIDIDO como mecanismo |
+| CON-002 | Optimistic concurrency em Listing | PASSA / DECIDIDO no Gate 01 |
+| AUTH-001 | Seller ownership enforcement | PASSA / DECIDIDO no Gate 01 |
+| AUTH-002 | Público nunca vê Draft/private | PASSA / DECIDIDO no Gate 01 |
+| GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
+| LOCK-001 | Distributed locking | ADIADO até caso real |
+| JOB-001 | Background jobs | ADIADO até caso real |
+| SEARCH-001 | PostgreSQL vs engine externo | NÃO DECIDIDO; benchmark futuro |
+
+## Evidência do Gate 01
+
+Execução em GitHub Actions com ABP 10.6, .NET 10 e PostgreSQL 17:
+
+- arquitetura: checker positivo e ataques negativos passaram;
+- host: template oficial ABP 10.6 gerado, cinco módulos wired e build Release passou;
+- fresh migration: banco vazio recebeu migrations do host e dos módulos;
+- `G01_PUBLIC_DRAFT: PASS`;
+- `G01_OWNERSHIP: PASS`;
+- `G01_CONCURRENCY: PASS`;
+- `G01_MULTI_MODULE_ROLLBACK: PASS`.
+
+Classe da evidência comportamental: **B — observado/reproduzido no CI do BPT2**.
+
+A decisão TX-002 vale para múltiplos DbContexts participantes do mesmo ABP Unit of Work sobre o mesmo PostgreSQL. Não implica atomicidade com APIs externas, object storage, outro banco ou outro processo.
+
+## Regra de decisão
+
+Documentação/código/standard -> capacidade comprovada -> teste mínimo se a decisão específica do BPT não estiver resolvida -> PASS/FAIL -> decisão registrada.
+
+Inferência ou preferência não vira requisito arquitetural sem evidência.
