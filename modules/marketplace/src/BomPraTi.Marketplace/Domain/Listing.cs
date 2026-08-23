@@ -1,3 +1,4 @@
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Entities;
 
 namespace BomPraTi.Marketplace.Domain;
@@ -45,7 +46,10 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public void EnsureOwnedBy(Guid sellerId)
     {
-        if (SellerId != sellerId) throw new InvalidOperationException("Listing does not belong to this seller.");
+        if (SellerId != sellerId)
+        {
+            throw new AbpAuthorizationException("Listing does not belong to this seller.");
+        }
     }
 
     public void ChangeTitle(string title)

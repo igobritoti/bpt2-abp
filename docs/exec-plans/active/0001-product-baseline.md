@@ -19,7 +19,7 @@ Media/fotos entra imediatamente depois que o fluxo principal estiver consolidado
 - Módulos atuais: Catalog, Sellers, Marketplace, Media, Ingestion.
 - Cross-module somente via Contracts/eventos apropriados; implementação→implementação proibida.
 - DbContext por módulo no baseline; mesmo PostgreSQL/ABP UoW já provou rollback multi-módulo.
-- Listing ownership, visibilidade pública e optimistic concurrency já foram provados no Gate 01.
+- Listing ownership, visibilidade pública e optimistic concurrency já foram provados no Gate 01 e pelo HTTP real.
 - Infra extra não entra sem necessidade demonstrada.
 
 ## Escopo
@@ -79,7 +79,7 @@ Media/fotos entra imediatamente depois que o fluxo principal estiver consolidado
 - [x] Gate 01 arquitetural/comportamental concluído.
 - [x] Host ABP 10.6 materializado/versionado na branch de implementação.
 - [x] Consolidar API real Seller/Catalog/Listing.
-- [ ] Executar regressões focadas de ownership/public/concurrency pelo caminho HTTP/application service final.
+- [x] Executar regressões focadas de ownership/public/concurrency pelo caminho HTTP/application service final.
 - [ ] Integrar Media/ListingPhoto.
 - [ ] Validar detalhe/listagem pública mínima.
 - [ ] Atualizar MDV/ADRs apenas se surgir decisão arquitetural nova.
@@ -99,8 +99,10 @@ Nenhuma dessas decisões autoriza automaticamente mudança de chassis, busca ext
 ## Progress log
 
 - 2026-08-22: chassis e Gate 01 validados; documentação operacional formalizada antes de continuar feature work.
-- 2026-08-23: API real Seller/Catalog/Listing/Public Listing comprovada no host; endpoints protegidos retornam 401/403 em `/api/**` e superfícies públicas permanecem anônimas. Próximo alvo é lifecycle autenticado pelo caminho HTTP.
+- 2026-08-23: API real Seller/Catalog/Listing/Public Listing comprovada no host; endpoints protegidos retornam 401/403 em `/api/**` e superfícies públicas permanecem anônimas.
+- 2026-08-23: lifecycle autenticado de Listing comprovado por HTTP real: password-grant/Identity seed, criação em Draft, Draft invisível, ownership negado com 403, Publish público, update válido com rotação de `ConcurrencyStamp` e update stale rejeitado com 409. O teste também revelou e corrigiu a configuração HTTP de OpenIddict somente em Development e a exceção de ownership que antes vazava como 500.
 
 ## Decision log
 
-- Nenhuma decisão arquitetural nova neste plano até agora. Decisões anteriores permanecem em `../../MDV.md` e `../../adr/`.
+- Nenhuma decisão arquitetural nova neste checkpoint. A configuração de transport security segue a opção documentada do ABP/OpenIddict apenas para Development quando `AuthServer:RequireHttpsMetadata=false`; produção continua exigindo HTTPS.
+- Decisões arquiteturais anteriores permanecem em `../../MDV.md` e `../../adr/`.
