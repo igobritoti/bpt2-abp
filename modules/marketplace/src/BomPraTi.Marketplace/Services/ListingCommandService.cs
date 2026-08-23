@@ -55,7 +55,10 @@ public sealed class ListingCommandService : IListingCommandService, ITransientDe
         UpdateListingInput input,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(input.ConcurrencyStamp);
+
         var listing = await GetOwnedAsync(listingId, cancellationToken);
+        listing.ConcurrencyStamp = input.ConcurrencyStamp;
         listing.ChangeTitle(input.Title);
         listing.ChangePrice(input.Price);
 
@@ -138,5 +141,6 @@ public sealed class ListingCommandService : IListingCommandService, ITransientDe
         listing.Color,
         listing.City,
         listing.StateCode,
-        listing.Status.ToString());
+        listing.Status.ToString(),
+        listing.ConcurrencyStamp);
 }
