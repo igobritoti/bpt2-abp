@@ -52,6 +52,7 @@ Fluxo:
 - 2026-08-23: slice aberto a partir do menor gap central ainda ausente: moderação.
 - 2026-08-23: implementados aggregate, service, UI e smoke HTTP; aguardando evidência de CI.
 - 2026-08-23: primeiro Harness Gate falhou apenas por formato obrigatório deste plan; produto não foi alterado por essa falha.
+- 2026-08-23: o primeiro smoke funcional observou no Swagger a rota ABP `POST /api/app/listing-report/report/{listingId}`; cliente e teste foram alinhados à rota convencional sem controller customizado nem alteração de domínio.
 
 ## Decision log
 
