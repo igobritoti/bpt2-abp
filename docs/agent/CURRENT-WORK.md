@@ -10,9 +10,11 @@ Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operac
 
 `Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
 
-A auditoria inicial confirmou que perfil, My Listings, comandos de Listing, Vehicle search, Media upload e mutações de foto já existem. O gap mínimo de backend já identificado é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio.
+A fronteira de UI/auth foi provada: a primeira experiência Seller vive no `public-web` existente sob `/vender`, usa o cliente público OpenIddict `BomPraTi_SellerWeb`, Authorization Code + PKCE e continua isolada do backend por HTTP/API. O password grant não é permitido para esse cliente.
 
-Próximo acceptance target: provar a menor fronteira de UI/auth para o Seller usando Authorization Code + PKCE e decidir, por evidência, entre estender o cliente Next.js existente ou usar um cliente autenticado separado.
+A auditoria anterior já confirmou perfil, My Listings, comandos de Listing, Vehicle search, Media upload e mutações de foto. O gap mínimo de backend continua sendo uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio.
+
+Próximo acceptance target: implementar o Seller shell mínimo sobre a autenticação já provada — leitura/upsert do próprio perfil e página `Meus anúncios` consumindo a query autenticada existente, sem criar regras de domínio no frontend.
 
 ## Active plan
 
