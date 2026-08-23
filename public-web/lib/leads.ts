@@ -11,14 +11,16 @@ function serverApiBaseUrl(): string {
   return trimTrailingSlash(value);
 }
 
-export async function recordWhatsAppLead(listingId: string): Promise<void> {
+export async function recordWhatsAppLead(listingId: string, authorization?: string | null): Promise<void> {
   const url = new URL("/api/app/lead", `${serverApiBaseUrl()}/`);
   url.searchParams.set("listingId", listingId);
+  const headers = new Headers({ Accept: "application/json" });
+  if (authorization?.startsWith("Bearer ")) headers.set("Authorization", authorization);
 
   const response = await fetch(url, {
     method: "POST",
     cache: "no-store",
-    headers: { Accept: "application/json" },
+    headers,
   });
 
   if (!response.ok) {

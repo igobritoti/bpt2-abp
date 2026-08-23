@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import FavoriteButton from "./FavoriteButton";
+import WhatsAppContactButton from "./WhatsAppContactButton";
 import {
   formatPrice,
   getPublicListing,
@@ -63,12 +64,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <p className="eyebrow">Vendedor</p><h2 id="seller-title">{listing.seller.displayName ?? "Vendedor"}</h2><p>Fale diretamente com o responsável por este anúncio.</p>
             <FavoriteButton listingId={listing.id} />
             <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
-            {contactUrl ? (
-              <form action="/api/contact/whatsapp" method="post" target="_blank">
-                <input name="listingId" type="hidden" value={listing.id} />
-                <button className="whatsapp-cta" type="submit">Falar no WhatsApp</button>
-              </form>
-            ) : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
+            {contactUrl ? <WhatsAppContactButton listingId={listing.id} /> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
           </aside>
         </div>
       </article>
