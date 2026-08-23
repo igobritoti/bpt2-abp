@@ -96,6 +96,28 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             );
         }
 
+        // Seller Web Client
+        var sellerWebClientId = configurationSection["BomPraTi_SellerWeb:ClientId"];
+        if (!sellerWebClientId.IsNullOrWhiteSpace())
+        {
+            var sellerWebRootUrl = configurationSection["BomPraTi_SellerWeb:RootUrl"]?.TrimEnd('/');
+            await CreateApplicationAsync(
+                name: sellerWebClientId!,
+                type: OpenIddictConstants.ClientTypes.Public,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "Bom Pra Ti Seller Web",
+                secret: null,
+                grantTypes: new List<string>
+                {
+                    OpenIddictConstants.GrantTypes.AuthorizationCode
+                },
+                scopes: commonScopes,
+                redirectUri: $"{sellerWebRootUrl}/auth/callback",
+                postLogoutRedirectUri: $"{sellerWebRootUrl}/auth/logout-callback",
+                requireProofKeyForCodeExchange: true
+            );
+        }
+
         // Swagger Client
         var swaggerClientId = configurationSection["BomPraTi_Swagger:ClientId"];
         if (!swaggerClientId.IsNullOrWhiteSpace())
@@ -128,7 +150,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         List<string> scopes,
         string? redirectUri = null,
         string? postLogoutRedirectUri = null,
-        List<string>? permissions = null)
+        List<string>? permissions = null,
+        bool requireProofKeyForCodeExchange = false)
     {
         if (!string.IsNullOrEmpty(secret) && string.Equals(type, OpenIddictConstants.ClientTypes.Public, StringComparison.OrdinalIgnoreCase))
         {
@@ -157,6 +180,11 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 ConsentType = consentType,
                 DisplayName = displayName
             };
+
+            if (requireProofKeyForCodeExchange)
+            {
+                application.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
+            }
 
             Check.NotNullOrEmpty(grantTypes, nameof(grantTypes));
             Check.NotNullOrEmpty(scopes, nameof(scopes));
