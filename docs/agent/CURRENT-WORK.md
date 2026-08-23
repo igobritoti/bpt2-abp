@@ -6,11 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Retomar o baseline de produto:
+Continuar o baseline de produto:
 
-`Seller → Vehicle → Listing → Publish → Public Listing Query`
+`Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto`
 
-Próximo acceptance target: provar o lifecycle autenticado do Listing pelo caminho HTTP real, incluindo ownership, Draft invisível, Publish público e optimistic concurrency.
+O lifecycle autenticado de Listing pelo HTTP real já foi comprovado com Draft invisível, ownership 403, Publish público e optimistic concurrency 409.
+
+Próximo acceptance target: integrar Media/ListingPhoto pelo caminho real, preservando `MediaAssetId` como identidade, validando conteúdo do upload pelos bytes e expondo a foto necessária na projeção pública sem vazar storage key/provider.
 
 ## Active plan
 
