@@ -52,7 +52,7 @@ jobs:
             --exclude='*.key' \
             --exclude='*.pem' \
             -czf bpt2abp-dev-worktree.tar.gz \
-            .github docs modules scripts tests .config Directory.Build.props Directory.Packages.props README.md ARCHITECTURE.md global.json main
+            .github docs modules scripts tests .config README.md ARCHITECTURE.md global.json main
       - uses: actions/upload-artifact@v4
         with:
           name: bpt2abp-dev-worktree
