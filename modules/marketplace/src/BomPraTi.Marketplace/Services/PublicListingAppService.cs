@@ -14,8 +14,8 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
         _query = query;
     }
 
-    public Task<PublicListingDto?> GetAsync(Guid listingId, CancellationToken cancellationToken = default) =>
-        _query.GetAsync(listingId, cancellationToken);
+    public Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _query.GetAsync(id, cancellationToken);
 
     public Task<IReadOnlyList<PublicListingDto>> GetListAsync(
         PublicListingSearchInput input,

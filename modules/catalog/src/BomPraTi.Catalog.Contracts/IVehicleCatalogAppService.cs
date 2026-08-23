@@ -4,7 +4,7 @@ namespace BomPraTi.Catalog.Contracts;
 
 public interface IVehicleCatalogAppService : IApplicationService
 {
-    Task<VehicleRefDto?> GetAsync(Guid vehicleId, CancellationToken cancellationToken = default);
+    Task<VehicleRefDto?> GetAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<VehicleRefDto>> GetListAsync(
         VehicleCatalogSearchInput input,
         int take = 50,

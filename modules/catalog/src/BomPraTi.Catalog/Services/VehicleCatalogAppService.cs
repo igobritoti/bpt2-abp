@@ -14,8 +14,8 @@ public class VehicleCatalogAppService : IVehicleCatalogAppService, ITransientDep
         _reader = reader;
     }
 
-    public Task<VehicleRefDto?> GetAsync(Guid vehicleId, CancellationToken cancellationToken = default) =>
-        _reader.GetAsync(vehicleId, cancellationToken);
+    public Task<VehicleRefDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _reader.GetAsync(id, cancellationToken);
 
     public Task<IReadOnlyList<VehicleRefDto>> GetListAsync(
         VehicleCatalogSearchInput input,
