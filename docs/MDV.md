@@ -20,8 +20,10 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | CON-002 | Optimistic concurrency em Listing | PASSA / DECIDIDO no Gate 01 |
 | AUTH-001 | Seller ownership enforcement | PASSA / DECIDIDO no Gate 01 |
 | AUTH-002 | Público nunca vê Draft/private | PASSA / DECIDIDO no Gate 01 |
+| AUTH-003 | Mecanismo de login Seller no browser: Authorization Code + PKCE | PASSA no boundary protocolar / DECIDIDO no Plan 0004; jornada de login/logout real ainda em execução |
 | UI-001 | Public frontend desacoplado do host ABP | PASSA / DECIDIDO em ADR-0004 |
 | UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | PASSA / DECIDIDO no Plan 0003; boundary HTTP reversível |
+| UI-003 | Primeira UI Seller no `public-web` existente sob `/vender` | PASSA no spike / DECIDIDO no Plan 0004; composição reversível atrás de HTTP/OIDC |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; Lead persistido ainda não exigido |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | LOCK-001 | Distributed locking | ADIADO até caso real |
@@ -56,6 +58,18 @@ A decisão TX-002 vale para múltiplos DbContexts participantes do mesmo ABP Uni
 Classe da evidência comportamental do fluxo Buyer: **B — observado/reproduzido no CI do BPT2**.
 
 UI-002 é uma decisão de implementação do cliente público, isolada pela fronteira HTTP. Não altera os boundaries dos módulos do backend nem classifica outros frameworks SSR como tecnicamente incapazes.
+
+## Evidência da fronteira Seller/OIDC
+
+- O host semeia `BomPraTi_SellerWeb` como cliente público dedicado de Authorization Code e exige Proof Key for Code Exchange.
+- `public-web` expõe `/vender` e `/vender/callback` usando um cliente OIDC browser; senha não é coletada pelo frontend BPT2.
+- O Seller Auth HTTP Gate executou em banco PostgreSQL vazio, aplicou migrations/seed e comprovou `SELLER_AUTH_DISCOVERY: PASS`, `SELLER_AUTH_PKCE_REQUIRED: PASS`, `SELLER_AUTH_LOGIN_REDIRECT: PASS` e `SELLER AUTH HTTP SPIKE: PASSED`.
+- No mesmo head corrigido passaram Harness, Host, Public Web, Listing Lifecycle, Listing Photo, Product API e Public Buyer HTTP.
+- O primeiro run detectou um contributor `[UnitOfWork]` selado incompatível com proxy do ABP/Autofac; a correção mínima tornou a classe/método interceptáveis e o run subsequente passou.
+
+Classe da evidência do boundary Seller: **B — observado/reproduzido no CI do BPT2**.
+
+AUTH-003 ainda não declara a jornada completa de login/logout do usuário como concluída; isso será elevado para PASSA integral quando o Seller shell provar sessão real e consumo autenticado das APIs.
 
 ## Regra de decisão
 
