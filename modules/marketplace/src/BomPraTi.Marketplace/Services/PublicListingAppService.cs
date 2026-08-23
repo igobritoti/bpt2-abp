@@ -1,6 +1,12 @@
+using BomPraTi.Media.Contracts;
 using BomPraTi.Marketplace.Contracts;
+using BomPraTi.Marketplace.Data;
+using BomPraTi.Marketplace.Domain;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 
 namespace BomPraTi.Marketplace.Services;
 
@@ -8,10 +14,17 @@ namespace BomPraTi.Marketplace.Services;
 public class PublicListingAppService : IPublicListingAppService, ITransientDependency
 {
     private readonly IPublicListingQuery _query;
+    private readonly MarketplaceDbContext _dbContext;
+    private readonly IMediaContentReader _mediaContent;
 
-    public PublicListingAppService(IPublicListingQuery query)
+    public PublicListingAppService(
+        IPublicListingQuery query,
+        MarketplaceDbContext dbContext,
+        IMediaContentReader mediaContent)
     {
         _query = query;
+        _dbContext = dbContext;
+        _mediaContent = mediaContent;
     }
 
     public Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
@@ -21,4 +34,32 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default) =>
         _query.SearchAsync(input, cancellationToken);
+
+    public async Task<IRemoteStreamContent> GetPhotoAsync(
+        Guid id,
+        Guid photoId,
+        CancellationToken cancellationToken = default)
+    {
+        var mediaAssetId = await ListingVisibility.PublicOnly(_dbContext.Listings.AsNoTracking())
+            .Where(listing => listing.Id == id)
+            .Join(
+                _dbContext.ListingPhotos.AsNoTracking().Where(photo => photo.Id == photoId),
+                listing => listing.Id,
+                photo => photo.ListingId,
+                (_, photo) => (Guid?)photo.MediaAssetId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (!mediaAssetId.HasValue)
+        {
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
+        }
+
+        var media = await _mediaContent.OpenReadAsync(mediaAssetId.Value, cancellationToken);
+        if (media is null)
+        {
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
+        }
+
+        return new RemoteStreamContent(media.Content, null, media.ContentType, media.Length);
+    }
 }

@@ -1,6 +1,7 @@
 using BomPraTi.Media.Contracts;
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -9,7 +10,8 @@ using Volo.Abp.Users;
 
 namespace BomPraTi.Marketplace.Services;
 
-public sealed class ListingPhotoService : IListingPhotoService, ITransientDependency
+[Authorize]
+public class ListingPhotoService : IListingPhotoService, ITransientDependency
 {
     private readonly IRepository<Listing, Guid> _listings;
     private readonly IRepository<ListingPhoto, Guid> _photos;
