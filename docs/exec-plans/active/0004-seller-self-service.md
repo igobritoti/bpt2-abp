@@ -1,6 +1,6 @@
 # Execution Plan 0004 — Seller Self-Service
 
-Status: **ATIVO**
+Status: **CONCLUÍDO**
 
 ## Objetivo
 
@@ -8,65 +8,66 @@ Transformar a superfície autenticada já existente no backend no primeiro fluxo
 
 `Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
 
-O plano deve provar a experiência Seller sem duplicar regras de domínio no frontend e sem reabrir decisões já comprovadas no Product Baseline e no Plan 0003.
+O plano prova a experiência Seller sem duplicar regras de domínio no frontend e sem reabrir decisões já comprovadas no Product Baseline e no Plan 0003.
 
 ## Contexto congelado
 
 - Product Baseline e Plan 0003 concluídos; Buyer já percorre `Public Listing → Public Detail → Photo → WhatsApp Contact`.
 - `SellerProfileService` já é autenticado, deriva o Seller de `ICurrentUser` e permite leitura/upsert do perfil.
 - `SellerListingQuery.GetMineAsync` já retorna somente Listings do usuário autenticado.
-- `ListingCommandService` já cobre Create, Update com `ConcurrencyStamp`, Publish, Pause e Archive, sempre com ownership server-side e validação de Vehicle canônico.
-- `ListingPhotoService` já cobre Attach, Reorder e Remove com ownership server-side.
-- `MediaUploadAppService` já é autenticado.
-- `VehicleCatalogAppService` já expõe Get/Search de Vehicle canônico; não é necessário criar catálogo paralelo para o formulário Seller.
-- O host já contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelos smokes.
-- Para browser interativo, a baseline de segurança é Authorization Code + PKCE. O password grant usado em fixtures/smokes legados não deve virar formulário de login do produto.
-- A leitura autenticada de edição foi resolvida pelo contrato mínimo `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` e devolve o Listing com a galeria ordenada atual. Nenhum novo aggregate, regra de domínio ou dependência entre implementações de módulos foi necessário.
-- BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis nesta auditoria nem em busca pública identificável com segurança; portanto nenhuma regra, tela ou componente do BPT1 será presumido. Quando uma fonte real estiver acessível, ela poderá ser auditada como donor sem bloquear este plano.
-- O Seller Auth HTTP Gate comprovou um cliente OpenIddict público dedicado `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP; o Public Web Gate comprovou as rotas Seller no cliente Next existente.
-- O Seller Shell HTTP Gate comprovou em PostgreSQL fresco o fluxo `Account login → Authorization Code + PKCE → SellerWeb access token → Profile → Draft → My Listings → logout`, usando o mesmo cliente OIDC do produto para as APIs autenticadas.
+- `ListingCommandService` cobre Create, Update com `ConcurrencyStamp`, Publish, Pause e Archive, sempre com ownership server-side e validação de Vehicle canônico.
+- `ListingPhotoService` cobre Attach, Reorder e Remove com ownership server-side.
+- `MediaUploadAppService` é autenticado; Media valida bytes de JPEG/PNG/WebP e não expõe storage key/provider ao cliente.
+- `VehicleCatalogAppService` expõe Get/Search de Vehicle canônico; não foi criado catálogo paralelo para o formulário Seller.
+- O host contém Account/OpenIddict/Identity e a infraestrutura de autenticação usada pelo produto e pelos smokes.
+- Para browser interativo, a baseline é Authorization Code + PKCE. O password grant usado em fixtures legados não virou formulário de login do produto.
+- A leitura autenticada de edição foi resolvida pelo contrato mínimo `SellerListingQuery.GetMineByIdAsync`, que filtra `listingId + CurrentUser` e devolve o Listing com a galeria ordenada atual.
+- BPT1 continua sendo donor, não chassis. Nenhum repositório/código BPT1 foi encontrado nas fontes GitHub acessíveis durante o plano; nenhuma regra, tela ou componente do BPT1 foi presumido.
+- O Seller Auth HTTP Gate comprovou o cliente público `BomPraTi_SellerWeb`, PKCE obrigatório e redirect válido para o Account login do ABP.
+- O Seller Shell HTTP Gate comprovou em PostgreSQL fresco `Account login → Authorization Code + PKCE → SellerWeb access token → Profile → Draft → My Listings → logout`.
 - O Seller Draft Edit HTTP Gate comprovou Vehicle canônico, criação Draft, leitura apenas do owner, estado/galeria atuais, update com rotação de `ConcurrencyStamp`, conflito stale 409 e reread do estado canônico.
+- O Seller Photos Publish HTTP Gate comprovou upload/attach/reorder/remove, ownership negativo, Draft privado, Publish público, Pause privado, republish público e Archive privado contra host real + PostgreSQL fresco + Next de produção.
 
-## Escopo
+## Escopo executado
 
-### Fase 0 — provar a fronteira autenticada do Seller
+### Fase 0 — fronteira autenticada do Seller
 
-- decidir, por prova mínima, onde vive a UI Seller: extensão do cliente Next.js existente ou cliente autenticado separado;
-- registrar cliente OpenIddict/redirects necessários;
-- provar o mecanismo de login por Authorization Code + PKCE contra o Auth Server BPT2;
-- manter senha fora do frontend BPT2 e não usar ROPC/password grant como UX do produto;
-- preservar o boundary HTTP/API: frontend não referencia assemblies, DbContexts ou implementação dos módulos.
+- [x] UI Seller no `public-web` existente sob `/vender`;
+- [x] cliente OpenIddict dedicado;
+- [x] login por Authorization Code + PKCE;
+- [x] senha fora do frontend BPT2;
+- [x] boundary HTTP/API preservado.
 
 ### Fase 1 — Seller shell mínimo
 
-- concluir login/logout de usuário real pelo fluxo já provado em protocolo;
-- perfil do Seller com `DisplayName` e WhatsApp canônico;
-- página `Meus anúncios` consumindo a query autenticada existente;
-- estados de Listing apresentados sem inventar transições no frontend.
+- [x] login/logout real;
+- [x] perfil do Seller com `DisplayName` e WhatsApp canônico;
+- [x] `Meus anúncios` via query autenticada;
+- [x] estados apresentados sem inventar transições no frontend.
 
 ### Fase 2 — edição de Listing
 
-- adicionar somente a leitura autenticada necessária para abrir um Listing próprio em modo de edição, incluindo a galeria/ordem atual ou contrato equivalente mínimo;
-- selecionar Vehicle usando a API canônica já existente;
-- criar Draft;
-- editar campos existentes respeitando `ConcurrencyStamp` e conflito 409;
-- não permitir que o cliente escolha/forje `SellerId`.
+- [x] leitura autenticada de Listing próprio com galeria/ordem atual;
+- [x] seleção de Vehicle pela API canônica;
+- [x] criação Draft;
+- [x] edição com `ConcurrencyStamp` e conflito 409;
+- [x] ausência de `SellerId` forjável no cliente.
 
 ### Fase 3 — fotos e publicação
 
-- upload usando Media autenticado existente;
-- attach/remove/reorder usando Marketplace existente;
-- primeira foto/ordem derivada da ordenação já modelada, sem provider key no frontend;
-- publicar, pausar e arquivar apenas pelas transições existentes no backend;
-- após Publish, comprovar presença no public web já existente.
+- [x] upload via Media autenticado existente;
+- [x] attach/remove/reorder via Marketplace existente;
+- [x] primeira foto/capa derivada da ordenação modelada, sem novo campo e sem provider key no frontend;
+- [x] Publish/Pause/Archive apenas pelos commands existentes;
+- [x] após Publish, presença comprovada no public web.
 
 ### Fase 4 — prova operacional
 
-- gate reproduzível com autenticação real do Seller e chamadas HTTP reais;
-- provar ownership negativo com segundo usuário;
-- provar stale concurrency na edição;
-- provar Draft privado antes de Publish e anúncio público depois de Publish;
-- manter Harness/Public Web e regressões diretamente afetadas verdes.
+- [x] gate reproduzível com autenticação real SellerWeb/PKCE e chamadas HTTP reais;
+- [x] ownership negativo com segundo usuário;
+- [x] stale concurrency na edição;
+- [x] Draft privado antes de Publish e anúncio público depois de Publish;
+- [x] regressões Seller/Public diretamente afetadas verdes.
 
 ## Fora de escopo
 
@@ -79,7 +80,7 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - novo object storage provider;
 - Redis, broker, distributed locks ou background jobs sem caso real;
 - engine de busca externo;
-- expansão do modelo de Listing ou de filtros públicos sem necessidade desta UI;
+- expansão do modelo de Listing ou de filtros públicos sem necessidade comprovada;
 - clonagem integral do BPT1;
 - mudança de framework do public web apenas para acomodar este plano.
 
@@ -92,9 +93,9 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 5. [x] Seller consegue criar Draft escolhendo um Vehicle da API canônica existente.
 6. [x] Seller consegue reabrir e editar um Listing próprio com estado e fotos atuais; o backend expõe apenas o contrato adicional mínimo necessário.
 7. [x] Edição usa `ConcurrencyStamp`; stale update continua resultando em conflito em vez de overwrite silencioso.
-8. [ ] Upload/attach/remove/reorder de fotos funciona pela UI sem expor storage provider key e respeita ownership.
-9. [ ] Publish torna o anúncio visível no public web; Draft continua invisível e segundo Seller continua impedido de mutar o anúncio.
-10. [ ] Fluxo `login → perfil/meus anúncios → Draft → edição/fotos → Publish → public web` é comprovado por gate reproduzível e documentação canônica é atualizada no fechamento.
+8. [x] Upload/attach/remove/reorder de fotos funciona pela UI sem expor storage provider key e respeita ownership.
+9. [x] Publish torna o anúncio visível no public web; Draft continua invisível e segundo Seller continua impedido de mutar o anúncio.
+10. [x] Fluxo `login → perfil/meus anúncios → Draft → edição/fotos → Publish → public web` é comprovado por gate reproduzível e documentação canônica atualizada no fechamento.
 
 ## Checkpoints
 
@@ -106,28 +107,16 @@ O plano deve provar a experiência Seller sem duplicar regras de domínio no fro
 - [x] Provar a menor opção de UI/auth e registrar a decisão antes de construir telas de negócio.
 - [x] Implementar Seller shell mínimo: login/logout, perfil e Meus anúncios.
 - [x] Implementar query de edição mínima + Draft/Edit/Vehicle.
-- [ ] Implementar fotos + Publish/Pause/Archive.
-- [ ] Provar fluxo end-to-end e regressões relevantes.
-- [x] Revisar necessidade de ADR/MDV após a prova — MDV atualizado; nenhum novo ADR necessário porque ADR-0004/0009 continuam descrevendo os boundaries duráveis e a escolha `/vender` é uma composição de cliente reversível.
-- [ ] Encerrar o plano com resultado, evidência e gaps futuros explícitos.
+- [x] Implementar fotos + Publish/Pause/Archive.
+- [x] Provar fluxo end-to-end e regressões relevantes.
+- [x] Revisar necessidade de ADR/MDV — nenhum novo ADR necessário; ADR-0004/0007/0009 continuam cobrindo os boundaries duráveis.
+- [x] Encerrar o plano com resultado, evidência e gaps futuros explícitos.
 
 ## Decisões
 
-### UI Seller: mesmo `public-web` ou cliente separado
+### UI Seller
 
-**DECIDIDO para a primeira implementação:** reutilizar o `public-web` existente com rotas Seller isoladas sob `/vender`, sessão OIDC dedicada e cliente `BomPraTi_SellerWeb`.
-
-Evidência B reproduzida no CI:
-
-- `BomPraTi_SellerWeb` é semeado como cliente público de Authorization Code;
-- PKCE é requisito do cliente no OpenIddict;
-- requisição sem PKCE é recusada;
-- requisição com S256 PKCE é encaminhada ao Account login do ABP;
-- o Seller Shell troca o authorization code por token e usa esse access token nas APIs autenticadas;
-- perfil é salvo/lido com WhatsApp canônico devolvido pelo backend;
-- `My Listings` é consultado sem `SellerId` fornecido pelo cliente e o backend continua derivando ownership de `ICurrentUser`;
-- as rotas Seller passam lint, typecheck e production build;
-- regressões públicas continuam exercitadas pelo Public Buyer HTTP Gate.
+**DECIDIDO:** reutilizar o `public-web` existente com rotas Seller isoladas sob `/vender`, sessão OIDC dedicada e cliente `BomPraTi_SellerWeb`.
 
 A decisão não acopla React/Next aos módulos do backend e permanece reversível porque a integração durável continua HTTP/OIDC conforme ADR-0004 e ADR-0009.
 
@@ -135,49 +124,77 @@ A decisão não acopla React/Next aos módulos do backend e permanece reversíve
 
 **DECIDIDO:** `ISellerListingQuery.GetMineByIdAsync(Guid listingId)` retorna `SellerListingDetailDto(ListingDto Listing, IReadOnlyList<ListingPhotoDto> Photos)`.
 
-A implementação:
+A implementação deriva o Seller de `ICurrentUser`, filtra `Listing.Id + SellerId`, oculta Listings de outro Seller e devolve galeria ordenada por `SortOrder`/`Id`, reutilizando Contracts existentes.
 
-- deriva o Seller de `ICurrentUser`;
-- filtra `Listing.Id + SellerId` no servidor;
-- retorna `null` para Listing inexistente ou pertencente a outro Seller, sem expor existência pela query de edição;
-- devolve a galeria do Listing ordenada por `SortOrder` e `Id`;
-- reutiliza `ListingDto` e `ListingPhotoDto`, sem novo aggregate ou referência a outro módulo de implementação.
+### Fotos e publicação
 
-O Vehicle é selecionado na criação do Draft pela API canônica existente. A edição respeita o contrato atual de `UpdateListingInput`, que não altera `VehicleId`; não foi expandido o comando apenas por conveniência de UI.
+**DECIDIDO por reutilização dos contratos existentes:**
 
-## Evidência externa usada no planejamento
+- upload permanece responsabilidade de Media;
+- Marketplace recebe somente `MediaAssetId` no attach;
+- a galeria é ordenada pelo `SortOrder` já modelado;
+- a primeira posição é a capa derivada da galeria, sem novo campo de domínio;
+- o frontend não recebe storage key/provider;
+- Publish/Pause/Archive são commands do backend; o React não replica regras de transição.
 
-- ABP React UI atual documenta Authorization Code + PKCE como o fluxo do browser e configura Auth Server/OpenIddict, route guards e cliente OIDC para aplicações React modernas.
-- OpenIddict recomenda Authorization Code para aplicações com usuário final e suporta PKCE; resource owner password credentials não é recomendado para novas aplicações interativas.
+## Evidência executada
 
-Essas fontes definem a baseline de segurança do login do browser. A escolha específica do container de UI do BPT2 foi resolvida empiricamente pelo Seller Auth spike.
+O Seller Photos Publish HTTP Gate usa PostgreSQL fresco, host ABP real, Node 22.13.0 e Next.js de produção. No primeiro run funcional completo passaram:
+
+- `SELLER_PUBLISH_ROUTES: PASS`;
+- `SELLER_PUBLISH_PKCE_LOGIN: PASS`;
+- `SELLER_PUBLISH_PROFILE: PASS`;
+- `SELLER_PUBLISH_DRAFT_MY_LISTINGS: PASS`;
+- `SELLER_PUBLISH_EDIT: PASS`;
+- `SELLER_PUBLISH_UPLOAD: PASS`;
+- `SELLER_PUBLISH_REORDER: PASS`;
+- `SELLER_PUBLISH_REMOVE: PASS`;
+- `SELLER_PUBLISH_OWNERSHIP: PASS`;
+- `SELLER_PUBLISH_DRAFT_PRIVATE_API: PASS`;
+- `SELLER_PUBLISH_DRAFT_PRIVATE_WEB: PASS`;
+- `SELLER_PUBLISH_PUBLIC: PASS`;
+- `SELLER_PUBLISH_PAUSE: PASS`;
+- `SELLER_PUBLISH_REPUBLISH: PASS`;
+- `SELLER_PUBLISH_ARCHIVE: PASS`;
+- `SELLER PHOTOS PUBLISH HTTP: PASSED`.
+
+O gate também valida via Swagger os endpoints usados pelo frontend, inclusive multipart de Media e `DELETE /api/app/listing-photo` com `listingId`/`photoId` como query parameters. A foto pública retornada depois de Publish é comparada byte a byte com o upload.
+
+Classe da evidência: **B — comportamento reproduzido em CI contra a aplicação real**.
 
 ## Progress log
 
-- 2026-08-23: após Plan 0003 e fechamento do guia de desenvolvimento local, Seller Self-Service foi selecionado como menor gap operacional que fecha o ciclo vendedor→comprador pela experiência real.
-- 2026-08-23: auditoria do backend confirmou SellerProfile autenticado, My Listings, Listing commands, Vehicle search, Media upload e photo mutations já existentes.
-- 2026-08-23: auditoria identificou como gap de backend uma leitura autenticada de detalhe/galeria para reabrir edição, não uma nova modelagem de Listing.
-- 2026-08-23: donor BPT1 não estava disponível nas fontes GitHub conectadas nem foi identificado com segurança em busca pública; nenhuma clonagem/adaptação foi presumida.
-- 2026-08-23: documentação atual ABP/OpenIddict confirmou Authorization Code + PKCE como baseline para login interativo; password grant permanece restrito a fixtures/smokes existentes.
-- 2026-08-23: primeiro Seller Auth CI detectou que um novo `[UnitOfWork]` contributor `sealed` não podia ser interceptado pelo ABP/Autofac; a correção mínima tornou a classe proxyable e o método interceptado `virtual`.
-- 2026-08-23: Seller Auth HTTP Gate corrigido passou discovery, PKCE obrigatório e redirect ao Account login; as regressões diretamente afetadas também passaram.
-- 2026-08-23: Seller shell implementado no `/vender` usando o access token OIDC para carregar Seller Profile e `Meus anúncios`; o frontend não recebe `SellerId` nem normaliza WhatsApp por conta própria.
-- 2026-08-23: a auditoria do primeiro Seller Shell gate identificou evidência insuficiente porque as APIs eram exercitadas com o password grant do cliente de fixture. O gate foi reforçado para obter token real de `BomPraTi_SellerWeb` via Account login + Authorization Code + PKCE.
-- 2026-08-23: o primeiro reforço do smoke falhou por erro de sintaxe no próprio Bash antes de atingir Profile/My Listings; corrigido o script e adicionado `bash -n` como fail-fast antes do bootstrap de banco.
-- 2026-08-23: Seller Shell HTTP Gate corrigido comprovou `OIDC discovery → Account login → PKCE token → Profile upsert/current → Draft → My Listings → logout`; Public Web, Seller Auth, Harness e Public Buyer permaneceram verdes no mesmo runtime head.
-- 2026-08-23: implementado o read model mínimo `GetMineByIdAsync` e as rotas Seller para escolher Vehicle canônico, criar Draft e reabrir/editar Listing próprio.
-- 2026-08-23: o primeiro Seller Draft Edit gate mostrou que `UpdateAsync` existente é `PUT /api/app/listing-command?listingId=...`, e não uma rota path-param; o cliente foi alinhado ao Swagger real sem mudar o backend.
-- 2026-08-23: o segundo run do gate encontrou um erro no próprio fixture Bash (`local` com expansão sob `set -u`) antes do token; as declarações foram separadas sem alteração de produto.
-- 2026-08-23: Seller Draft Edit HTTP Gate corrigido passou routes, Vehicle canônico, Draft create, owned read, cross-Seller hidden read, update, rotação do `ConcurrencyStamp`, stale 409 e reread do estado atualizado.
+- 2026-08-23: Plan 0004 selecionado como menor gap operacional após o ciclo Buyer → WhatsApp.
+- 2026-08-23: auditoria confirmou SellerProfile, My Listings, Listing commands, Vehicle search, Media upload e photo mutations existentes.
+- 2026-08-23: fronteira de login Seller resolvida com Authorization Code + PKCE e cliente `BomPraTi_SellerWeb`.
+- 2026-08-23: Seller shell comprovou login real, Profile, My Listings e logout.
+- 2026-08-23: read model `GetMineByIdAsync` implementado como única extensão mínima de backend para edição.
+- 2026-08-23: primeiro Seller Draft Edit gate revelou que Update usa `PUT /api/app/listing-command?listingId=...`; cliente foi alinhado ao Swagger sem mudar o backend por conveniência.
+- 2026-08-23: segundo run Draft/Edit encontrou bug no fixture Bash sob `set -u`; fixture corrigido sem alteração de produto.
+- 2026-08-23: Draft/Edit comprovou Vehicle canônico, Draft, owned read, cross-Seller hidden, rotação de stamp e stale 409.
+- 2026-08-23: checkpoint final reutilizou Media, ListingPhoto e ListingCommand existentes; nenhum novo aggregate, serviço de domínio ou regra de transição foi adicionado.
+- 2026-08-23: UI Seller passou a enviar imagens multipart, anexar/remover/reordenar galeria e chamar Publish/Pause/Archive; upload evita `Content-Type: application/json` quando o corpo é `FormData`.
+- 2026-08-23: Seller Photos Publish HTTP Gate passou no primeiro run funcional e comprovou o ciclo completo até o public web de produção.
 
-## Decision log
+## Resultado
 
-- Plan 0004 selecionado como próximo slice de produto.
-- Reutilizar as regras e APIs BPT2 existentes antes de criar qualquer backend novo.
-- BPT1 só será donor quando houver fonte concreta auditável; indisponibilidade do donor não bloqueia o desenvolvimento do Seller Self-Service.
-- Login interativo não usará password grant.
-- Primeira UI Seller será implementada no `public-web` existente sob `/vender`, usando cliente OIDC dedicado e Authorization Code + PKCE.
-- Seller shell não exigiu novo serviço, aggregate ou regra de domínio no backend; reutilizou Seller Profile e My Listings existentes.
-- A edição usa um único read contract adicional no Marketplace; ownership permanece server-side e a galeria atual é parte da projeção de edição.
-- Vehicle é escolhido na criação do Draft; o contrato de update não foi ampliado para trocar Vehicle sem necessidade de domínio comprovada.
-- Nenhum ADR novo foi criado para esta composição: ADR-0004 preserva o boundary HTTP e ADR-0009 já fixa o cliente Next inicial; as decisões Seller continuam reversíveis e registradas neste plano + MDV.
+**PASSA / CONCLUÍDO.** O BPT2 possui agora um primeiro ciclo operacional de marketplace de duas pontas comprovado:
+
+`Seller login → Profile → My Listings → Vehicle canônico → Draft → Edit → Photos → Publish → Public Listing → Public Detail/Photo → WhatsApp`
+
+O fechamento não exigiu nova infraestrutura, novo storage provider, novo aggregate nem mudança de boundary arquitetural.
+
+## Gaps futuros explícitos
+
+Continuam fora deste plano e devem ser priorizados somente por necessidade real de produto:
+
+- Public Discovery interativo: busca/filtros/paginação usando primeiro o contrato público já existente;
+- buyer account/Favorites;
+- ativação de comportamento de Lead/analytics/CRM para contatos, se houver requisito;
+- moderação/admin operacional;
+- promoções;
+- Vehicle Hub;
+- ingestão/reconciliation em escala;
+- provider final de object storage;
+- estratégia final de busca baseada em benchmark;
+- decisões ainda abertas de schemas/FKs cross-module, distributed locks e background jobs.
