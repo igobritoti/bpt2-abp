@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0003 concluído. O primeiro consumidor público real está comprovado até:
+Execution Plan 0004 ativo. O objetivo corrente é fechar o primeiro fluxo operacional real do Seller sobre a superfície autenticada já existente:
 
-`Public Listing → Public Detail → Photo → WhatsApp Contact`
+`Seller login → Seller profile → My Listings → Draft/Edit → Vehicle selection → Photos → Publish → Public Listing`
 
-O public web permanece independente do host ABP e consome somente a API HTTP. Draft/private continua indisponível, o contato usa o `WhatsAppNumber` canônico de Sellers e o fluxo completo foi comprovado pelo gate HTTP real.
+A auditoria inicial confirmou que perfil, My Listings, comandos de Listing, Vehicle search, Media upload e mutações de foto já existem. O gap mínimo de backend já identificado é uma leitura autenticada de detalhe/galeria para reabrir a edição de um Listing próprio.
 
-Próximo acceptance target: selecionar o menor próximo gap de produto antes de abrir nova feature ou novo execution plan. Não há plano de implementação ativo neste momento.
+Próximo acceptance target: provar a menor fronteira de UI/auth para o Seller usando Authorization Code + PKCE e decidir, por evidência, entre estender o cliente Next.js existente ou usar um cliente autenticado separado.
 
 ## Active plan
 
-Nenhum execution plan ativo após o fechamento do Plan 0003.
+[`../exec-plans/active/0004-seller-self-service.md`](../exec-plans/active/0004-seller-self-service.md)
 
 ## Source of runtime truth
 
@@ -28,7 +28,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido.
+Nenhum blocker de repositório conhecido. O código donor do BPT1 não está disponível nas fontes GitHub acessíveis nesta auditoria; isso limita transplantar UX/código antigo, mas não bloqueia o Plan 0004 porque o backend BPT2 necessário já está majoritariamente exposto.
 
 ## Update rule
 
