@@ -36,6 +36,12 @@ export type SellerListingDetail = {
   photos: SellerListingPhoto[];
 };
 
+export type MediaAssetRef = {
+  id: string;
+  contentType: string;
+  length: number;
+};
+
 export type VehicleRef = {
   id: string;
   brand: string;
@@ -61,6 +67,8 @@ export type UpdateListingInput = Omit<CreateListingInput, "vehicleId"> & {
   concurrencyStamp: string;
 };
 
+export type SellerListingAction = "publish" | "pause" | "archive";
+
 function apiBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_BPT_API_BASE_URL ??
@@ -76,7 +84,9 @@ async function apiRequest(
 ): Promise<Response> {
   const headers = new Headers(init?.headers);
   headers.set("Authorization", `Bearer ${accessToken}`);
-  if (init?.body && !headers.has("Content-Type")) {
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
+  if (init?.body && !isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -155,6 +165,18 @@ export async function getMyListingDetail(
   return (await response.json()) as SellerListingDetail;
 }
 
+export async function getSellerPhotoBlob(
+  accessToken: string,
+  listingId: string,
+  photoId: string,
+): Promise<Blob> {
+  const response = await apiRequest(
+    `/api/app/seller-listing-query/mine-photo?listingId=${encodeURIComponent(listingId)}&photoId=${encodeURIComponent(photoId)}`,
+    accessToken,
+  );
+  return response.blob();
+}
+
 export async function getVehicleCatalog(take = 50): Promise<VehicleRef[]> {
   const response = await publicRequest(`/api/app/vehicle-catalog?take=${take}`);
   return (await response.json()) as VehicleRef[];
@@ -191,6 +213,76 @@ export async function updateSellerListing(
       method: "PUT",
       body: JSON.stringify(input),
     },
+  );
+  return (await response.json()) as SellerListing;
+}
+
+export async function uploadSellerPhoto(
+  accessToken: string,
+  file: File,
+): Promise<MediaAssetRef> {
+  const form = new FormData();
+  form.append("content", file);
+  const response = await apiRequest("/api/app/media-upload/upload", accessToken, {
+    method: "POST",
+    body: form,
+  });
+  return (await response.json()) as MediaAssetRef;
+}
+
+export async function attachSellerPhoto(
+  accessToken: string,
+  listingId: string,
+  mediaAssetId: string,
+): Promise<SellerListingPhoto[]> {
+  const response = await apiRequest(
+    `/api/app/listing-photo/attach/${encodeURIComponent(listingId)}`,
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify({ mediaAssetId }),
+    },
+  );
+  return (await response.json()) as SellerListingPhoto[];
+}
+
+export async function reorderSellerPhotos(
+  accessToken: string,
+  listingId: string,
+  photoIds: string[],
+): Promise<SellerListingPhoto[]> {
+  const response = await apiRequest(
+    `/api/app/listing-photo/reorder/${encodeURIComponent(listingId)}`,
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify({ photoIds }),
+    },
+  );
+  return (await response.json()) as SellerListingPhoto[];
+}
+
+export async function removeSellerPhoto(
+  accessToken: string,
+  listingId: string,
+  photoId: string,
+): Promise<void> {
+  await apiRequest(
+    `/api/app/listing-photo?listingId=${encodeURIComponent(listingId)}&photoId=${encodeURIComponent(photoId)}`,
+    accessToken,
+    { method: "DELETE" },
+  );
+}
+
+export async function transitionSellerListing(
+  accessToken: string,
+  listingId: string,
+  action: SellerListingAction,
+): Promise<SellerListing> {
+  const response = await apiRequest(
+    `/api/app/listing-command/${action}/${encodeURIComponent(listingId)}`,
+    accessToken,
+    { method: "POST" },
   );
   return (await response.json()) as SellerListing;
 }
