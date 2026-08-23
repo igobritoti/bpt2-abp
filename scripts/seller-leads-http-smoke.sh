@@ -39,7 +39,9 @@ request_json() {
 }
 
 get_token() {
-  local username="$1" password="$2" token_file="${TMP}/token-${username}.json"
+  local username="$1"
+  local password="$2"
+  local token_file="${TMP}/token-${username}.json"
   local status
   status="$(curl --silent --show-error --output "$token_file" --write-out '%{http_code}' \
     -X POST "$API_BASE/connect/token" \
