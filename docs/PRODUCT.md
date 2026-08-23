@@ -53,17 +53,17 @@ Separações conceituais:
 
 ## Slice de implementação ativo
 
-Sequência principal:
+O Product Baseline de backend foi concluído até:
 
-`Seller → Vehicle → Listing → Publish → Public Listing Query`
+`Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-Primeiro incremento de produto após o Gate 01:
+O próximo slice fecha o primeiro ciclo real do comprador:
 
-1. consolidar Seller;
-2. consolidar Catalog/Vehicle;
-3. completar Listing CRUD e publicação pela API real;
-4. garantir leitura pública somente de anúncios publicáveis;
-5. integrar Media/fotos em seguida.
+`Public Listing → Public Detail → WhatsApp Contact`
+
+A experiência pública é um cliente independente da API conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary HTTP reversível.
+
+Não há requisito comprovado para persistir um agregado de Lead apenas para abrir o contato inicial: o domínio Sellers já modela `WhatsAppNumber` no contato público. Persistência/analytics de leads será decidida quando houver requisito de registrar, acompanhar ou medir contatos.
 
 ## Requisitos já congelados
 
@@ -73,6 +73,8 @@ Primeiro incremento de produto após o Gate 01:
 - Listing usa optimistic concurrency com `ConcurrencyStamp` no caminho da application service.
 - Catálogo automotivo é autoridade canônica e Marketplace consome seus contratos.
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
+- Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
+- A primeira implementação do public web usa Next.js 16 Active LTS/App Router sem criar dependência de frontend nos módulos de backend.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
@@ -80,13 +82,14 @@ O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente, por exemplo:
 
-- frontend específico;
+- persistência/analytics/CRM de Leads;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;
 - distributed locks quando surgir disputa real que optimistic concurrency/UoW não resolvam;
 - background jobs quando houver caso assíncrono real;
-- object storage/provider final.
+- object storage/provider final;
+- eventual troca do framework do public web, se houver evidência que justifique — o boundary HTTP preserva essa reversibilidade.
 
 ## Regra de evolução
 

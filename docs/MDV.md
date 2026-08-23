@@ -20,6 +20,9 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | CON-002 | Optimistic concurrency em Listing | PASSA / DECIDIDO no Gate 01 |
 | AUTH-001 | Seller ownership enforcement | PASSA / DECIDIDO no Gate 01 |
 | AUTH-002 | Público nunca vê Draft/private | PASSA / DECIDIDO no Gate 01 |
+| UI-001 | Public frontend desacoplado do host ABP | PASSA / DECIDIDO em ADR-0004 |
+| UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | DECIDIDO em ADR-0009; boundary HTTP reversível |
+| CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | DECIDIDO no Plan 0003; Lead persistido ainda não exigido |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | LOCK-001 | Distributed locking | ADIADO até caso real |
 | JOB-001 | Background jobs | ADIADO até caso real |
@@ -40,6 +43,15 @@ Execução em GitHub Actions com ABP 10.6, .NET 10 e PostgreSQL 17:
 Classe da evidência comportamental: **B — observado/reproduzido no CI do BPT2**.
 
 A decisão TX-002 vale para múltiplos DbContexts participantes do mesmo ABP Unit of Work sobre o mesmo PostgreSQL. Não implica atomicidade com APIs externas, object storage, outro banco ou outro processo.
+
+## Evidência do primeiro consumidor público
+
+- ADR-0004 já fixava a separação entre public web e host ABP.
+- O repositório não possuía public web versionado ao iniciar o Plan 0003.
+- `Sellers.Contracts` já expõe `SellerPublicContactDto` com `DisplayName` + `WhatsAppNumber`, e `ISellerPublicReader` já é consumido pela projeção pública de Listing.
+- Documentação oficial atual, verificada em 2026-08-23, classifica Next.js 16 como Active LTS e documenta App Router, metadata e self-hosting adequados ao primeiro cliente público.
+
+UI-002 é uma decisão de implementação do cliente público, isolada pela fronteira HTTP. Não altera os boundaries dos módulos do backend nem classifica outros frameworks SSR como tecnicamente incapazes.
 
 ## Regra de decisão
 
