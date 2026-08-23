@@ -81,6 +81,7 @@ create_path, _ = pick("listing-command", "post", no_path_parameter=True)
 update_path, update_op = pick("listing-command", "put")
 publish_path, publish_op = pick("listing-command", "post", action="publish")
 public_list_path, _ = pick("public-listing", "get", no_path_parameter=True)
+seller_upsert_path, _ = pick("seller-profile", "post", action="upsert", no_path_parameter=True)
 identity_create = "/api/identity/users"
 
 update_path, update_query = route(update_path, update_op)
@@ -93,6 +94,7 @@ values = {
     "LISTING_PUBLISH": publish_path,
     "LISTING_PUBLISH_QUERY": publish_query,
     "PUBLIC_LIST": public_list_path,
+    "SELLER_UPSERT": seller_upsert_path,
     "IDENTITY_CREATE": identity_create,
 }
 with open(env_path, "w", encoding="utf-8") as handle:
@@ -178,6 +180,41 @@ if actual != want:
 PY
 }
 
+assert_listing_whatsapp() {
+  local file="$1" listing_id="$2" expected="$3"
+  python3 - "$file" "$listing_id" "$expected" <<'PY'
+import json, sys
+path, target, expected = sys.argv[1:]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+def find_listing(value):
+    if isinstance(value, dict):
+        if str(value.get("id", "")).lower() == target.lower():
+            return value
+        for item in value.values():
+            found = find_listing(item)
+            if found is not None:
+                return found
+    elif isinstance(value, list):
+        for item in value:
+            found = find_listing(item)
+            if found is not None:
+                return found
+    return None
+
+listing = find_listing(data)
+if listing is None:
+    raise SystemExit(f"Published Listing {target} not found in public response: {data}")
+seller = listing.get("seller")
+if not isinstance(seller, dict):
+    raise SystemExit(f"Published Listing seller projection missing: {listing}")
+actual = seller.get("whatsAppNumber")
+if actual != expected:
+    raise SystemExit(f"Public WhatsApp expected {expected!r}, got {actual!r}: {listing}")
+PY
+}
+
 ADMIN_TOKEN="$(get_token admin '1q2w3E*')"
 SELLER_B_USER="sellerb-$(python3 - <<'PY'
 import uuid
@@ -206,6 +243,19 @@ status="$(request POST "$BASE$IDENTITY_CREATE" "$ADMIN_TOKEN" "$SELLER_B_BODY")"
 SELLER_B_TOKEN="$(get_token "$SELLER_B_USER" "$SELLER_B_PASSWORD")"
 
 echo "HTTP_AUTH_USERS: PASS"
+
+EXPECTED_WHATSAPP="5511999998877"
+SELLER_PROFILE_BODY='{"displayName":"BPT Admin Seller","whatsAppNumber":"+55 (11) 99999-8877"}'
+status="$(request POST "$BASE$SELLER_UPSERT" "$ADMIN_TOKEN" "$SELLER_PROFILE_BODY")"
+[[ "$status" == "200" || "$status" == "201" ]] || { echo "Seller profile upsert expected 200/201, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+ACTUAL_WHATSAPP="$(python3 - "$RESPONSE" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    print(json.load(handle)["whatsAppNumber"])
+PY
+)"
+[[ "$ACTUAL_WHATSAPP" == "$EXPECTED_WHATSAPP" ]] || { echo "Seller WhatsApp normalization expected $EXPECTED_WHATSAPP, got $ACTUAL_WHATSAPP" >&2; exit 1; }
+echo "HTTP_SELLER_CONTACT_NORMALIZED: PASS"
 
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json, sys
@@ -258,7 +308,9 @@ PY
 status="$(request GET "$BASE$PUBLIC_LIST")"
 [[ "$status" == "200" ]] || { echo "Public list expected 200 after publish, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 contains_listing "$RESPONSE" "$LISTING_ID" true
+assert_listing_whatsapp "$RESPONSE" "$LISTING_ID" "$EXPECTED_WHATSAPP"
 echo "HTTP_PUBLISH_PUBLIC: PASS"
+echo "HTTP_PUBLIC_SELLER_CONTACT: PASS"
 
 UPDATE_URL="$(render_id_url "$LISTING_UPDATE" "$LISTING_UPDATE_QUERY" "$LISTING_ID")"
 UPDATE_BODY="$(python3 - "$PUBLISH_STAMP" <<'PY'

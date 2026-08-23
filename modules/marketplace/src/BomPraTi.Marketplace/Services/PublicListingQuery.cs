@@ -274,7 +274,7 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
                 vehicle.Generation,
                 vehicle.Version,
                 vehicle.ModelYear),
-            new PublicListingSellerDto(row.SellerId, seller?.DisplayName),
+            new PublicListingSellerDto(row.SellerId, seller?.DisplayName, seller?.WhatsAppNumber),
             row.Title,
             row.Price,
             row.Description,
