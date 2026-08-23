@@ -20,6 +20,7 @@ DISCOVERY="${TMP}/discovery.json"
 SWAGGER="${TMP}/swagger.json"
 HOME_HTML="${TMP}/home.html"
 DETAIL_HTML="${TMP}/detail.html"
+PRIVATE_PHOTO="${TMP}/seller-private-photo.bin"
 PUBLIC_PHOTO="${TMP}/public-photo.bin"
 PNG="${TMP}/photo.png"
 
@@ -135,6 +136,7 @@ required = [
     ("/api/app/listing-command/pause/{listingId}", "post"),
     ("/api/app/listing-command/archive/{listingId}", "post"),
     ("/api/app/seller-listing-query/mine-by-id/{listingId}", "get"),
+    ("/api/app/seller-listing-query/mine-photo/{listingId}/{photoId}", "get"),
     ("/api/app/public-listing/{id}", "get"),
 ]
 missing = [f"{verb.upper()} {path}" for path, verb in required if verb not in paths.get(path, {})]
@@ -260,7 +262,6 @@ echo "SELLER_PUBLISH_PKCE_LOGIN: PASS"
 PROFILE='{"displayName":"BPT Seller Publish","whatsAppNumber":"+55 (11) 97777-6655"}'
 status="$(request_json POST '/api/app/seller-profile/upsert' "$TOKEN" "$PROFILE")"
 [[ "$status" == "200" || "$status" == "201" ]] || { echo "Profile upsert expected 200/201, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-
 echo "SELLER_PUBLISH_PROFILE: PASS"
 
 LISTING_TITLE="Seller Publish Flow"
@@ -300,7 +301,6 @@ with open(sys.argv[1], encoding="utf-8") as handle:
 if not any(str(item.get("id", "")).lower() == sys.argv[2].lower() for item in data):
     raise SystemExit(f"Draft missing from My Listings: {data}")
 PY
-
 echo "SELLER_PUBLISH_DRAFT_MY_LISTINGS: PASS"
 
 UPDATE_BODY="$(python3 - "$STAMP" <<'PY'
@@ -396,8 +396,14 @@ expected = [sys.argv[2].lower(), sys.argv[3].lower()]
 if ids != expected or [item.get("sortOrder") for item in data] != [0, 1]:
     raise SystemExit(f"Unexpected photo order: {data}")
 PY
-
 echo "SELLER_PUBLISH_REORDER: PASS"
+
+PRIVATE_PATH="/api/app/seller-listing-query/mine-photo/$LISTING_ID/$PHOTO_2"
+status="$(curl --silent --show-error --output "$PRIVATE_PHOTO" --write-out '%{http_code}' \
+  -H "Authorization: Bearer $TOKEN" "$API_BASE$PRIVATE_PATH")"
+[[ "$status" == "200" ]] || { echo "Owned Draft photo expected 200, got $status" >&2; exit 1; }
+cmp -s "$PNG" "$PRIVATE_PHOTO" || { echo "Owned Draft photo bytes differ from upload" >&2; exit 1; }
+echo "SELLER_PUBLISH_PRIVATE_PHOTO: PASS"
 
 status="$(request_json DELETE "/api/app/listing-photo?listingId=$LISTING_ID&photoId=$PHOTO_1" "$TOKEN")"
 [[ "$status" == "200" || "$status" == "204" ]] || { echo "Photo remove failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
@@ -444,11 +450,13 @@ status="$(request_json POST "/api/app/listing-command/publish/$LISTING_ID" "$OTH
 [[ "$status" == "403" ]] || { echo "Cross-Seller publish expected 403, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request_json POST "/api/app/listing-photo/attach/$LISTING_ID" "$OTHER_TOKEN" "$(attach_body "$MEDIA_2")")"
 [[ "$status" == "403" ]] || { echo "Cross-Seller attach expected 403, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(curl --silent --show-error --output "$RESPONSE" --write-out '%{http_code}' \
+  -H "Authorization: Bearer $OTHER_TOKEN" "$API_BASE$PRIVATE_PATH")"
+[[ "$status" == "404" ]] || { echo "Cross-Seller private photo expected hidden 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo "SELLER_PUBLISH_OWNERSHIP: PASS"
 
 status="$(request_json GET "/api/app/public-listing/$LISTING_ID")"
 [[ "$status" == "204" || "$status" == "404" ]] || { echo "Draft public detail expected hidden, got $status" >&2; exit 1; }
-
 echo "SELLER_PUBLISH_DRAFT_PRIVATE_API: PASS"
 
 pushd "$ROOT/public-web" >/dev/null
