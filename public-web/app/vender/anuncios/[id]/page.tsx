@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 import type { User } from "oidc-client-ts";
 
 import { getCurrentSellerUser } from "../../../../lib/seller-auth";
@@ -60,11 +60,14 @@ export default function EditSellerListingPage() {
   const [stateCode, setStateCode] = useState("");
   const currentPhotos = detail?.photos ?? null;
 
-  async function reloadOwnedDetail(accessToken: string): Promise<SellerListingDetail | null> {
-    const currentDetail = await getMyListingDetail(accessToken, listingId);
-    setDetail(currentDetail);
-    return currentDetail;
-  }
+  const reloadOwnedDetail = useCallback(
+    async (accessToken: string): Promise<SellerListingDetail | null> => {
+      const currentDetail = await getMyListingDetail(accessToken, listingId);
+      setDetail(currentDetail);
+      return currentDetail;
+    },
+    [listingId],
+  );
 
   useEffect(() => {
     async function load() {
@@ -98,11 +101,10 @@ export default function EditSellerListingPage() {
     }
 
     void load();
-  }, [listingId]);
+  }, [reloadOwnedDetail]);
 
   useEffect(() => {
     if (!user || !currentPhotos) {
-      setPhotoUrls({});
       return;
     }
 
