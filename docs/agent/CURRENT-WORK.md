@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Concluir o Product Baseline 0001 depois de comprovar:
+Product Baseline 0001 concluído. O próximo outcome é selecionar e formalizar o próximo execution plan de produto a partir das lacunas explícitas do produto-alvo, sem reabrir decisões arquiteturais já comprovadas.
+
+O baseline comprovado cobre:
 
 `Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-Os lifecycles autenticados de Listing e Media/ListingPhoto e a experiência pública mínima de backend já foram comprovados no host real. A superfície pública mantém Draft/foto de Draft indisponíveis, ownership 403, optimistic concurrency 409, validação de upload pelos bytes, projeção Seller + Vehicle + Photos, conteúdo público byte-for-byte e listagem paginada com `totalCount/items`.
-
-Próximo acceptance target: encerrar o Product Baseline 0001 com resultado e pendências explícitas, confirmando os critérios finais do execution plan. Só depois disso decidir o próximo execution plan de produto; não abrir nova feature antes dessa decisão.
+Próximo acceptance target: escolher o menor próximo fluxo de produto que feche uma lacuna real de usuário, definir seus critérios por evidência e abrir um execution plan específico antes de implementar nova feature. O candidato prioritário é a jornada pública Buyer → contato/lead, porque completa o objetivo central de conectar comprador e vendedor; frontend e contrato exato do primeiro consumidor ainda precisam ser decididos por evidência.
 
 ## Active plan
 
-[`../exec-plans/active/0001-product-baseline.md`](../exec-plans/active/0001-product-baseline.md)
+Nenhum execution plan ativo após o fechamento do Product Baseline 0001. O próximo plano deve ser criado somente depois de fechar seu escopo e critérios de aceite.
 
 ## Source of runtime truth
 
@@ -28,7 +28,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. Se surgir blocker externo real, registre-o aqui enquanto estiver ativo e remova/substitua quando resolvido.
+Nenhum blocker de repositório conhecido. O próximo trabalho depende de selecionar o primeiro gap de produto a fechar; isso é boundary de decisão, não blocker técnico.
 
 ## Update rule
 
