@@ -56,7 +56,24 @@ Classificação inicial:
 ## Checkpoints
 
 - [x] Auditar domínio, DbContext, CTA público e gap documental.
-- [ ] Implementar contrato e backend.
-- [ ] Integrar o CTA público.
+- [x] Implementar contrato e backend.
+- [x] Integrar o CTA público.
 - [ ] Provar comportamento real e regressões.
 - [ ] Atualizar documentação e arquivar o plano.
+
+## Progress log
+
+- 2026-08-23: `main` foi refetchado em `fceecd089818f5482a354c206f4f583bb0b1ca45`; PR #25 já havia fechado a prova de isolamento de Favorites e não foi reaberto.
+- 2026-08-23: auditoria de `PRODUCT.md`, `MDV.md`, `Lead`, `MarketplaceDbContext` e detalhe público selecionou Lead capture como menor gap vertical real.
+- 2026-08-23: contrato/app service de Lead e integração Next foram implementados sem migration, controller customizado ou infraestrutura nova.
+- 2026-08-23: o gate público foi ampliado para observar a rota pelo Swagger, bloquear Draft/Pause/Archive, validar o Lead anônimo persistido e provar o redirect ao WhatsApp canônico.
+- 2026-08-23: primeiro Harness Gate de um head intermediário falhou somente porque este plano ainda não tinha `Progress log`/`Decision log` e os fatos gerados ainda diziam zero planos ativos; ambos foram corrigidos no head seguinte.
+
+## Decision log
+
+- Usar a estrutura `Lead` já existente em Marketplace em vez de introduzir novo aggregate ou módulo.
+- Reutilizar `IPublicListingQuery` como autoridade de visibilidade: só Listing atualmente público pode gerar novo Lead.
+- Fixar o canal deste slice como `WhatsApp` e preservar `UserId` opcional para contato anônimo.
+- Usar a convenção HTTP gerada pelo ABP e validar a rota real no Swagger; não criar controller/rota artificial.
+- Fazer o public web registrar o Lead por POST antes de redirecionar para o `wa.me` canônico, sem confiar em número informado pelo browser.
+- Manter CRM, analytics agregados, deduplicação, scoring, Seller inbox, filas e background jobs fora do slice até necessidade comprovada.
