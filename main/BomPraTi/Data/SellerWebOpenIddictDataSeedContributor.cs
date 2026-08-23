@@ -5,7 +5,7 @@ using Volo.Abp.Uow;
 
 namespace BomPraTi.Data;
 
-public sealed class SellerWebOpenIddictDataSeedContributor : IDataSeedContributor, ITransientDependency
+public class SellerWebOpenIddictDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
     private readonly IConfiguration _configuration;
     private readonly IOpenIddictApplicationManager _applicationManager;
@@ -19,7 +19,7 @@ public sealed class SellerWebOpenIddictDataSeedContributor : IDataSeedContributo
     }
 
     [UnitOfWork]
-    public async Task SeedAsync(DataSeedContext context)
+    public virtual async Task SeedAsync(DataSeedContext context)
     {
         var section = _configuration.GetSection("OpenIddict:Applications:BomPraTi_SellerWeb");
         var clientId = section["ClientId"];
