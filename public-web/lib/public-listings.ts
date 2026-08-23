@@ -37,7 +37,20 @@ export type PublicListing = {
   photos: PublicListingPhoto[];
 };
 
-type PagedResult<T> = {
+export type PublicListingSearch = {
+  vehicleId?: string;
+  brand?: string;
+  model?: string;
+  minModelYear?: number;
+  maxModelYear?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  query?: string;
+  skip?: number;
+  take?: number;
+};
+
+export type PagedResult<T> = {
   totalCount: number;
   items: T[];
 };
@@ -64,10 +77,34 @@ function publicApiBaseUrl(): string {
   return trimTrailingSlash(value);
 }
 
-export async function getPublicListings(take = 24): Promise<PagedResult<PublicListing>> {
+function setText(searchParams: URLSearchParams, key: string, value: string | undefined) {
+  const normalized = value?.trim();
+  if (normalized) {
+    searchParams.set(key, normalized);
+  }
+}
+
+function setNumber(searchParams: URLSearchParams, key: string, value: number | undefined) {
+  if (value !== undefined && Number.isFinite(value)) {
+    searchParams.set(key, String(value));
+  }
+}
+
+export async function getPublicListings(
+  input: PublicListingSearch = {},
+): Promise<PagedResult<PublicListing>> {
   const url = new URL("/api/app/public-listing", `${serverApiBaseUrl()}/`);
-  url.searchParams.set("Skip", "0");
-  url.searchParams.set("Take", String(take));
+
+  setText(url.searchParams, "VehicleId", input.vehicleId);
+  setText(url.searchParams, "Brand", input.brand);
+  setText(url.searchParams, "Model", input.model);
+  setNumber(url.searchParams, "MinModelYear", input.minModelYear);
+  setNumber(url.searchParams, "MaxModelYear", input.maxModelYear);
+  setNumber(url.searchParams, "MinPrice", input.minPrice);
+  setNumber(url.searchParams, "MaxPrice", input.maxPrice);
+  setText(url.searchParams, "Query", input.query);
+  setNumber(url.searchParams, "Skip", input.skip ?? 0);
+  setNumber(url.searchParams, "Take", input.take ?? 24);
 
   const response = await fetch(url, {
     cache: "no-store",

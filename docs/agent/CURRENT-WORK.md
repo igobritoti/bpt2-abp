@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0004 concluído. O primeiro ciclo operacional real do Seller está comprovado sobre a mesma fronteira HTTP/OIDC do produto:
+Execution Plan 0005 concluído. A experiência pública do Buyer agora consome o contrato de discovery existente sem ampliar o backend:
 
-`Seller login → Seller profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish → Public Listing`
+`Public Listings → busca/filtros → paginação → detalhe → WhatsApp`
 
-A experiência Seller reutiliza o `public-web` sob `/vender`, com cliente OpenIddict dedicado `BomPraTi_SellerWeb` e Authorization Code + PKCE. Ownership permanece server-side, edição usa `ConcurrencyStamp`, Media valida uploads, ListingPhoto controla galeria/ordem e Publish/Pause/Archive continuam regras do backend.
+A home Next usa query string como estado canônico, mantém SSR/URLs compartilháveis e expõe Query, Brand, Model, faixas de ano/preço e paginação anterior/próxima. O Public Discovery HTTP Gate comprovou em PostgreSQL fresco + host ABP + Next de produção: dois Listings publicados e um Draft, filtros de Query/preço/catálogo, paginação preservando estado, range invertido retornando vazio e Draft permanecendo oculto.
 
-O gate final comprovou em PostgreSQL fresco e Next.js de produção: login PKCE, Profile, Draft/My Listings, edição, upload/attach/reorder/remove, bloqueio de segundo Seller, Draft privado, Publish público, Pause privado, republish público e Archive privado.
+O princípio transversal ADR-0010 também já está integrado em `main`: nova capacidade de infraestrutura exige primeiro necessidade comprovada e avaliação de soluções maduras aplicáveis; adoção ou construção deve deixar decisão durável documentada.
 
-Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0005 é presumido apenas porque o Plan 0004 terminou.
+Próximo acceptance target: selecionar por evidência o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0006 é presumido apenas porque o Plan 0005 terminou.
 
 ## Active plan
 
@@ -25,13 +25,14 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do Public Discovery: [`../exec-plans/completed/0005-public-discovery.md`](../exec-plans/completed/0005-public-discovery.md).
 - Histórico do Seller Self-Service: [`../exec-plans/completed/0004-seller-self-service.md`](../exec-plans/completed/0004-seller-self-service.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. O código donor do BPT1 continua indisponível nas fontes GitHub acessíveis; isso limita transplante auditável de UX/código antigo, mas não bloqueia os fluxos BPT2 já comprovados.
+Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e passam a seguir ADR-0010 quando forem abertas.
 
 ## Update rule
 

@@ -67,13 +67,19 @@ O primeiro ciclo operacional real do vendedor também foi concluído no Plan 000
 
 A prova Seller usa Authorization Code + PKCE com o cliente `BomPraTi_SellerWeb`, mantém ownership no servidor, usa `ConcurrencyStamp` na edição, reutiliza Media/ListingPhoto para galeria e chama Publish/Pause/Archive somente pelos commands do backend. O gate final comprovou Draft privado, bloqueio de segundo Seller, publicação real no Next, Pause/Archive removendo visibilidade pública e republish restaurando-a.
 
+O Plan 0005 concluiu a primeira experiência interativa de descoberta pública sem ampliar o contrato backend:
+
+`Public Listings → busca/filtros → paginação → Public Detail → Photo → WhatsApp`
+
+A home pública usa query string como estado da descoberta e oferece Query, Brand, Model, faixas de ano/preço e paginação anterior/próxima. O gate real comprovou filtros, total/paginação, preservação do estado na URL, range invertido retornando vazio e Draft permanecendo invisível. Ranking, novos filtros e engine externa continuam fora do slice.
+
 A experiência pública e a experiência Seller continuam clientes independentes da aplicação por HTTP conforme ADR-0004. A primeira implementação usa Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo o boundary reversível.
 
 O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web e o CTA usa `https://wa.me/{digits}`. Marketplace já possui a estrutura de domínio/persistência de `Lead`, mas o fluxo WhatsApp atual não cria Lead. Ativar registro de contato, analytics ou CRM continua dependente de requisito comprovado.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0004. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0005. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -86,6 +92,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0004. O próximo sl
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - A primeira implementação do public web usa Next.js 16 Active LTS/App Router sem criar dependência de frontend nos módulos de backend.
 - A primeira experiência Seller usa o mesmo cliente Next sob `/vender`, isolada por HTTP/OIDC e autenticada por Authorization Code + PKCE.
+- A primeira experiência de discovery usa somente o contrato público já existente e mantém query string como estado SSR/compartilhável.
 - O primeiro contato público Buyer → Seller usa o WhatsApp canônico já pertencente a Sellers; isso não ativa automaticamente persistência/analytics de Lead.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
