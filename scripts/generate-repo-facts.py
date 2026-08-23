@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -101,6 +102,13 @@ def main() -> int:
         if current != content:
             print("generated repository facts are stale; run:")
             print("  python3 scripts/generate-repo-facts.py --write")
+            print("\n".join(difflib.unified_diff(
+                current.splitlines(),
+                content.splitlines(),
+                fromfile=str(OUTPUT.relative_to(ROOT)),
+                tofile="generated",
+                lineterm="",
+            )))
             return 1
         print("GENERATED REPOSITORY FACTS: PASSED")
         return 0
