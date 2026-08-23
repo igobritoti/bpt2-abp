@@ -127,20 +127,24 @@ status="$(request_json POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" "$PR
 
 status="$(request_json GET "/api/app/vehicle-catalog/$BPT_FIXTURE_VEHICLE_ID")"
 [[ "$status" == "200" ]] || { echo "Vehicle fixture lookup failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
-read -r VEHICLE_BRAND VEHICLE_MODEL VEHICLE_YEAR < <(python3 - "$RESPONSE" <<'PY'
-import json, shlex, sys
+IFS=$'\t' read -r VEHICLE_BRAND VEHICLE_MODEL VEHICLE_YEAR < <(python3 - "$RESPONSE" <<'PY'
+import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
-print(shlex.quote(data["brand"]), shlex.quote(data["model"]), data.get("modelYear") or "")
+print(f"{data['brand']}\t{data['model']}\t{data.get('modelYear') or ''}")
 PY
 )
+[[ -n "$VEHICLE_BRAND" && -n "$VEHICLE_MODEL" && -n "$VEHICLE_YEAR" ]] || {
+  echo "Vehicle fixture must expose brand/model/modelYear for discovery proof" >&2
+  exit 1
+}
 
 ALPHA_TITLE="Discovery Alpha"
 BETA_TITLE="Discovery Beta"
 HIDDEN_TITLE="Discovery Hidden Draft"
 ALPHA_ID="$(create_listing "$ALPHA_TITLE" 101000)"
 BETA_ID="$(create_listing "$BETA_TITLE" 202000)"
-HIDDEN_ID="$(create_listing "$HIDDEN_TITLE" 303000)"
+create_listing "$HIDDEN_TITLE" 303000 >/dev/null
 publish_listing "$ALPHA_ID"
 publish_listing "$BETA_ID"
 echo "PUBLIC_DISCOVERY_FIXTURES: PASS"
