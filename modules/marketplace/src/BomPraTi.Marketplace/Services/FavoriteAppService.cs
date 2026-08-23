@@ -62,7 +62,7 @@ public class FavoriteAppService : IFavoriteAppService, ITransientDependency
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> IsFavoriteAsync(Guid listingId, CancellationToken cancellationToken = default)
+    public async Task<bool> GetIsFavoriteAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
         var userId = CurrentUserId();
         if (await _publicListings.GetAsync(listingId, cancellationToken) is null)

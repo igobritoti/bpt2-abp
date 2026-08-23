@@ -26,11 +26,11 @@ with open(sys.argv[1], encoding='utf-8') as f: paths=json.load(f)['paths']
 expected={
  '/api/app/favorite/mine':'get',
  '/api/app/favorite/is-favorite/{listingId}':'get',
- '/api/app/favorite/{listingId}':'post',
+ '/api/app/favorite':'post',
 }
 for path, verb in expected.items():
-    if path not in paths or verb not in paths[path]: raise SystemExit(f'Missing expected Favorite route {verb.upper()} {path}; favorite paths={[p for p in paths if "favorite" in p]}')
-if 'delete' not in paths['/api/app/favorite/{listingId}']: raise SystemExit('Missing Favorite DELETE route')
+    if path not in paths or verb not in paths[path]: raise SystemExit(f'Missing expected Favorite route {verb.upper()} {path}; favorite routes={{p:list(paths[p]) for p in paths if "favorite" in p}}')
+if 'delete' not in paths['/api/app/favorite']: raise SystemExit('Missing Favorite DELETE route')
 print('BUYER_FAVORITE_ROUTES: PASS')
 PY
 
@@ -43,13 +43,13 @@ print(json.dumps({'vehicleId':sys.argv[1],'title':'Buyer Favorite Fixture','pric
 PY
 )"
 status="$(request POST '/api/app/listing-command' "$ADMIN_TOKEN" "$CREATE_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || { cat "$RESPONSE"; exit 1; }
-LISTING_ID="$(python3 - "$RESPONSE" -c 'x' 2>/dev/null || true)"
 LISTING_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys
 print(json.load(open(sys.argv[1]))['id'])
 PY
 )"
-status="$(request POST "/api/app/favorite/$LISTING_ID")"; [[ "$status" == 401 ]] || { echo "Anonymous favorite expected 401 got $status" >&2; exit 1; }
+FAVORITE_PATH="/api/app/favorite?listingId=$LISTING_ID"
+status="$(request POST "$FAVORITE_PATH")"; [[ "$status" == 401 ]] || { echo "Anonymous favorite expected 401 got $status" >&2; exit 1; }
 echo 'BUYER_FAVORITE_ANONYMOUS_BLOCKED: PASS'
 
 read -r VERIFIER CHALLENGE STATE < <(python3 <<'PY'
@@ -101,10 +101,10 @@ PY
 )"
 echo 'BUYER_AUTH_PKCE_TOKEN: PASS'
 
-status="$(request POST "/api/app/favorite/$LISTING_ID" "$BUYER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Draft favorite expected 404 got $status" >&2; cat "$RESPONSE"; exit 1; }
+status="$(request POST "$FAVORITE_PATH" "$BUYER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Draft favorite expected 404 got $status" >&2; cat "$RESPONSE"; exit 1; }
 echo 'BUYER_FAVORITE_DRAFT_BLOCKED: PASS'
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
-for _ in 1 2; do status="$(request POST "/api/app/favorite/$LISTING_ID" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || { cat "$RESPONSE"; exit 1; }; done
+for _ in 1 2; do status="$(request POST "$FAVORITE_PATH" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || { cat "$RESPONSE"; exit 1; }; done
 echo 'BUYER_FAVORITE_IDEMPOTENT_ADD: PASS'
 status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
@@ -121,7 +121,7 @@ status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" ==
 python3 - "$RESPONSE" <<'PY'
 import json,sys; assert len(json.load(open(sys.argv[1])))==1
 PY
-status="$(request DELETE "/api/app/favorite/$LISTING_ID" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || exit 1
+status="$(request DELETE "$FAVORITE_PATH" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || exit 1
 status="$(request GET '/api/app/favorite/mine' "$BUYER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || exit 1
 echo 'BUYER_FAVORITE_REMOVE: PASS'
 

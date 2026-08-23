@@ -41,13 +41,13 @@ export async function isFavorite(accessToken: string, listingId: string): Promis
 }
 
 export async function addFavorite(accessToken: string, listingId: string): Promise<void> {
-  await buyerRequest(`/api/app/favorite/${encodeURIComponent(listingId)}`, accessToken, {
+  await buyerRequest(`/api/app/favorite?listingId=${encodeURIComponent(listingId)}`, accessToken, {
     method: "POST",
   });
 }
 
 export async function removeFavorite(accessToken: string, listingId: string): Promise<void> {
-  await buyerRequest(`/api/app/favorite/${encodeURIComponent(listingId)}`, accessToken, {
+  await buyerRequest(`/api/app/favorite?listingId=${encodeURIComponent(listingId)}`, accessToken, {
     method: "DELETE",
   });
 }
