@@ -30,5 +30,7 @@ Owns provenance, confidence, reconciliation/import state e chama Catalog via con
 5. Frontend não entra nos assemblies de domínio.
 6. External side effects exigem coordenação durável quando introduzidos.
 7. Infra extra só entra com evidência de necessidade.
+8. Antes de experimentar ou construir uma nova capacidade de infraestrutura, avaliar soluções maduras aplicáveis — nativas da plataforma/framework, OSS/self-hosted e/ou gerenciadas — conforme ADR-0010.
+9. Adoção de solução existente ou construção customizada de infraestrutura exige decisão durável documentada, incluindo alternativas, boundary, consequências operacionais e estratégia de saída/migração.
 
 O estado formal das decisões fica em `docs/MDV.md` e `docs/adr/`.

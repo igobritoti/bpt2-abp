@@ -29,6 +29,8 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; estrutura de Lead existe, mas o fluxo WhatsApp não ativa registro/analytics/CRM |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
+| INFRA-001 | Antes de experimentar/construir nova capacidade de infraestrutura, avaliar soluções maduras aplicáveis | DECIDIDO em ADR-0010 |
+| INFRA-002 | Adoção de solução existente ou construção customizada de infraestrutura exige decisão durável documentada | DECIDIDO em ADR-0010 |
 | LOCK-001 | Distributed locking | ADIADO até caso real |
 | JOB-001 | Background jobs | ADIADO até caso real |
 | SEARCH-001 | PostgreSQL vs engine externo | NÃO DECIDIDO; benchmark futuro |
@@ -86,8 +88,20 @@ Classe da evidência do boundary Seller: **B — observado/reproduzido no CI do 
 
 Classe da evidência do fluxo Seller: **B — observado/reproduzido no CI do BPT2**.
 
+## Princípio de seleção de infraestrutura
+
+ADR-0010 define uma regra transversal para qualquer nova capacidade de infraestrutura:
+
+`necessidade comprovada -> avaliação de soluções maduras -> experimento mínimo se ainda necessário -> decisão adopt/build documentada`.
+
+A avaliação deve considerar opções nativas da plataforma/framework, OSS/self-hosted e gerenciadas/comerciais quando aplicáveis. Isso não cria preferência automática por SaaS nem proíbe construção própria; impede que custom build seja o experimento padrão sem antes verificar soluções maduras e seus trade-offs.
+
+A decisão final de adoção ou construção deve registrar necessidade, alternativas, rationale, boundary/ownership, consequências operacionais e estratégia de reversibilidade/saída. Decisões atualmente adiadas, como distributed locking, background jobs e engine externa de busca, continuam adiadas; ADR-0010 governa o processo quando alguma delas for aberta.
+
 ## Regra de decisão
 
-Documentação/código/standard -> capacidade comprovada -> teste mínimo se a decisão específica do BPT não estiver resolvida -> PASS/FAIL -> decisão registrada.
+Para regra de domínio/aplicação: documentação/código/standard -> capacidade comprovada -> teste mínimo se a decisão específica do BPT não estiver resolvida -> PASS/FAIL -> decisão registrada.
 
-Inferência ou preferência não vira requisito arquitetural sem evidência.
+Para nova infraestrutura: necessidade/constraints comprovados -> avaliação de soluções maduras -> experimento/benchmark mínimo somente se necessário -> decisão adopt/build documentada.
+
+Inferência, popularidade de mercado ou preferência não vira requisito arquitetural sem evidência.
