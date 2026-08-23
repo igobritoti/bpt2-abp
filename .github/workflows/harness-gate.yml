@@ -9,7 +9,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/generate-repo-facts.py'
-      - '.github/workflows/harness-gate.yml'
+      - '.github/workflows/*.yml'
   push:
     branches:
       - main
@@ -20,7 +20,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/generate-repo-facts.py'
-      - '.github/workflows/harness-gate.yml'
+      - '.github/workflows/*.yml'
 
 permissions:
   contents: read
