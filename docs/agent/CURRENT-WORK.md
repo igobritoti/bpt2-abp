@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Continuar o baseline de produto:
+Concluir o Product Baseline 0001 depois de comprovar:
 
 `Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-Os lifecycles autenticados de Listing e Media/ListingPhoto pelo HTTP real já foram comprovados, incluindo Draft invisível/404 para foto pública, ownership 403, Publish público, optimistic concurrency 409, validação de upload pelos bytes, reorder/capa e conteúdo público byte-for-byte sem vazamento de storage key/provider.
+Os lifecycles autenticados de Listing e Media/ListingPhoto e a experiência pública mínima de backend já foram comprovados no host real. A superfície pública mantém Draft/foto de Draft indisponíveis, ownership 403, optimistic concurrency 409, validação de upload pelos bytes, projeção Seller + Vehicle + Photos, conteúdo público byte-for-byte e listagem paginada com `totalCount/items`.
 
-Próximo acceptance target: Fase 3 — detalhe/listagem pública mínima de backend, com detalhe público do anúncio reunindo fatos de Seller + Vehicle + fotos necessárias e listagem pública paginada correta. Filtros mínimos entram somente quando houver requisito real do primeiro consumidor.
+Próximo acceptance target: encerrar o Product Baseline 0001 com resultado e pendências explícitas, confirmando os critérios finais do execution plan. Só depois disso decidir o próximo execution plan de produto; não abrir nova feature antes dessa decisão.
 
 ## Active plan
 
