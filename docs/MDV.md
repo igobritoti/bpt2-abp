@@ -29,7 +29,8 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-002 | Upload/preview privado/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
-| CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; estrutura de Lead existe, mas o fluxo WhatsApp não ativa registro/analytics/CRM |
+| CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
+| CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | INFRA-001 | Antes de experimentar/construir nova capacidade de infraestrutura, avaliar soluções maduras aplicáveis | DECIDIDO em ADR-0010 |
 | INFRA-002 | Adoção de solução existente ou construção customizada de infraestrutura exige decisão durável documentada | DECIDIDO em ADR-0010 |
@@ -59,7 +60,7 @@ A decisão TX-002 vale para múltiplos DbContexts participantes do mesmo ABP Uni
 - `Sellers.Contracts` expõe `SellerPublicContactDto` com `DisplayName` + `WhatsAppNumber`; a projeção pública de Listing preserva esse contrato.
 - `SellerProfile` normaliza WhatsApp para 8–15 dígitos incluindo country code, e o lifecycle HTTP comprovou a propagação do valor canônico até a resposta pública.
 - O Public Web Gate comprovou lint, typecheck e production build do cliente independente.
-- O Public Buyer HTTP Gate sobe banco vazio, host ABP e Next.js e comprovou Draft invisível, Publish, listagem, detalhe com Seller/Vehicle, foto pública, metadata e CTA `wa.me` para o número canônico.
+- O Public Buyer HTTP Gate sobe banco vazio, host ABP e Next.js e comprovou Draft invisível, Publish, listagem, detalhe com Seller/Vehicle, foto pública, metadata e CTA de WhatsApp para o número canônico.
 - O primeiro run end-to-end revelou HTTP 204 para detalhe não publicável; o cliente foi corrigido para tratar 204/404 como ausência pública e o run subsequente passou.
 
 Classe da evidência comportamental do fluxo Buyer: **B — observado/reproduzido no CI do BPT2**.
@@ -100,6 +101,18 @@ Classe da evidência do fluxo Seller: **B — observado/reproduzido no CI do BPT
 - O primeiro run mostrou empiricamente as convenções ABP: `POST/DELETE /api/app/favorite?listingId=...`; `GetIsFavoriteAsync` produz GET em `/api/app/favorite/is-favorite/{listingId}`. Cliente e gate foram alinhados ao Swagger, sem controller customizado.
 
 Classe da evidência do fluxo Favorites: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência de WhatsApp Lead Capture
+
+- Marketplace reutiliza o aggregate/tabela `Lead` já existente; nenhuma migration nova foi criada.
+- `ILeadAppService.CreateAsync` é anônimo, deriva `UserId` de `ICurrentUser` quando houver sessão e usa `IPublicListingQuery` como autoridade de visibilidade. Draft, Pause e Archive não geram novo Lead.
+- O canal deste slice é `WhatsApp`; o servidor persiste `ListingId`, `UserId?`, `Channel` e `CreatedAtUtc` antes de o cliente público abrir a conversa.
+- A rota convencional observada no Swagger é `POST /api/app/lead?listingId=...`; nenhum controller customizado foi adicionado.
+- O public web envia somente `listingId` para sua rota server-side; o destino `wa.me` continua derivado do contato canônico retornado por Sellers, não de número informado pelo browser.
+- O Public Buyer HTTP Gate em PostgreSQL fresco, host ABP real e Next.js de produção comprovou `PUBLIC_LEAD_ROUTE`, `PUBLIC_LEAD_DRAFT_BLOCKED`, `PUBLIC_LEAD_PERSISTED`, `PUBLIC_WEB_WHATSAPP_LEAD`, `PUBLIC_LEAD_PAUSED_BLOCKED`, `PUBLIC_LEAD_ARCHIVED_BLOCKED` e `PUBLIC BUYER HTTP FLOW` como PASS.
+- Um run intermediário falhou por uma expressão de teste que tratava CRLF do header `Location` incorretamente; o próprio log mostrava `303` e o `wa.me` canônico. A asserção foi corrigida sem alteração de produto e o run seguinte passou.
+
+Classe da evidência do Lead capture: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 
