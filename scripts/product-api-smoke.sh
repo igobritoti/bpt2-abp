@@ -91,11 +91,22 @@ missing = {"seller", "vehicle", "photos"} - properties
 if missing:
     raise SystemExit(f"PublicListingDto missing detail facts {sorted(missing)}: {sorted(properties)}")
 
+public_seller_schema = next(
+    (schema for name, schema in schemas.items() if name.split(".")[-1] == "PublicListingSellerDto"),
+    None,
+)
+if public_seller_schema is None:
+    raise SystemExit(f"PublicListingSellerDto schema missing from Swagger components: {sorted(schemas)}")
+seller_properties = {name.lower() for name in public_seller_schema.get("properties", {})}
+if "whatsappnumber" not in seller_properties:
+    raise SystemExit(f"PublicListingSellerDto missing WhatsAppNumber: {sorted(seller_properties)}")
+
 with open(env_path, "w", encoding="utf-8") as handle:
     for key, value in selected.items():
         handle.write(f"{key}={shlex.quote(value)}\n")
 print("PRODUCT API SURFACES:", selected)
 print("PUBLIC LISTING DETAIL CONTRACT: seller + vehicle + photos")
+print("PUBLIC LISTING SELLER CONTRACT: whatsappNumber")
 PY
 
 # shellcheck disable=SC1090
@@ -130,4 +141,5 @@ PY
 
 echo "PUBLIC_LIST_DETAIL_CONTRACT: PASS"
 echo "PUBLIC_LIST_PAGING_CONTRACT: PASS"
+echo "PUBLIC_LIST_CONTACT_CONTRACT: PASS"
 echo "PRODUCT API SMOKE: PASSED"
