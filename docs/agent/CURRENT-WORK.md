@@ -8,11 +8,11 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Continuar o baseline de produto:
 
-`Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto`
+`Seller → Vehicle → Listing → Publish → Public Listing Query → Media/ListingPhoto → detalhe/listagem pública mínima`
 
-O lifecycle autenticado de Listing pelo HTTP real já foi comprovado com Draft invisível, ownership 403, Publish público e optimistic concurrency 409.
+Os lifecycles autenticados de Listing e Media/ListingPhoto pelo HTTP real já foram comprovados, incluindo Draft invisível/404 para foto pública, ownership 403, Publish público, optimistic concurrency 409, validação de upload pelos bytes, reorder/capa e conteúdo público byte-for-byte sem vazamento de storage key/provider.
 
-Próximo acceptance target: integrar Media/ListingPhoto pelo caminho real, preservando `MediaAssetId` como identidade, validando conteúdo do upload pelos bytes e expondo a foto necessária na projeção pública sem vazar storage key/provider.
+Próximo acceptance target: Fase 3 — detalhe/listagem pública mínima de backend, com detalhe público do anúncio reunindo fatos de Seller + Vehicle + fotos necessárias e listagem pública paginada correta. Filtros mínimos entram somente quando houver requisito real do primeiro consumidor.
 
 ## Active plan
 

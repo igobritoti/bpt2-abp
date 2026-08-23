@@ -341,7 +341,7 @@ echo "PHOTO_ORDER_AND_COVER: PASS"
 # A Draft listing must not make photo bytes public.
 PUBLIC_PHOTO_URL="$(render_url "$PUBLIC_PHOTO_PATH" "$PUBLIC_PHOTO_QUERY" "$LISTING_ID" "$PHOTO_2")"
 status="$(curl --silent --show-error --output "$PHOTO_RESPONSE" --write-out '%{http_code}' "$PUBLIC_PHOTO_URL")"
-[[ "$status" != "200" ]] || { echo "Draft Listing exposed public photo content" >&2; exit 1; }
+[[ "$status" == "404" ]] || { echo "Draft Listing public photo expected 404, got $status" >&2; exit 1; }
 
 PUBLISH_URL="$(render_url "$LISTING_PUBLISH_PATH" "$LISTING_PUBLISH_QUERY" "$LISTING_ID")"
 status="$(request_json "$LISTING_PUBLISH_METHOD" "$PUBLISH_URL" "$ADMIN_TOKEN")"
