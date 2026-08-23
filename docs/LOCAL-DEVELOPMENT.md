@@ -9,9 +9,10 @@ Quando houver conflito entre este guia e comportamento executado pelo repositór
 - .NET 10; `global.json` fixa `10.0.100` com `rollForward: latestFeature`.
 - ABP CLI `10.6.0` e `dotnet-ef` `10.0.9` vêm do manifest `.config/dotnet-tools.json`.
 - PostgreSQL 17 é a versão exercitada pelos gates atuais.
-- Node.js `22.13.0` é a versão exercitada pelo Public Web Gate e pelo Public Buyer HTTP Gate; `public-web/package.json` aceita `>=22.13.0`.
+- Node.js `22.13.0` é a versão exercitada pelos gates do public web, Buyer e Seller Auth; `public-web/package.json` aceita `>=22.13.0`.
 - API local canônica para o fluxo por shell: `http://127.0.0.1:5093`.
 - Public web em desenvolvimento: `http://localhost:3000`.
+- Área Seller inicial: `http://localhost:3000/vender`, autenticada contra o Auth Server BPT2 por Authorization Code + PKCE.
 
 O perfil `https://localhost:44350` existente em `main/BomPraTi/Properties/launchSettings.json` continua válido para IDE/template, mas não é o endpoint documentado para o fluxo reproduzível por shell do BPT2.
 
@@ -83,7 +84,9 @@ bash scripts/fresh-migration-gate.sh
 )
 ```
 
-O segundo comando segue o mecanismo de database migration/data seed do template single-layer do ABP e cria os dados de Identity/OpenIddict usados no ambiente de desenvolvimento.
+O segundo comando segue o mecanismo de database migration/data seed do template single-layer do ABP e cria os dados de Identity/OpenIddict usados no ambiente de desenvolvimento, incluindo o cliente público `BomPraTi_SellerWeb` usado pela área Seller.
+
+Se seu banco local já existia antes da introdução do Seller Web, não é necessário recriá-lo apenas por isso. Com o código atual e a connection string correta, execute novamente o bloco `dotnet run ... -- --migrate-database` acima uma vez para semear o cliente OpenIddict ausente.
 
 Depois de um bootstrap bem-sucedido, remova apenas as migrations efêmeras criadas pelo gate:
 
@@ -126,12 +129,13 @@ Verificação mínima:
 
 ```bash
 curl --fail http://127.0.0.1:5093/swagger/v1/swagger.json >/dev/null
-echo 'API local: OK'
+curl --fail http://127.0.0.1:5093/.well-known/openid-configuration >/dev/null
+echo 'API/Auth Server local: OK'
 ```
 
 Após o seed padrão, as credenciais de desenvolvimento usadas pelos smokes são `admin` / `1q2w3E*`. São dados locais do template/fixture, não credenciais de produção.
 
-## Subir o public web
+## Subir o public web e a área Seller
 
 Em outro terminal:
 
@@ -141,15 +145,24 @@ npm install --no-audit --no-fund
 
 export BPT_API_BASE_URL='http://127.0.0.1:5093'
 export NEXT_PUBLIC_BPT_API_BASE_URL='http://127.0.0.1:5093'
+export NEXT_PUBLIC_BPT_AUTHORITY='http://127.0.0.1:5093'
+export NEXT_PUBLIC_BPT_SELLER_CLIENT_ID='BomPraTi_SellerWeb'
 
 npm run dev
 ```
 
-Abra `http://localhost:3000`.
+Abra:
+
+- `http://localhost:3000` para o marketplace público;
+- `http://localhost:3000/vender` para iniciar a experiência autenticada do Seller.
+
+No fluxo Seller, o browser é redirecionado ao Account/Auth Server BPT2 para credenciais e retorna por `/auth/callback`. Logout usa o endpoint OIDC de end-session e `/auth/logout-callback`. O cliente `BomPraTi_SellerWeb` é público, permite somente Authorization Code e exige PKCE; o frontend não recebe a senha do vendedor e esse cliente não pode usar password grant.
 
 - `BPT_API_BASE_URL` é usado pelo Next.js no servidor.
-- `NEXT_PUBLIC_BPT_API_BASE_URL` é o endereço alcançável pelo browser para fotos públicas.
-- Não aponte o public web local para `44350` ou para uma porta arbitrária se estiver tentando reproduzir o fluxo documentado; altere a porta apenas quando a tarefa exigir e mantenha as duas variáveis alinhadas ao backend escolhido.
+- `NEXT_PUBLIC_BPT_API_BASE_URL` é o endereço alcançável pelo browser para fotos públicas e fallback da API Seller.
+- `NEXT_PUBLIC_BPT_AUTHORITY` aponta para o Auth Server BPT2.
+- `NEXT_PUBLIC_BPT_SELLER_CLIENT_ID` identifica o cliente público Seller registrado no OpenIddict.
+- Não aponte o public web local para `44350` ou para uma porta arbitrária se estiver tentando reproduzir o fluxo documentado; altere a porta apenas quando a tarefa exigir e mantenha API, authority e redirects coerentes.
 
 Antes de enviar mudança no frontend, execute o mesmo conjunto lógico do gate:
 
@@ -157,6 +170,20 @@ Antes de enviar mudança no frontend, execute o mesmo conjunto lógico do gate:
 cd public-web
 npm run check
 ```
+
+## Prova do login Seller com PKCE
+
+Mudanças em autenticação Seller devem preservar o gate dedicado `BPT2 Seller Auth PKCE Gate`. Ele executa contra PostgreSQL fresco e comprova:
+
+- discovery OIDC e suporte S256;
+- redirecionamento ao login real do ABP Account;
+- Authorization Code trocado por token com `code_verifier`;
+- uso do access token em uma API Seller autenticada;
+- rejeição de authorization request sem PKCE;
+- rejeição do password grant para `BomPraTi_SellerWeb`;
+- endpoint de logout/end-session.
+
+O script reproduzível é `scripts/seller-auth-pkce-smoke.sh`. Ele usa portas próprias (`5094`/`3094`) e pressupõe um banco preparado/seed compatível com o mesmo root do cliente; para a prova canônica completa, siga os passos de `.github/workflows/seller-auth-pkce-gate.yml` em um banco descartável ou deixe o GitHub Actions executar o gate.
 
 ## Prova ponta a ponta equivalente ao gate Buyer
 
@@ -190,12 +217,14 @@ Para mudança somente no harness/documentação:
 python3 scripts/check-harness.py
 ```
 
-Para frontend público:
+Para frontend público/Seller:
 
 ```bash
 cd public-web
 npm run check
 ```
+
+Para mudanças de autenticação Seller, execute/aguarde também `BPT2 Seller Auth PKCE Gate`.
 
 Para mudanças de domínio, persistência, auth, mídia ou boundary, siga a matriz específica de `docs/QUALITY.md` e os gates/scripts correspondentes.
 
@@ -213,6 +242,10 @@ Confirme que o servidor está ouvindo em `localhost:5432`, que o database existe
 
 Confirme primeiro `http://127.0.0.1:5093/swagger/v1/swagger.json`. Depois reinicie o Next.js com `BPT_API_BASE_URL` e `NEXT_PUBLIC_BPT_API_BASE_URL` definidos antes do `npm run dev`.
 
+### `/vender` falha ao iniciar o login
+
+Confirme `http://127.0.0.1:5093/.well-known/openid-configuration`, verifique `NEXT_PUBLIC_BPT_AUTHORITY` e confirme que o banco atual foi seedado depois da inclusão de `BomPraTi_SellerWeb`. Em um banco antigo, execute novamente `dotnet run -- --migrate-database` conforme a seção de bootstrap.
+
 ### Apareceram migrations `Gate` no `git status`
 
 Isso é esperado após `fresh-migration-gate.sh`. Remova somente os cinco diretórios `Data/Migrations/Gate` listados neste guia. Eles são artefatos efêmeros do gate, não mudanças de produto.
@@ -226,5 +259,7 @@ As decisões específicas do BPT2 vêm do código e CI versionados. As práticas
 - PostgreSQL — documentação oficial da série 17: https://www.postgresql.org/docs/17/
 - Node.js / OpenJS Foundation — política de releases e LTS: https://nodejs.org/en/about/previous-releases
 - ABP — single-layer solution structure, database creation e seed por `dotnet run --migrate-database`: https://abp.io/docs/latest/solution-templates/single-layer-web-application/solution-structure
+- ABP React authorization — Authorization Code + PKCE e integração OIDC de browser: https://abp.io/docs/latest/framework/ui/react/authorization
+- OpenIddict — escolha de flow e enforcement de PKCE: https://documentation.openiddict.com/guides/choosing-the-right-flow.html e https://documentation.openiddict.com/configuration/proof-key-for-code-exchange
 
 Essas referências não substituem o comportamento executado pelo repositório. Se uma recomendação externa mudar sem alterar o BPT2, reavalie antes de atualizar este guia mecanicamente.
