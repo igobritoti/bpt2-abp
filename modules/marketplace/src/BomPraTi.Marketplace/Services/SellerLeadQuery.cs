@@ -30,15 +30,16 @@ public class SellerLeadQuery : ISellerLeadQuery, ITransientDependency
                 _dbContext.Listings.AsNoTracking().Where(listing => listing.SellerId == sellerId),
                 lead => lead.ListingId,
                 listing => listing.Id,
-                (lead, listing) => new SellerLeadDto(
-                    lead.Id,
-                    lead.ListingId,
-                    listing.Title,
-                    lead.UserId,
-                    lead.Channel,
-                    lead.CreatedAtUtc))
-            .OrderByDescending(lead => lead.CreatedAtUtc)
-            .ThenByDescending(lead => lead.Id)
+                (lead, listing) => new { Lead = lead, ListingTitle = listing.Title })
+            .OrderByDescending(item => item.Lead.CreatedAtUtc)
+            .ThenByDescending(item => item.Lead.Id)
+            .Select(item => new SellerLeadDto(
+                item.Lead.Id,
+                item.Lead.ListingId,
+                item.ListingTitle,
+                item.Lead.UserId,
+                item.Lead.Channel,
+                item.Lead.CreatedAtUtc))
             .ToListAsync(cancellationToken);
     }
 }
