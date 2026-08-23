@@ -29,6 +29,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-002 | Upload/preview privado/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
 | SELLER-004 | Seller Lead inbox com ownership server-side e histórico de contatos dos próprios Listings | PASSA / DECIDIDO no Plan 0009 |
+| SELLER-005 | Seller owner marca Lead próprio como atendido por `ContactedAtUtc`, com ownership server-side e ação idempotente | PASSA / DECIDIDO no Plan 0010 |
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
 | CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
@@ -141,6 +142,18 @@ Classe: **B para os comportamentos executados individualmente; C apenas para a c
 - Pause não apaga nem oculta o Lead já ocorrido da inbox do Seller; a inbox é histórico de contato, distinta da regra que só permite criar novo Lead enquanto o Listing está público.
 
 Classe da evidência da Seller Lead Inbox: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência de Seller Lead Follow-up
+
+- `Lead` ganhou somente `ContactedAtUtc?`; não foi criado enum, pipeline comercial, notas, CRM ou infraestrutura.
+- `ISellerLeadCommandService.MarkContactedAsync` é autenticado e a rota convencional observada no Swagger é `POST /api/app/seller-lead-command/mark-contacted/{leadId}`.
+- O command deriva o Seller de `ICurrentUser.Id` e filtra o Lead por JOIN com Listings próprios antes de qualquer alteração; outro Seller recebe 404 e não existe `SellerId` controlável pelo cliente.
+- O método de domínio é monotônico: se `ContactedAtUtc` já existe, chamadas posteriores não mudam o primeiro instante.
+- No head funcional `c3c811cbb0f1811e3348990fa80a27c11a351558`, os 16 workflows aplicáveis passaram.
+- O Seller Photos Publish HTTP Gate em PostgreSQL fresco comprovou `SELLER_LEADS_FOLLOW_UP_ROUTE`, `SELLER_LEADS_NEW_STATUS`, `SELLER_LEADS_FOLLOW_UP_ANONYMOUS_BLOCKED`, `SELLER_LEADS_FOLLOW_UP_OWNERSHIP`, `SELLER_LEADS_FOLLOW_UP_PERSISTED`, `SELLER_LEADS_FOLLOW_UP_IDEMPOTENT`, `SELLER_LEADS_HISTORY_PRESERVED` e `SELLER LEADS HTTP` como PASS.
+- O Fresh Migration Gate passou com o novo scalar nullable e o Public Web/Seller Shell Gate passou com a ação Novo/Atendido no `/vender`.
+
+Classe da evidência do Seller Lead Follow-up: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 

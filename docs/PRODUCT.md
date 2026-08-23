@@ -97,13 +97,19 @@ O Plan 0009 fechou o primeiro ciclo operacional de Leads para o Seller:
 
 Marketplace expõe uma query autenticada que deriva o Seller de `ICurrentUser` e filtra Leads por JOIN com Listings pertencentes a esse Seller; o cliente não informa `SellerId`. A inbox exibe somente metadados já existentes do Lead, título do Listing e `BuyerUserId` opcional, sem resolver PII/perfil Buyer. Leads já ocorridos permanecem como histórico quando o Listing é pausado ou arquivado. O shell `/vender` consome a rota por HTTP/OIDC existente, sem migration, módulo ou infraestrutura nova.
 
+O Plan 0010 adicionou o primeiro estado operacional mínimo de atendimento sem transformar Leads em CRM:
+
+`Lead novo → Seller owner marca como atendido → inbox preserva ContactedAtUtc`
+
+`Lead.ContactedAtUtc` é nulo enquanto o contato é novo e recebe o primeiro instante UTC quando o Seller owner marca o atendimento. O command deriva o Seller de `ICurrentUser` e só encontra Leads ligados a Listings próprios; outro Seller recebe 404 e o browser nunca informa `SellerId`. A operação é monotônica/idempotente: chamadas repetidas preservam o primeiro timestamp. O shell `/vender` exibe Novo/Atendido e oferece a ação apenas para Leads ainda não atendidos. Notas, pipeline comercial, CRM, scoring e resolução de PII Buyer continuam fora do slice.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consegue consultar o histórico de Leads dos próprios anúncios. Analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, status de atendimento e resolução de perfil/PII Buyer continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. Analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0009. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0010. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -126,6 +132,8 @@ Nenhum execution plan está ativo após o fechamento do Plan 0009. O próximo sl
 - Credencial Buyer usada no contato permanece restrita ao boundary same-origin/public-web → API BPT e nunca é enviada ao domínio do WhatsApp.
 - Seller Lead inbox deriva ownership de `ICurrentUser` + `Listing.SellerId`; o cliente não escolhe Seller.
 - Lead já persistido é histórico do contato e continua visível ao Seller owner mesmo se o Listing deixar de estar público.
+- O estado operacional mínimo de atendimento é `ContactedAtUtc?`: nulo significa novo; o primeiro timestamp UTC significa atendido.
+- Somente o Seller owner do Listing pode marcar o Lead como atendido, e chamadas repetidas preservam o primeiro instante.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
@@ -133,7 +141,7 @@ O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente, por exemplo:
 
-- analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, status/notas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
+- analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;

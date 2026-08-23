@@ -67,13 +67,8 @@ dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nol
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$API_LOG" 2>&1 &
 API_PID=$!
 for _ in $(seq 1 60); do
-  if curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" -o "$SWAGGER"; then
-    break
-  fi
-  if ! kill -0 "$API_PID" >/dev/null 2>&1; then
-    cat "$API_LOG" >&2
-    exit 1
-  fi
+  if curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" -o "$SWAGGER"; then break; fi
+  if ! kill -0 "$API_PID" >/dev/null 2>&1; then cat "$API_LOG" >&2; exit 1; fi
   sleep 1
 done
 curl --fail --silent --show-error "$API_BASE/swagger/v1/swagger.json" -o "$SWAGGER" || { cat "$API_LOG" >&2; exit 1; }
@@ -82,9 +77,12 @@ import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     paths = json.load(handle).get("paths", {})
 if "get" not in paths.get("/api/app/seller-lead-query/mine", {}):
-    raise SystemExit(f"Expected GET /api/app/seller-lead-query/mine; available={sorted(paths)}")
+    raise SystemExit(f"Expected GET Seller Lead inbox; available={sorted(paths)}")
+if "post" not in paths.get("/api/app/seller-lead-command/mark-contacted/{leadId}", {}):
+    raise SystemExit(f"Expected POST Seller Lead follow-up; available={sorted(paths)}")
 PY
 echo "SELLER_LEADS_ROUTE: PASS"
+echo "SELLER_LEADS_FOLLOW_UP_ROUTE: PASS"
 
 TOKEN="$(get_token admin '1q2w3E*')"
 status="$(request_json GET '/api/app/seller-lead-query/mine')"
@@ -96,25 +94,14 @@ status="$(request_json POST '/api/app/seller-profile/upsert' "$TOKEN" '{"display
 
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json, sys
-print(json.dumps({
-    "vehicleId": sys.argv[1],
-    "title": "Seller Lead Inbox Listing",
-    "price": 175000,
-    "description": "Listing para prova de inbox de Leads.",
-    "manufactureYear": 2024,
-    "mileageKm": 8000,
-    "color": "Azul",
-    "city": "São Paulo",
-    "stateCode": "SP"
-}))
+print(json.dumps({"vehicleId": sys.argv[1], "title": "Seller Lead Inbox Listing", "price": 175000, "description": "Listing para prova de inbox de Leads.", "manufactureYear": 2024, "mileageKm": 8000, "color": "Azul", "city": "São Paulo", "stateCode": "SP"}))
 PY
 )"
 status="$(request_json POST '/api/app/listing-command' "$TOKEN" "$CREATE_BODY")"
 [[ "$status" == "200" || "$status" == "201" ]] || { echo "Listing create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 LISTING_ID="$(python3 - "$RESPONSE" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    print(json.load(handle)["id"])
+with open(sys.argv[1], encoding="utf-8") as handle: print(json.load(handle)["id"])
 PY
 )"
 status="$(request_json POST "/api/app/listing-command/publish/$LISTING_ID" "$TOKEN")"
@@ -124,10 +111,8 @@ status="$(request_json POST "/api/app/lead?listingId=$LISTING_ID")"
 [[ "$status" == "200" || "$status" == "201" ]] || { echo "Anonymous Lead create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 LEAD_ID="$(python3 - "$RESPONSE" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-if data.get("userId") is not None or data.get("channel") != "WhatsApp":
-    raise SystemExit(f"Expected anonymous WhatsApp Lead: {data}")
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+if data.get("userId") is not None or data.get("channel") != "WhatsApp": raise SystemExit(data)
 print(data["id"])
 PY
 )"
@@ -136,20 +121,19 @@ status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
 [[ "$status" == "200" ]] || { echo "Owner lead inbox failed: $status $(cat "$RESPONSE")" >&2; cat "$API_LOG" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" "$LISTING_ID" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-lead_id, listing_id = sys.argv[2].lower(), sys.argv[3].lower()
-match = next((item for item in data if str(item.get("id", "")).lower() == lead_id), None)
-if not match:
-    raise SystemExit(f"Owner Lead missing from inbox: {data}")
-if str(match.get("listingId", "")).lower() != listing_id:
-    raise SystemExit(f"Inbox ListingId mismatch: {match}")
-if match.get("listingTitle") != "Seller Lead Inbox Listing" or match.get("channel") != "WhatsApp":
-    raise SystemExit(f"Inbox projection mismatch: {match}")
-if match.get("buyerUserId") is not None or not match.get("createdAtUtc"):
-    raise SystemExit(f"Anonymous/history projection mismatch: {match}")
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+lead_id, listing_id=sys.argv[2].lower(),sys.argv[3].lower()
+match=next((item for item in data if str(item.get("id","")).lower()==lead_id),None)
+if not match: raise SystemExit(f"Owner Lead missing: {data}")
+if str(match.get("listingId","")).lower()!=listing_id or match.get("listingTitle")!="Seller Lead Inbox Listing" or match.get("channel")!="WhatsApp": raise SystemExit(match)
+if match.get("buyerUserId") is not None or not match.get("createdAtUtc") or match.get("contactedAtUtc") is not None: raise SystemExit(match)
 PY
 echo "SELLER_LEADS_OWNER_VISIBLE: PASS"
+echo "SELLER_LEADS_NEW_STATUS: PASS"
+
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID")"
+[[ "$status" == "401" ]] || { echo "Anonymous follow-up expected 401, got $status" >&2; exit 1; }
+echo "SELLER_LEADS_FOLLOW_UP_ANONYMOUS_BLOCKED: PASS"
 
 OTHER_USER="seller-leads-$(python3 - <<'PY'
 import uuid
@@ -159,45 +143,57 @@ PY
 OTHER_PASSWORD='Bpt2-SellerLeads-9!x'
 OTHER_BODY="$(python3 - "$OTHER_USER" "$OTHER_PASSWORD" <<'PY'
 import json, sys
-username, password = sys.argv[1:]
-print(json.dumps({
-    "userName": username,
-    "name": "Other",
-    "surname": "Seller",
-    "email": f"{username}@example.invalid",
-    "password": password,
-    "isActive": True,
-    "lockoutEnabled": True,
-    "roleNames": []
-}))
+username,password=sys.argv[1:]
+print(json.dumps({"userName":username,"name":"Other","surname":"Seller","email":f"{username}@example.invalid","password":password,"isActive":True,"lockoutEnabled":True,"roleNames":[]}))
 PY
 )"
 status="$(request_json POST '/api/identity/users' "$TOKEN" "$OTHER_BODY")"
 [[ "$status" == "200" || "$status" == "201" ]] || { echo "Second Seller create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 OTHER_TOKEN="$(get_token "$OTHER_USER" "$OTHER_PASSWORD")"
 status="$(request_json GET '/api/app/seller-lead-query/mine' "$OTHER_TOKEN")"
-[[ "$status" == "200" ]] || { echo "Second Seller inbox failed: $status $(cat "$RESPONSE")" >&2; cat "$API_LOG" >&2; exit 1; }
+[[ "$status" == "200" ]] || { echo "Second Seller inbox failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-lead_id = sys.argv[2].lower()
-if any(str(item.get("id", "")).lower() == lead_id for item in data):
-    raise SystemExit(f"Cross-Seller Lead leaked: {data}")
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+if any(str(item.get("id","")).lower()==sys.argv[2].lower() for item in data): raise SystemExit(f"Cross-Seller Lead leaked: {data}")
 PY
 echo "SELLER_LEADS_OWNERSHIP: PASS"
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID" "$OTHER_TOKEN")"
+[[ "$status" == "404" ]] || { echo "Second Seller follow-up expected 404, got $status $(cat "$RESPONSE")" >&2; exit 1; }
+echo "SELLER_LEADS_FOLLOW_UP_OWNERSHIP: PASS"
+
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID" "$TOKEN")"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Owner follow-up failed: $status $(cat "$RESPONSE")" >&2; cat "$API_LOG" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+[[ "$status" == "200" ]] || { echo "Owner inbox after follow-up failed: $status" >&2; exit 1; }
+CONTACTED_AT="$(python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+match=next((item for item in data if str(item.get("id","")).lower()==sys.argv[2].lower()),None)
+if not match or not match.get("contactedAtUtc"): raise SystemExit(f"Contacted timestamp missing: {data}")
+print(match["contactedAtUtc"])
+PY
+)"
+echo "SELLER_LEADS_FOLLOW_UP_PERSISTED: PASS"
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID" "$TOKEN")"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Idempotent follow-up failed: $status" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+python3 - "$RESPONSE" "$LEAD_ID" "$CONTACTED_AT" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+match=next(item for item in data if str(item.get("id","")).lower()==sys.argv[2].lower())
+if match.get("contactedAtUtc")!=sys.argv[3]: raise SystemExit(f"Follow-up timestamp changed: {match}")
+PY
+echo "SELLER_LEADS_FOLLOW_UP_IDEMPOTENT: PASS"
 
 status="$(request_json POST "/api/app/listing-command/pause/$LISTING_ID" "$TOKEN")"
 [[ "$status" == "200" ]] || { echo "Pause failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
-[[ "$status" == "200" ]] || { echo "Owner inbox after Pause failed: $status" >&2; cat "$API_LOG" >&2; exit 1; }
+[[ "$status" == "200" ]] || { echo "Owner inbox after Pause failed: $status" >&2; exit 1; }
 python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-lead_id = sys.argv[2].lower()
-if not any(str(item.get("id", "")).lower() == lead_id for item in data):
-    raise SystemExit(f"Historical Lead disappeared after Pause: {data}")
+with open(sys.argv[1], encoding="utf-8") as handle: data=json.load(handle)
+if not any(str(item.get("id","")).lower()==sys.argv[2].lower() and item.get("contactedAtUtc") for item in data): raise SystemExit(f"Historical Lead disappeared: {data}")
 PY
 echo "SELLER_LEADS_HISTORY_PRESERVED: PASS"
 

@@ -6,4 +6,5 @@ public sealed record SellerLeadDto(
     string ListingTitle,
     Guid? BuyerUserId,
     string Channel,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    DateTime? ContactedAtUtc);
