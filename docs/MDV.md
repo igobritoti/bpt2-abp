@@ -21,12 +21,14 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | AUTH-001 | Seller ownership enforcement | PASSA / DECIDIDO no Gate 01 e Plan 0004 |
 | AUTH-002 | Público nunca vê Draft/private | PASSA / DECIDIDO no Gate 01 e Plan 0004 |
 | AUTH-003 | Login Seller no browser: Authorization Code + PKCE | PASSA / DECIDIDO no Plan 0004 |
+| AUTH-004 | Login Buyer no browser: cliente dedicado + Authorization Code + PKCE | PASSA / DECIDIDO no Plan 0006 |
 | UI-001 | Public frontend desacoplado do host ABP | PASSA / DECIDIDO em ADR-0004 |
 | UI-002 | Primeiro public web em Next.js 16 Active LTS / App Router | PASSA / DECIDIDO no Plan 0003; boundary HTTP reversível |
 | UI-003 | Primeira UI Seller no `public-web` existente sob `/vender` | PASSA / DECIDIDO no Plan 0004; composição reversível atrás de HTTP/OIDC |
 | SELLER-001 | Seller Profile + My Listings + Draft/Edit/Vehicle | PASSA no Plan 0004 |
 | SELLER-002 | Upload/preview privado/attach/remove/reorder de fotos sem storage provider no cliente | PASSA no Plan 0004 |
 | SELLER-003 | Publish/Pause/Archive preservando visibilidade pública correta | PASSA no Plan 0004 |
+| BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003; estrutura de Lead existe, mas o fluxo WhatsApp não ativa registro/analytics/CRM |
 | GATE-001 | Vertical Slice 01: arquitetura + host + fresh migration + comportamento crítico | PASSA / DECIDIDO |
 | INFRA-001 | Antes de experimentar/construir nova capacidade de infraestrutura, avaliar soluções maduras aplicáveis | DECIDIDO em ADR-0010 |
@@ -87,6 +89,17 @@ Classe da evidência do boundary Seller: **B — observado/reproduzido no CI do 
 - Publish/Pause/Archive permanecem commands do backend; o frontend não codifica matriz própria de transições.
 
 Classe da evidência do fluxo Seller: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência de Buyer Favorites
+
+- O host semeia `BomPraTi_BuyerWeb` como cliente OpenIddict público separado de Seller, com Authorization Code + PKCE e callbacks sob `/favoritos`.
+- O Favorite AppService exige autenticação e deriva `UserId` de `ICurrentUser`; nenhum endpoint aceita owner informado pelo browser.
+- Add reutiliza `IPublicListingQuery.GetAsync`, portanto Draft/private não pode ser favoritado.
+- `GetMineAsync` resolve as relações persistidas pela mesma projeção pública; Pause oculta o item sem apagar a relação e republish o faz reaparecer.
+- O Buyer Favorites HTTP Gate executou login Account real, troca PKCE, bloqueio anônimo, Draft 404, add duplicado idempotente, mine, Pause/republish, remove e Next.js de produção.
+- O primeiro run mostrou empiricamente as convenções ABP: `POST/DELETE /api/app/favorite?listingId=...`; `GetIsFavoriteAsync` produz GET em `/api/app/favorite/is-favorite/{listingId}`. Cliente e gate foram alinhados ao Swagger, sem controller customizado.
+
+Classe da evidência do fluxo Favorites: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 

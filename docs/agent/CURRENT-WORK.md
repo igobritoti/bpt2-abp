@@ -6,28 +6,33 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0006 ativo. O objetivo corrente é fechar o menor ciclo autenticado restante do Buyer:
+Execution Plan 0006 concluído. O primeiro ciclo autenticado de Favorite do Buyer está fechado:
 
 `Public Detail → Buyer login → Favorite/Unfavorite → Meus favoritos`
 
-A auditoria de `main` confirmou que `Favorite` e `MarketplaceFavorites` já existem com unicidade `(UserId, ListingId)`, mas não existe Contract/AppService/UI. O cliente OIDC atual é deliberadamente Seller; o Buyer usará cliente público dedicado com Authorization Code + PKCE sem alterar essa fronteira.
+O Buyer usa o cliente OIDC público dedicado `BomPraTi_BuyerWeb` com Authorization Code + PKCE, sem alterar `BomPraTi_SellerWeb`. A API deriva `UserId` de `ICurrentUser`, só aceita add para Listing atualmente público e projeta `Meus favoritos` pela mesma autoridade pública de Listing. Pause oculta sem apagar a relação; republish restaura; unfavorite remove.
 
-Próximo acceptance target: provar em runtime que identidade é derivada no servidor, Draft não pode ser favoritado, Published pode, duplicata é idempotente, Pause oculta da lista sem perder a relação, republish restaura e unfavorite remove.
+O Buyer Favorites HTTP Gate comprovou o fluxo em PostgreSQL fresco + host ABP + Account/OIDC real + Next de produção. O head de produto também manteve verdes todos os workflows aplicáveis.
+
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0007 é presumido apenas porque o Plan 0006 terminou.
 
 ## Active plan
 
-[`../exec-plans/active/0006-buyer-favorites.md`](../exec-plans/active/0006-buyer-favorites.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do Buyer Favorites: [`../exec-plans/completed/0006-buyer-favorites.md`](../exec-plans/completed/0006-buyer-favorites.md).
 - Histórico do Public Discovery: [`../exec-plans/completed/0005-public-discovery.md`](../exec-plans/completed/0005-public-discovery.md).
+
+Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker conhecido. O plano não requer infraestrutura nova; ADR-0010 não abre avaliação de fornecedor sem necessidade infra.
+Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e seguem ADR-0010 quando forem abertas.
 
 ## Update rule
 
