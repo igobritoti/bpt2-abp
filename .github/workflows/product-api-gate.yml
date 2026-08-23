@@ -1,0 +1,44 @@
+name: BPT2 Product API Gate
+
+on:
+  pull_request:
+    paths:
+      - 'modules/catalog/**'
+      - 'modules/sellers/**'
+      - 'modules/marketplace/**'
+      - 'main/**'
+      - 'scripts/product-api-smoke.sh'
+      - 'scripts/fresh-migration-gate.sh'
+      - '.github/workflows/product-api-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  product-api:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: BomPraTi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d BomPraTi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Apply fresh database
+        run: bash scripts/fresh-migration-gate.sh
+      - name: Verify real product API surfaces
+        run: bash scripts/product-api-smoke.sh

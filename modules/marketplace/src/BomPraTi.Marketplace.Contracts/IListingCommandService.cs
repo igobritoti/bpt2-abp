@@ -1,6 +1,8 @@
+using Volo.Abp.Application.Services;
+
 namespace BomPraTi.Marketplace.Contracts;
 
-public interface IListingCommandService
+public interface IListingCommandService : IApplicationService
 {
     Task<ListingDto> CreateAsync(CreateListingInput input, CancellationToken cancellationToken = default);
     Task<ListingDto> UpdateAsync(Guid listingId, UpdateListingInput input, CancellationToken cancellationToken = default);
