@@ -37,7 +37,8 @@ public sealed class SellerListingQuery : ISellerListingQuery, ITransientDependen
                 x.Color,
                 x.City,
                 x.StateCode,
-                x.Status.ToString()))
+                x.Status.ToString(),
+                x.ConcurrencyStamp))
             .ToListAsync(cancellationToken);
     }
 }
