@@ -8,6 +8,7 @@ using BomPraTi.Marketplace.Domain;
 using BomPraTi.Sellers;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
+using Volo.Abp.Authorization;
 using Volo.Abp.Autofac;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -96,7 +97,7 @@ try
         {
             await commands.PublishAsync(listingId);
         }
-        catch (InvalidOperationException)
+        catch (AbpAuthorizationException)
         {
             rejected = true;
         }
