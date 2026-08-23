@@ -35,3 +35,31 @@ jobs:
         run: bash scripts/bootstrap-host.sh
       - name: Build generated host and modules
         run: dotnet build main/BomPraTi/BomPraTi.csproj --configuration Release --nologo
+      - name: Sanitize generated development tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          find main -type f \( -name '*.pfx' -o -name '*.p12' -o -name '*.key' -o -name '*.pem' \) -delete
+          find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} + || true
+          if grep -RIlE '(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|client_secret|api[_-]?key["'"' ]*[:=])' main modules scripts docs tests 2>/dev/null | grep -q .; then
+            echo 'Potential secret material found in export tree.' >&2
+            exit 1
+          fi
+      - name: Package development worktree
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='**/bin' \
+            --exclude='**/obj' \
+            --exclude='*.pfx' \
+            --exclude='*.p12' \
+            --exclude='*.key' \
+            --exclude='*.pem' \
+            -czf bpt2abp-dev-worktree.tar.gz \
+            .github docs modules scripts tests .config Directory.Build.props Directory.Packages.props README.md main
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bpt2abp-dev-worktree
+          path: bpt2abp-dev-worktree.tar.gz
+          if-no-files-found: error
+          retention-days: 1
