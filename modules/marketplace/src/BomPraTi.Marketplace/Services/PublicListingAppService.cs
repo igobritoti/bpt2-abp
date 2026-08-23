@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 
 namespace BomPraTi.Marketplace.Services;
 
@@ -34,7 +35,7 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
         CancellationToken cancellationToken = default) =>
         _query.SearchAsync(input, cancellationToken);
 
-    public async Task<IRemoteStreamContent?> GetPhotoAsync(
+    public async Task<IRemoteStreamContent> GetPhotoAsync(
         Guid id,
         Guid photoId,
         CancellationToken cancellationToken = default)
@@ -50,13 +51,13 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
 
         if (!mediaAssetId.HasValue)
         {
-            return null;
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
         }
 
         var media = await _mediaContent.OpenReadAsync(mediaAssetId.Value, cancellationToken);
         if (media is null)
         {
-            return null;
+            throw new EntityNotFoundException<ListingPhoto>(photoId);
         }
 
         return new RemoteStreamContent(media.Content, null, media.ContentType, media.Length);

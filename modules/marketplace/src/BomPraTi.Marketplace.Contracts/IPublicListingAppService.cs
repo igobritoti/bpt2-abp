@@ -11,7 +11,7 @@ public interface IPublicListingAppService : IApplicationService
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default);
 
-    Task<IRemoteStreamContent?> GetPhotoAsync(
+    Task<IRemoteStreamContent> GetPhotoAsync(
         Guid id,
         Guid photoId,
         CancellationToken cancellationToken = default);
