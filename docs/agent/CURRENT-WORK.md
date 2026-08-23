@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Executar o primeiro fluxo público real do comprador conforme o Execution Plan 0003:
+Execution Plan 0003 concluído. O primeiro consumidor público real está comprovado até:
 
-`Public Listing → Public Detail → WhatsApp Contact`
+`Public Listing → Public Detail → Photo → WhatsApp Contact`
 
-A fundação independente do public web já foi materializada e comprovada por CI com Next.js 16 Active LTS/App Router, TypeScript, ESLint e production build. O cliente continua desacoplado do host ABP e sua fronteira durável é a API HTTP.
+O public web permanece independente do host ABP e consome somente a API HTTP. Draft/private continua indisponível, o contato usa o `WhatsAppNumber` canônico de Sellers e o fluxo completo foi comprovado pelo gate HTTP real.
 
-Próximo acceptance target: expor na projeção pública de Listing o `WhatsAppNumber` que já existe e é normalizado no domínio Sellers, comprovando o contrato HTTP sem criar Lead persistido. Depois disso, conectar listagem/detalhe/CTA no public web.
+Próximo acceptance target: selecionar o menor próximo gap de produto antes de abrir nova feature ou novo execution plan. Não há plano de implementação ativo neste momento.
 
 ## Active plan
 
-[`../exec-plans/active/0003-public-buyer-contact.md`](../exec-plans/active/0003-public-buyer-contact.md)
+Nenhum execution plan ativo após o fechamento do Plan 0003.
 
 ## Source of runtime truth
 
@@ -28,7 +28,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. A normalização de WhatsApp deixou de ser decisão aberta: `SellerProfile` já persiste somente 8–15 dígitos incluindo country code.
+Nenhum blocker de repositório conhecido.
 
 ## Update rule
 
