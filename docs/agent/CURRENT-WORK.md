@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0018 concluído. A primeira superfície visual operacional de Ingestion está fechada:
+Execution Plan 0019 ativo. Fechar a metadata social mínima do Vehicle Hub público:
 
-`candidate externo → fila pendente → admin login no host → /ingestao → reconciliar com Vehicle canônico`
+`Vehicle canônico → /veiculos/{id} → metadata social SSR → link compartilhável coerente`
 
-A página reutiliza Account Web + role `admin` já existentes e consome somente `IIngestionCandidateAppService`. Vehicle inexistente permanece pendente; Vehicle canônico validado pelo backend é reconciliado e sai da fila. Não foi criado domínio, schema, migration, frontend ou cliente OIDC novo.
+A mudança deve reutilizar `generateMetadata`, identidade canônica do Catalog e canonical já existentes. Não deve buscar Listing/foto extra, criar imagem social paralela, backend, contrato, schema ou migration.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar Open Graph/Twitter coerentes no Vehicle Hub existente e preservar 404/noindex para Vehicle inexistente.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0019-public-vehicle-hub-share-metadata.md`](../exec-plans/active/0019-public-vehicle-hub-share-metadata.md)
 
 ## Source of runtime truth
 
@@ -27,7 +27,6 @@ Nenhum execution plan ativo.
 - Histórico de Moderation Admin Surface: [`../exec-plans/completed/0017-moderation-admin-surface.md`](../exec-plans/completed/0017-moderation-admin-surface.md).
 - Histórico de Listing share metadata: [`../exec-plans/completed/0016-public-listing-share-metadata.md`](../exec-plans/completed/0016-public-listing-share-metadata.md).
 - Histórico do Vehicle Hub: [`../exec-plans/completed/0015-public-vehicle-hub.md`](../exec-plans/completed/0015-public-vehicle-hub.md).
-- Histórico de Ingestion reconciliation: [`../exec-plans/completed/0014-ingestion-candidate-reconciliation.md`](../exec-plans/completed/0014-ingestion-candidate-reconciliation.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
