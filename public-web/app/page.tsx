@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   formatPrice,
@@ -7,9 +8,27 @@ import {
   publicPhotoUrl,
   vehicleLabel,
 } from "@/lib/public-listings";
+import { publicUrl } from "@/lib/site-url";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
+
+const HOME_TITLE = "Bom Pra Ti";
+const HOME_DESCRIPTION = "Encontre veículos e fale diretamente com o vendedor.";
+
+export const metadata: Metadata = {
+  openGraph: {
+    type: "website",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: publicUrl("/"),
+  },
+  twitter: {
+    card: "summary",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+  },
+};
 
 const DEFAULT_TAKE = 12;
 const MAX_UI_TAKE = 24;
