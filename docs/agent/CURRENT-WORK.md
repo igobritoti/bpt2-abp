@@ -1,20 +1,18 @@
 # Current work
 
-Last verified: **2026-08-23**
+Last verified: **2026-08-24**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
 ## Active outcome
 
-Execution Plan 0006 concluído. O primeiro ciclo autenticado de Favorite do Buyer está fechado:
+Execution Plan 0012 concluído. O primeiro consumo operacional dos sinais de moderação está fechado:
 
-`Public Detail → Buyer login → Favorite/Unfavorite → Meus favoritos`
+`Buyer sinaliza Listing → report persistido → operador admin autenticado consulta fila`
 
-O Buyer usa o cliente OIDC público dedicado `BomPraTi_BuyerWeb` com Authorization Code + PKCE, sem alterar `BomPraTi_SellerWeb`. A API deriva `UserId` de `ICurrentUser`, só aceita add para Listing atualmente público e projeta `Meus favoritos` pela mesma autoridade pública de Listing. Pause oculta sem apagar a relação; republish restaura; unfavorite remove.
+A inbox é read-only, reutiliza a role `admin` existente no baseline ABP, não expõe identidade/PII Buyer e preserva reports históricos quando o Listing deixa de estar público. Política de moderação, taxonomia, ações sobre Listing, scoring, notificações e frontend administrativo continuam abertos até evidência suficiente.
 
-O Buyer Favorites HTTP Gate comprovou o fluxo em PostgreSQL fresco + host ABP + Account/OIDC real + Next de produção. O head de produto também manteve verdes todos os workflows aplicáveis.
-
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0007 é presumido apenas porque o Plan 0006 terminou.
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0013 é presumido apenas porque o Plan 0012 terminou.
 
 ## Active plan
 
@@ -25,14 +23,14 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Histórico do Buyer Favorites: [`../exec-plans/completed/0006-buyer-favorites.md`](../exec-plans/completed/0006-buyer-favorites.md).
-- Histórico do Public Discovery: [`../exec-plans/completed/0005-public-discovery.md`](../exec-plans/completed/0005-public-discovery.md).
+- Histórico da Moderation Report Inbox: [`../exec-plans/completed/0012-moderation-report-inbox.md`](../exec-plans/completed/0012-moderation-report-inbox.md).
+- Histórico do Buyer Listing Report: [`../exec-plans/completed/0011-buyer-listing-report.md`](../exec-plans/completed/0011-buyer-listing-report.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. Decisões futuras de infraestrutura continuam adiadas até necessidade real e seguem ADR-0010 quando forem abertas.
+Nenhum blocker de repositório conhecido. Decisões futuras de política de moderação continuam abertas até evidência operacional suficiente.
 
 ## Update rule
 

@@ -32,6 +32,7 @@ Estados: PASSA, NÃO PASSA, DECIDIDO, NÃO DECIDIDO, ADIADO.
 | SELLER-005 | Seller owner marca Lead próprio como atendido por `ContactedAtUtc`, com ownership server-side e ação idempotente | PASSA / DECIDIDO no Plan 0010 |
 | BUYER-001 | Favorite/Unfavorite/Meus favoritos com ownership server-side e visibilidade pública | PASSA / DECIDIDO no Plan 0006 |
 | MODERATION-001 | Buyer autenticado sinaliza Listing público com ownership server-side, idempotência por Buyer+Listing e histórico preservado | PASSA / DECIDIDO no Plan 0011 |
+| MODERATION-002 | Operador admin consulta inbox read-only de ListingReports, com bloqueio a não-admin, sem PII Buyer e histórico preservado | PASSA / DECIDIDO no Plan 0012 |
 | CONTACT-001 | Primeiro contato Buyer → Seller por WhatsApp público já modelado | PASSA / DECIDIDO no Plan 0003 |
 | CONTACT-002 | Contato WhatsApp público persiste Lead somente para Listing atualmente público; contato anônimo mantém `UserId` opcional | PASSA / DECIDIDO no Plan 0007 |
 | CONTACT-003 | Sessão Buyer existente pode atribuir o Lead WhatsApp ao `UserId` autenticado sem tornar login obrigatório | PASSA / DECIDIDO no Plan 0008 |
@@ -170,6 +171,19 @@ Classe da evidência do Seller Lead Follow-up: **B — observado/reproduzido no 
 - O sinal já ocorrido permanece persistido e consultável pelo mesmo Buyer depois de Pause; esse histórico é distinto da regra de criação, que exige Listing atualmente público.
 
 Classe da evidência de Buyer Listing Report: **B — observado/reproduzido no CI do BPT2**.
+
+## Evidência da Moderation Report Inbox
+
+- `IModerationListingReportQuery` herda `IApplicationService`; a rota convencional observada no Swagger é `GET /api/app/moderation-listing-report-query`.
+- `ModerationListingReportQuery` exige `[Authorize(Roles = "admin")]`; anônimo recebe 401 e usuário autenticado sem role admin recebe 403.
+- A projeção retorna somente `ReportId`, `ListingId`, título/status do Listing e `CreatedAtUtc`; não expõe `UserId` nem resolve perfil/PII Buyer.
+- A query ordena por sinal mais recente e faz JOIN com Listing sem filtrar por visibilidade pública; após Pause, o report continua na fila e reflete `ListingStatus = Paused`.
+- No head funcional `b8ec5cbb7366d6232201a6461ec35067d8bcb247`, os 14 workflows aplicáveis ficaram verdes.
+- O Buyer Favorites HTTP Gate em PostgreSQL fresco comprovou `MODERATION_REPORT_ROUTES`, `MODERATION_REPORT_ANONYMOUS_BLOCKED`, `MODERATION_REPORT_NON_ADMIN_BLOCKED`, `MODERATION_REPORT_ADMIN_VISIBLE`, `MODERATION_REPORT_BUYER_PII_HIDDEN`, `MODERATION_REPORT_HISTORY_PRESERVED` e `MODERATION REPORT INBOX HTTP` como PASS.
+- Um run intermediário do Harness falhou apenas porque `repository-facts.md` ainda dizia zero planos ativos após a abertura do Plan 0012; o fato gerado foi sincronizado sem alteração de produto.
+- A conversão de `ListingStatus` para texto foi mantida fora da projeção SQL para não depender de tradução do provider; o head funcional provou o comportamento final.
+
+Classe da evidência da Moderation Report Inbox: **B — observado/reproduzido no CI do BPT2**.
 
 ## Princípio de seleção de infraestrutura
 

@@ -9,6 +9,7 @@ on:
       - 'public-web/**'
       - 'scripts/buyer-favorites-http-smoke.sh'
       - 'scripts/buyer-listing-report-http-smoke.sh'
+      - 'scripts/moderation-report-inbox-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - '.github/workflows/buyer-favorites-http-gate.yml'
@@ -44,6 +45,7 @@ jobs:
         run: |
           bash -n scripts/buyer-favorites-http-smoke.sh
           bash -n scripts/buyer-listing-report-http-smoke.sh
+          bash -n scripts/moderation-report-inbox-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -66,3 +68,5 @@ jobs:
         run: bash scripts/buyer-favorites-http-smoke.sh
       - name: Exercise Buyer Listing Reports over HTTP
         run: bash scripts/buyer-listing-report-http-smoke.sh
+      - name: Exercise Moderation Report Inbox over HTTP
+        run: bash scripts/moderation-report-inbox-http-smoke.sh
