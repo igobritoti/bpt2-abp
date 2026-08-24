@@ -1,0 +1,43 @@
+@page "/moderacao"
+@model BomPraTi.Pages.Moderacao.IndexModel
+@{
+    ViewData["Title"] = "Moderação de anúncios";
+}
+
+<div class="container py-4">
+    <h1>Moderação de anúncios</h1>
+    <p>Reports recebidos, em ordem do mais recente. Esta superfície é somente leitura.</p>
+
+    @if (Model.Reports.Count == 0)
+    {
+        <div class="alert alert-secondary" role="status">Nenhum report recebido.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Report</th>
+                        <th scope="col">Anúncio</th>
+                        <th scope="col">Título</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Recebido em UTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var report in Model.Reports)
+                {
+                    <tr data-report-id="@report.ReportId" data-listing-id="@report.ListingId">
+                        <td><code>@report.ReportId</code></td>
+                        <td><code>@report.ListingId</code></td>
+                        <td>@report.ListingTitle</td>
+                        <td>@report.ListingStatus</td>
+                        <td><time datetime="@report.CreatedAtUtc.ToString("O")">@report.CreatedAtUtc.ToString("u")</time></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
