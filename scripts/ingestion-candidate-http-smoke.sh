@@ -22,7 +22,7 @@ paths=json.load(open(sys.argv[1],encoding='utf-8'))['paths']
 expected={
     '/api/app/ingestion-candidate':'post',
     '/api/app/ingestion-candidate/pending':'get',
-    '/api/app/ingestion-candidate/reconcile/{recordId}':'post',
+    '/api/app/ingestion-candidate/reconcile':'post',
 }
 for path,verb in expected.items():
     if path not in paths or verb not in paths[path]:
@@ -95,7 +95,7 @@ print('INGESTION_PENDING_VISIBLE: PASS')
 PY
 
 BAD_VEHICLE="$(python3 -c 'import uuid; print(uuid.uuid4())')"
-status="$(request POST "$BASE_PATH/reconcile/$RECORD_ID?vehicleId=$BAD_VEHICLE" "$ADMIN_TOKEN")"; [[ "$status" == 404 ]] || { echo "Unknown Vehicle expected 404 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request POST "$BASE_PATH/reconcile?recordId=$RECORD_ID&vehicleId=$BAD_VEHICLE" "$ADMIN_TOKEN")"; [[ "$status" == 404 ]] || { echo "Unknown Vehicle expected 404 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request GET "$PENDING" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$RECORD_ID" <<'PY'
 import json,sys
@@ -104,7 +104,7 @@ assert any(x['id'].lower()==rid and x.get('reconciledVehicleId') is None for x i
 print('INGESTION_UNKNOWN_VEHICLE_REJECTED: PASS')
 PY
 
-status="$(request POST "$BASE_PATH/reconcile/$RECORD_ID?vehicleId=$BPT_FIXTURE_VEHICLE_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Canonical Vehicle reconcile failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request POST "$BASE_PATH/reconcile?recordId=$RECORD_ID&vehicleId=$BPT_FIXTURE_VEHICLE_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Canonical Vehicle reconcile failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 python3 - "$RESPONSE" "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
 x=json.load(open(sys.argv[1])); expected=sys.argv[2].lower()
