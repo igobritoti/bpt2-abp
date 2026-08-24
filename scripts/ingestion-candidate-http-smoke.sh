@@ -216,7 +216,13 @@ UI_BAD_VEHICLE="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 VERIFICATION="$(page_token "$UI_RECORD_ID")"
 status="$(curl --silent --show-error --output "$PAGE_HTML" --dump-header "$HEADERS" --cookie "$ADMIN_COOKIES" --cookie-jar "$ADMIN_COOKIES" --write-out '%{http_code}' --request POST "$BASE/ingestao?handler=Reconcile" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "__RequestVerificationToken=$VERIFICATION" --data-urlencode "RecordId=$UI_RECORD_ID" --data-urlencode "VehicleId=$UI_BAD_VEHICLE")"
 [[ "$status" == 200 ]] || { echo "Unknown Vehicle UI reconcile expected 200 validation page got $status" >&2; cat "$PAGE_HTML" >&2; exit 1; }
-grep -Fq 'Vehicle canônico não encontrado' "$PAGE_HTML" || { echo 'Unknown Vehicle validation message missing.' >&2; cat "$PAGE_HTML" >&2; exit 1; }
+python3 - "$PAGE_HTML" <<'PY'
+from html import unescape
+import sys
+text=unescape(open(sys.argv[1],encoding='utf-8').read())
+if 'Vehicle canônico não encontrado.' not in text:
+    raise SystemExit('Unknown Vehicle validation message missing.')
+PY
 grep -Fq "$UI_RECORD_ID" "$PAGE_HTML" || { echo 'Candidate disappeared after rejected UI reconcile.' >&2; exit 1; }
 status="$(request GET "$PENDING" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$UI_RECORD_ID" <<'PY'
