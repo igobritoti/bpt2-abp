@@ -6,17 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0015 concluído. A primeira fatia real de Vehicle Hub está fechada:
+Execution Plan 0016 ativo. O acceptance target é fechar a primeira fatia explícita de metadata de compartilhamento do detalhe público do Listing:
 
-`Listing público → Vehicle canônico → Hub público do Vehicle → Listings publicados desse Vehicle`
+`Listing publicado → metadata social SSR → link compartilhado com título/descrição/foto`
 
-O Hub usa o Catalog como única autoridade da identidade automotiva e a projeção pública existente para disponibilidade comercial. Draft/Pause/Archive não aparecem; o Vehicle continua existindo no Hub mesmo sem oferta ativa. Enrichment, páginas agregadas, slug final e sitemap completo do catálogo continuam abertos.
-
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+O slice reutiliza somente a projeção pública atual, canonical existente e primeira foto pública quando houver. Não cria backend, schema, asset social paralelo ou integração externa.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0016-public-listing-share-metadata.md`](../exec-plans/active/0016-public-listing-share-metadata.md)
 
 ## Source of runtime truth
 
