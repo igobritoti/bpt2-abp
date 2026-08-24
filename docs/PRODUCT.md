@@ -119,7 +119,7 @@ O Plan 0013 fechou a primeira fatia explícita de SEO técnico público:
 
 `Listing público → sitemap/robots → crawler descobre URL → detalhe publica canonical`
 
-O public web reutiliza a API pública como autoridade de indexabilidade. `robots.txt` referencia o sitemap e bloqueia superfícies utilitárias/autenticadas; `sitemap.xml` contém home e Listings atualmente públicos; Draft/private não entra, Publish inclui e Pause remove. O detalhe público publica canonical absoluto configurável por `BPT_PUBLIC_BASE_URL`. JSON-LD, Open Graph, landing pages, estratégia de conteúdo, Search Console/analytics, cache/revalidation específica e ranking continuam abertos.
+O public web reutiliza a API pública como autoridade de indexabilidade. `robots.txt` referencia o sitemap e bloqueia superfícies utilitárias/autenticadas; `sitemap.xml` contém home e Listings atualmente públicos; Draft/private não entra, Publish inclui e Pause remove. O detalhe público publica canonical absoluto configurável por `BPT_PUBLIC_BASE_URL`. JSON-LD, landing pages, estratégia de conteúdo, Search Console/analytics, cache/revalidation específica e ranking continuam abertos.
 
 O Plan 0014 fechou o primeiro loop operacional real de Ingestion sem introduzir connector ou automação prematura:
 
@@ -133,13 +133,19 @@ O Plan 0015 abriu a primeira fatia real de Vehicle Hub sem criar novo contrato b
 
 O public web carrega a identidade automotiva exclusivamente pelo `Vehicle` do Catalog e usa o filtro público já existente por `VehicleId` para disponibilidade. `/veiculos/{id}` continua 200 mesmo sem oferta ativa; Draft não aparece, Publish inclui o Listing e Pause o remove sem remover o Hub. O detalhe público liga a identidade do veículo ao Hub, e o Hub publica title/canonical para Vehicle existente e 404/noindex para id inexistente. Specs, equipamentos, consumo, preço de mercado, conteúdo editorial, páginas agregadas, slugs semânticos e sitemap completo do catálogo continuam abertos.
 
+O Plan 0016 fechou a primeira fatia explícita de metadata de compartilhamento do Listing público:
+
+`Listing publicado → metadata social SSR → link compartilhado com título/descrição/foto`
+
+O detalhe público reutiliza exatamente title, description e canonical já derivados da projeção pública para Open Graph e Twitter. Quando existe foto, a primeira foto pública do Listing é reutilizada como imagem social e o Twitter usa `summary_large_image`; sem foto não se inventa asset paralelo. Draft/Pause/Archive continuam sem detalhe público e sem URL social indexável do Listing. JSON-LD, metadata social do Vehicle Hub/home/páginas agregadas, geração dedicada de social image, conteúdo/keywords e analytics continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web publica descoberta SEO técnica mínima e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0015. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de Vehicle Hub, Ingestion, SEO, moderação ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0016. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -170,6 +176,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0015. O próximo sl
 - A primeira fatia de SEO técnico reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui, Pause remove e o detalhe público publica canonical absoluto.
 - A primeira superfície operacional de Ingestion é interna e restrita a `admin`; `(Source, ExternalId)` identifica o registro externo sem duplicação e reconciliation só aceita `Vehicle` confirmado por `Catalog.Contracts`.
 - O primeiro Vehicle Hub usa `/veiculos/{id}` para um `Vehicle` canônico, lê sua identidade somente do Catalog e deriva ofertas somente da projeção pública filtrada por `VehicleId`; ausência de oferta não remove o Hub.
+- Metadata social do Listing público deriva exclusivamente da mesma projeção pública e dos mesmos title/description/canonical; a primeira foto pública pode ser reutilizada como imagem social e ausência de foto não cria asset paralelo.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/` quando uma decisão exigir formalização adicional.
 
@@ -180,7 +187,7 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
 - taxonomia/motivo de denúncia, frontend/painel administrativo, workflow e política de suspensão/remoção, scoring e notificações de moderação;
-- JSON-LD/schema.org, Open Graph/Twitter cards, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
+- JSON-LD/schema.org, metadata social do Vehicle Hub/home/páginas agregadas, geração dedicada de social image, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
 - connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI de Ingestion;
 - promoções;
 - enrichment do Vehicle Hub (specs, equipamentos, segurança, consumo, preço/mercado, editorial e imagens enriquecidas), páginas agregadas, slug final e sitemap completo do catálogo;
