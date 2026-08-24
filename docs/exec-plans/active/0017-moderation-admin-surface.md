@@ -56,9 +56,9 @@ Fechar a primeira superfície operacional visual de moderação reutilizando a i
 - [x] rejeitar JSON-LD como prioridade por evidência Google atual.
 - [x] confirmar viabilidade do host Razor/Account Web existente.
 - [x] criar branch `feat/moderation-admin-surface`.
-- [ ] abrir draft PR.
-- [ ] implementar página read-only.
-- [ ] ampliar somente o smoke de moderação existente.
+- [x] abrir draft PR #36.
+- [x] implementar página read-only.
+- [x] ampliar somente o smoke de moderação existente.
 - [ ] corrigir apenas falhas observadas.
 - [ ] fechar docs, exigir CI fresco, review/base refresh e merge verde.
 
@@ -67,3 +67,10 @@ Fechar a primeira superfície operacional visual de moderação reutilizando a i
 - **DECIDIDO para este slice:** a primeira UI de moderação vive no host ABP já autenticado; não haverá cliente OIDC/admin frontend novo.
 - **DECIDIDO para este slice:** superfície é estritamente read-only e consome `IModerationListingReportQuery`.
 - **NÃO DECIDIDO:** política/ações de moderação, taxonomia, workflow, scoring, notificações e shell admin genérico.
+
+## Progress log
+
+- 2026-08-24: `main` remoto confirmado em `96b52538c9805fb19035ea374f8b2e79c642f04f` após o Plan 0016.
+- 2026-08-24: auditoria rejeitou JSON-LD como prioridade corrente e encontrou a inbox de moderação como maior implementação parcial sem UI.
+- 2026-08-24: branch e draft PR #36 abertos com Razor Page `/moderacao` e prova HTTP adicionada ao smoke existente.
+- 2026-08-24: primeiro Harness Gate falhou somente pela ausência desta seção obrigatória; corrigido sem mudança funcional.
