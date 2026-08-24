@@ -7,7 +7,7 @@ WEB_PORT="${BPT_SEO_WEB_PORT:-3098}"
 API_BASE="http://127.0.0.1:${API_PORT}"
 WEB_BASE="http://127.0.0.1:${WEB_PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-public-seo"
-RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"
+RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"; HOME="$TMP/home.html"; UTILITY="$TMP/utility.html"
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 : "${BPT_FIXTURE_VEHICLE_ID:?BPT_FIXTURE_VEHICLE_ID is required}"
 rm -rf "$TMP"; mkdir -p "$TMP"
@@ -57,6 +57,84 @@ for _ in $(seq 1 60); do curl --fail --silent "$WEB_BASE/robots.txt" -o "$ROBOTS
 curl --fail --silent "$WEB_BASE/robots.txt" -o "$ROBOTS" || { cat "$WEB_LOG" >&2; exit 1; }
 grep -Fq 'Disallow: /favoritos' "$ROBOTS" && grep -Fq 'Disallow: /vender' "$ROBOTS" && grep -Fq 'Disallow: /api/' "$ROBOTS" && grep -Fq "Sitemap: $WEB_BASE/sitemap.xml" "$ROBOTS" || { cat "$ROBOTS" >&2; exit 1; }
 echo 'PUBLIC_SEO_ROBOTS: PASS'
+
+curl --fail --silent "$WEB_BASE/" -o "$HOME"
+python3 - "$HOME" "$WEB_BASE/" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class HeadParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_title = False
+        self.title = []
+        self.meta = {}
+    def handle_starttag(self, tag, attrs):
+        if tag == 'title':
+            self.in_title = True
+        if tag == 'meta':
+            data = dict(attrs)
+            key = data.get('property') or data.get('name')
+            if key:
+                self.meta[key] = data.get('content', '')
+    def handle_endtag(self, tag):
+        if tag == 'title':
+            self.in_title = False
+    def handle_data(self, data):
+        if self.in_title:
+            self.title.append(data)
+
+parser = HeadParser()
+parser.feed(open(sys.argv[1], encoding='utf-8').read())
+title = ''.join(parser.title).strip()
+description = 'Encontre veículos e fale diretamente com o vendedor.'
+expected = {
+    'description': description,
+    'og:type': 'website',
+    'og:title': title,
+    'og:description': description,
+    'og:url': sys.argv[2],
+    'twitter:card': 'summary',
+    'twitter:title': title,
+    'twitter:description': description,
+}
+if title != 'Bom Pra Ti':
+    raise SystemExit(f'Unexpected home title: {title!r}')
+for key, value in expected.items():
+    actual = parser.meta.get(key)
+    if actual != value:
+        raise SystemExit(f'{key} mismatch: expected {value!r}, got {actual!r}')
+for key in ('og:image', 'twitter:image'):
+    if key in parser.meta:
+        raise SystemExit(f'Unexpected social image metadata: {key}')
+PY
+echo 'PUBLIC_SEO_HOME_SHARE_METADATA: PASS'
+echo 'PUBLIC_SEO_HOME_SHARE_METADATA_NO_IMAGE: PASS'
+
+curl --fail --silent "$WEB_BASE/favoritos" -o "$UTILITY"
+python3 - "$UTILITY" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class MetaParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.keys = []
+    def handle_starttag(self, tag, attrs):
+        if tag != 'meta':
+            return
+        data = dict(attrs)
+        key = data.get('property') or data.get('name')
+        if key:
+            self.keys.append(key)
+
+parser = MetaParser()
+parser.feed(open(sys.argv[1], encoding='utf-8').read())
+leaked = [key for key in parser.keys if key.startswith('og:') or key.startswith('twitter:')]
+if leaked:
+    raise SystemExit(f'Home social metadata leaked to /favoritos: {leaked}')
+PY
+echo 'PUBLIC_SEO_HOME_SHARE_METADATA_SCOPED: PASS'
 
 curl --fail --silent "$WEB_BASE/sitemap.xml" -o "$SITEMAP"
 grep -Fq "<loc>$WEB_BASE/</loc>" "$SITEMAP" || { cat "$SITEMAP" >&2; exit 1; }
