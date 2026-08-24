@@ -115,13 +115,25 @@ O Plan 0012 fechou o primeiro consumo operacional dos sinais de moderação sem 
 
 Marketplace expõe `IModerationListingReportQuery` como application service read-only restrito à role `admin` já existente no baseline ABP. A projeção retorna somente `ReportId`, `ListingId`, título/status do Listing e `CreatedAtUtc`; não expõe `UserId` nem resolve perfil/PII Buyer. Reports já ocorridos permanecem visíveis quando o Listing deixa de estar público e refletem o status corrente do anúncio. Aprovar/rejeitar, motivo/taxonomia, suspensão/remoção, workflow, scoring, notificações e novo frontend admin continuam fora do slice.
 
+O Plan 0013 fechou a primeira fatia explícita de SEO técnico público:
+
+`Listing público → sitemap/robots → crawler descobre URL → detalhe publica canonical`
+
+O public web reutiliza a API pública como autoridade de indexabilidade. `robots.txt` referencia o sitemap e bloqueia superfícies utilitárias/autenticadas; `sitemap.xml` contém home e Listings atualmente públicos; Draft/private não entra, Publish inclui e Pause remove. O detalhe público publica canonical absoluto configurável por `BPT_PUBLIC_BASE_URL`. JSON-LD, Open Graph, landing pages, estratégia de conteúdo, Search Console/analytics, cache/revalidation específica e ranking continuam abertos.
+
+O Plan 0014 fechou o primeiro loop operacional real de Ingestion sem introduzir connector ou automação prematura:
+
+`candidate externo → registro persistido → fila pendente → operador admin reconcilia com Vehicle canônico`
+
+Ingestion expõe application service restrito à role `admin`, reutiliza `(Source, ExternalId)` como identidade externa deduplicada já expressa no schema e lista apenas registros ainda não reconciliados. A reconciliação só persiste `ReconciledVehicleId` depois que `IVehicleCatalogReader`, via `Catalog.Contracts`, confirma que o Vehicle canônico existe. O primeiro payload permanece imutável porque o aggregate existente só oferece `ReconcileTo`; connector/source concreto, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI continuam não decididos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. Analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação, resolução de perfil/PII Buyer e política operacional de moderação continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web também publica a descoberta SEO técnica mínima, e Ingestion agora possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico sem alterar a autoridade do Catalog. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0012. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0014. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de Ingestion, SEO, moderação ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -149,8 +161,10 @@ Nenhum execution plan está ativo após o fechamento do Plan 0012. O próximo sl
 - ListingReport pertence ao Buyer autenticado derivado no servidor; o cliente não escolhe `UserId`.
 - Novo ListingReport só é criado para Listing atualmente público, é idempotente por Buyer+Listing e permanece como histórico depois que o Listing deixa de estar público.
 - A primeira inbox de moderação é read-only, restrita à role `admin`, não expõe identidade/PII Buyer e preserva reports históricos mesmo quando o Listing deixa de estar público.
+- A primeira fatia de SEO técnico reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui, Pause remove e o detalhe público publica canonical absoluto.
+- A primeira superfície operacional de Ingestion é interna e restrita a `admin`; `(Source, ExternalId)` identifica o registro externo sem duplicação e reconciliation só aceita `Vehicle` confirmado por `Catalog.Contracts`.
 
-O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
+O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/` quando uma decisão exigir formalização adicional.
 
 ## Decisões ainda abertas
 
@@ -159,6 +173,9 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
 - taxonomia/motivo de denúncia, frontend/painel administrativo, workflow e política de suspensão/remoção, scoring e notificações de moderação;
+- JSON-LD/schema.org, Open Graph/Twitter cards, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
+- connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI de Ingestion;
+- promoções e Vehicle Hub;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;
