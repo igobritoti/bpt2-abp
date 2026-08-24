@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0021 concluído. A descoberta pública agora filtra pelos dados de localização já canônicos do Listing:
+Execution Plan 0022 ativo. O menor gap público selecionado transforma o Seller já projetado no detalhe em uma vitrine derivada somente de Listings públicos:
 
-`Listing publicado com City/StateCode → filtros Cidade/UF → home SSR → resultados públicos localizados`
+`Public Listing → Seller exibido → /vendedores/{sellerId} → anúncios públicos desse Seller`
 
-Cidade/UF ampliam o contrato/query público existente e continuam preservadas na query string/paginação. O slice não introduziu geolocation, geocoder, radius, novo aggregate, schema ou infraestrutura de busca.
+O boundary reutiliza `PublicListingSearchInput`/`PublicListingQuery` e `ListingVisibility.PublicOnly`. Não cria perfil público paralelo, schema, migration, reputação, endereço, slug ou WhatsApp genérico.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar por HTTP real que o filtro/Hub mostra apenas Listings públicos do Seller correto e desaparece sem oferta pública.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0022-public-seller-hub.md`](../exec-plans/active/0022-public-seller-hub.md)
 
 ## Source of runtime truth
 
