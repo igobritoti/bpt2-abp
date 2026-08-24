@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0017 concluído. A primeira superfície visual operacional de moderação está fechada:
+Execution Plan 0018 ativo. Fechar a primeira superfície visual operacional de Ingestion:
 
-`admin login no host → /moderacao → reports persistidos read-only`
+`candidate externo → fila pendente → admin login no host → /ingestao → reconciliar com Vehicle canônico`
 
-A página usa o Account Web já existente, exige role `admin` e consome somente `IModerationListingReportQuery`. Não expõe PII Buyer e preserva reports históricos com o status corrente do Listing. Política, ações e workflow de moderação continuam abertos.
+A página deve reutilizar Account Web + role `admin` já existentes e consumir somente `IIngestionCandidateAppService`. Não há novo domínio, schema, migration, frontend ou cliente OIDC neste slice.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar fila pendente + reconciliação canônica pela UI interna real.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0018-ingestion-admin-surface.md`](../exec-plans/active/0018-ingestion-admin-surface.md)
 
 ## Source of runtime truth
 
