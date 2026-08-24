@@ -39,6 +39,7 @@ export type PublicListing = {
 
 export type PublicListingSearch = {
   vehicleId?: string;
+  sellerId?: string;
   brand?: string;
   model?: string;
   city?: string;
@@ -98,6 +99,7 @@ export async function getPublicListings(
   const url = new URL("/api/app/public-listing", `${serverApiBaseUrl()}/`);
 
   setText(url.searchParams, "VehicleId", input.vehicleId);
+  setText(url.searchParams, "SellerId", input.sellerId);
   setText(url.searchParams, "Brand", input.brand);
   setText(url.searchParams, "Model", input.model);
   setText(url.searchParams, "City", input.city);
