@@ -46,7 +46,7 @@ Fechar a metadata social mínima do Seller Hub recém-entregue no Plan 0022:
 6. [ ] nenhum backend/domain/schema/migration/contrato novo é introduzido.
 7. [ ] gate focal e workflows aplicáveis passam no head funcional e novamente no head documental final.
 
-## Decisões
+## Decision log
 
 - **DECIDIDO para este slice:** metadata social deriva exclusivamente da identidade já projetada pelo primeiro Listing público e do canonical existente.
 - **DECIDIDO para este slice:** sem asset canônico próprio, Twitter usa `summary` e não há `og:image`/`twitter:image`.
