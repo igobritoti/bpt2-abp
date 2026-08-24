@@ -274,4 +274,8 @@ status="$(curl --silent --show-error --output "$SELLER_HTML" --write-out '%{http
 [[ "$status" == "404" ]] || { echo "Seller Hub without public Listing expected 404, got $status" >&2; exit 1; }
 echo "PUBLIC_SELLER_HUB_EMPTY_HIDDEN: PASS"
 
+status="$(request_json POST "/api/app/listing-command/pause/$OTHER_LISTING_ID" "$OTHER_TOKEN")"
+[[ "$status" == "200" ]] || { echo "Other Seller Listing cleanup failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+echo "PUBLIC_SELLER_HUB_FIXTURES_CLEANED: PASS"
+
 echo "PUBLIC SELLER HUB HTTP: PASSED"
