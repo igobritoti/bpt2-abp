@@ -3,6 +3,7 @@ namespace BomPraTi.Marketplace.Contracts;
 public sealed class PublicListingSearchInput
 {
     public Guid? VehicleId { get; init; }
+    public Guid? SellerId { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
     public string? City { get; init; }
