@@ -114,6 +114,11 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
             listings = listings.Where(x => x.VehicleId == input.VehicleId.Value);
         }
 
+        if (input.SellerId.HasValue)
+        {
+            listings = listings.Where(x => x.SellerId == input.SellerId.Value);
+        }
+
         if (HasCatalogFilters(input))
         {
             var vehicleIds = await _vehicleCatalog.FindIdsAsync(
