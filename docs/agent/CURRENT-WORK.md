@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0012 concluído. O primeiro consumo operacional dos sinais de moderação está fechado:
+Execution Plan 0013 concluído. A primeira fatia explícita de SEO técnico público está fechada:
 
-`Buyer sinaliza Listing → report persistido → operador admin autenticado consulta fila`
+`Listing público → sitemap/robots → crawler descobre URL → detalhe publica canonical`
 
-A inbox é read-only, reutiliza a role `admin` existente no baseline ABP, não expõe identidade/PII Buyer e preserva reports históricos quando o Listing deixa de estar público. Política de moderação, taxonomia, ações sobre Listing, scoring, notificações e frontend administrativo continuam abertos até evidência suficiente.
+O public web reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui e Pause remove. `robots.txt` bloqueia superfícies utilitárias/autenticadas e o detalhe público publica canonical absoluto configurado por `BPT_PUBLIC_BASE_URL`.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan. Nenhum Plan 0013 é presumido apenas porque o Plan 0012 terminou.
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
 ## Active plan
 
@@ -23,14 +23,14 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico de SEO técnico: [`../exec-plans/completed/0013-public-seo-discovery.md`](../exec-plans/completed/0013-public-seo-discovery.md).
 - Histórico da Moderation Report Inbox: [`../exec-plans/completed/0012-moderation-report-inbox.md`](../exec-plans/completed/0012-moderation-report-inbox.md).
-- Histórico do Buyer Listing Report: [`../exec-plans/completed/0011-buyer-listing-report.md`](../exec-plans/completed/0011-buyer-listing-report.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker de repositório conhecido. Decisões futuras de política de moderação continuam abertas até evidência operacional suficiente.
+Nenhum blocker de repositório conhecido. JSON-LD, Open Graph, landing pages e estratégia de conteúdo permanecem abertos até evidência suficiente.
 
 ## Update rule
 
