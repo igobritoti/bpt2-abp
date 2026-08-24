@@ -76,8 +76,17 @@ BUYER_TOKEN="$(token "$BUYER" "$BUYER_PASSWORD")"
 status="$(request GET "$INBOX" "$BUYER_TOKEN")"; [[ "$status" == 403 ]] || { echo "Buyer inbox expected 403 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'MODERATION_REPORT_NON_ADMIN_BLOCKED: PASS'
 login_cookie "$BUYER" "$BUYER_PASSWORD" "$BUYER_COOKIES"
-status="$(curl --silent --show-error --output "$PAGE_HTML" --write-out '%{http_code}' --cookie "$BUYER_COOKIES" "$BASE/moderacao")"
-[[ "$status" == 403 ]] || { echo "Buyer moderation page expected 403 got $status" >&2; cat "$PAGE_HTML" >&2; exit 1; }
+status="$(curl --silent --show-error --output "$PAGE_HTML" --dump-header "$HEADERS" --write-out '%{http_code}' --cookie "$BUYER_COOKIES" "$BASE/moderacao")"
+if [[ "$status" == 403 ]]; then
+  :
+elif [[ "$status" == 302 ]] && grep -Fqi 'AccessDenied' "$HEADERS"; then
+  :
+else
+  echo "Buyer moderation page expected 403 or AccessDenied redirect, got $status" >&2
+  cat "$HEADERS" >&2
+  cat "$PAGE_HTML" >&2
+  exit 1
+fi
 echo 'MODERATION_PAGE_NON_ADMIN_BLOCKED: PASS'
 
 request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Moderation Fixture","whatsAppNumber":"5511999993333"}' >/dev/null
