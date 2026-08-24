@@ -18,16 +18,27 @@ public class ModerationListingReportQuery : IModerationListingReportQuery, ITran
 
     public async Task<IReadOnlyList<ModerationListingReportDto>> GetAsync(CancellationToken cancellationToken = default)
     {
-        return await (
+        var rows = await (
             from report in _dbContext.ListingReports.AsNoTracking()
             join listing in _dbContext.Listings.AsNoTracking() on report.ListingId equals listing.Id
             orderby report.CreatedAtUtc descending, report.Id descending
-            select new ModerationListingReportDto(
-                report.Id,
-                listing.Id,
-                listing.Title,
-                listing.Status.ToString(),
-                report.CreatedAtUtc))
+            select new
+            {
+                ReportId = report.Id,
+                ListingId = listing.Id,
+                ListingTitle = listing.Title,
+                ListingStatus = listing.Status,
+                report.CreatedAtUtc
+            })
             .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(row => new ModerationListingReportDto(
+                row.ReportId,
+                row.ListingId,
+                row.ListingTitle,
+                row.ListingStatus.ToString(),
+                row.CreatedAtUtc))
+            .ToList();
     }
 }
