@@ -109,13 +109,19 @@ O Plan 0011 abriu a primeira capacidade real de moderação sem inventar políti
 
 Marketplace persiste `ListingReport` com `UserId`, `ListingId` e `CreatedAtUtc`. O Buyer é sempre derivado de `ICurrentUser`; o browser não escolhe owner. Um mesmo Buyer gera no máximo um sinal por Listing, de forma idempotente. Um novo sinal só pode ser criado enquanto o Listing está público; depois de Pause/Archive o sinal já ocorrido permanece como histórico. O detalhe público expõe “Sinalizar anúncio” reutilizando a sessão `BomPraTi_BuyerWeb`. Motivo/taxonomia, texto livre, fila administrativa, suspensão automática, scoring e notificações permanecem fora deste slice.
 
+O Plan 0012 fechou o primeiro consumo operacional dos sinais de moderação sem introduzir política de decisão:
+
+`Buyer sinaliza Listing → report persistido → operador admin autenticado consulta fila`
+
+Marketplace expõe `IModerationListingReportQuery` como application service read-only restrito à role `admin` já existente no baseline ABP. A projeção retorna somente `ReportId`, `ListingId`, título/status do Listing e `CreatedAtUtc`; não expõe `UserId` nem resolve perfil/PII Buyer. Reports já ocorridos permanecem visíveis quando o Listing deixa de estar público e refletem o status corrente do anúncio. Aprovar/rejeitar, motivo/taxonomia, suspensão/remoção, workflow, scoring, notificações e novo frontend admin continuam fora do slice.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado também pode registrar um sinal mínimo de moderação sobre Listing público. Analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação, resolução de perfil/PII Buyer e política operacional de moderação continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. Analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação, resolução de perfil/PII Buyer e política operacional de moderação continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0011. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
+Nenhum execution plan está ativo após o fechamento do Plan 0012. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem reabrir decisões já comprovadas.
 
 ## Requisitos já congelados
 
@@ -142,6 +148,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0011. O próximo sl
 - Somente o Seller owner do Listing pode marcar o Lead como atendido, e chamadas repetidas preservam o primeiro instante.
 - ListingReport pertence ao Buyer autenticado derivado no servidor; o cliente não escolhe `UserId`.
 - Novo ListingReport só é criado para Listing atualmente público, é idempotente por Buyer+Listing e permanece como histórico depois que o Listing deixa de estar público.
+- A primeira inbox de moderação é read-only, restrita à role `admin`, não expõe identidade/PII Buyer e preserva reports históricos mesmo quando o Listing deixa de estar público.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/`.
 
@@ -151,7 +158,7 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
-- taxonomia/motivo de denúncia, fila/painel de moderação, política de suspensão/remoção, scoring e notificações de moderação;
+- taxonomia/motivo de denúncia, frontend/painel administrativo, workflow e política de suspensão/remoção, scoring e notificações de moderação;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;
