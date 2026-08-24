@@ -11,6 +11,7 @@ on:
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/product-api-smoke.sh'
       - 'scripts/ingestion-candidate-http-smoke.sh'
+      - 'scripts/admin-operations-hub-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/product-api-gate.yml'
 
@@ -45,6 +46,7 @@ jobs:
         run: |
           bash -n scripts/product-api-smoke.sh
           bash -n scripts/ingestion-candidate-http-smoke.sh
+          bash -n scripts/admin-operations-hub-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -66,3 +68,5 @@ jobs:
         run: bash scripts/product-api-smoke.sh
       - name: Exercise Ingestion candidate reconciliation
         run: bash scripts/ingestion-candidate-http-smoke.sh
+      - name: Exercise admin operations hub
+        run: bash scripts/admin-operations-hub-http-smoke.sh
