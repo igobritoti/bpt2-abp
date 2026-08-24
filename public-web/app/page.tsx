@@ -83,6 +83,8 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
   setNumber("maxModelYear", search.maxModelYear);
   setNumber("minPrice", search.minPrice);
   setNumber("maxPrice", search.maxPrice);
+  setNumber("minMileageKm", search.minMileageKm);
+  setNumber("maxMileageKm", search.maxMileageKm);
   if (skip > 0) {
     params.set("skip", String(skip));
   }
@@ -102,6 +104,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const maxModelYear = integerParam(raw, "maxModelYear");
   const minPrice = numberParam(raw, "minPrice");
   const maxPrice = numberParam(raw, "maxPrice");
+  const minMileageKm = integerParam(raw, "minMileageKm");
+  const maxMileageKm = integerParam(raw, "maxMileageKm");
   const skip = Math.max(0, integerParam(raw, "skip") ?? 0);
   const take = Math.min(
     MAX_UI_TAKE,
@@ -118,6 +122,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     maxModelYear,
     minPrice,
     maxPrice,
+    minMileageKm,
+    maxMileageKm,
     skip,
     take,
   };
@@ -131,7 +137,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       minModelYear !== undefined ||
       maxModelYear !== undefined ||
       minPrice !== undefined ||
-      maxPrice !== undefined,
+      maxPrice !== undefined ||
+      minMileageKm !== undefined ||
+      maxMileageKm !== undefined,
   );
   const hasPrevious = skip > 0;
   const hasNext = skip + page.items.length < page.totalCount;
@@ -144,7 +152,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <p className="eyebrow">Bom Pra Ti</p>
         <h1>Encontre o próximo carro.</h1>
         <p className="lede">
-          Busque anúncios públicos, refine pelo veículo, localização e preço e fale direto com o vendedor.
+          Busque anúncios públicos, refine pelo veículo, localização, quilometragem e preço e fale direto com o vendedor.
         </p>
       </header>
 
@@ -214,6 +222,30 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               defaultValue={maxModelYear ?? ""}
               inputMode="numeric"
               name="maxModelYear"
+              type="number"
+            />
+          </label>
+
+          <label>
+            Km mínima
+            <input
+              defaultValue={minMileageKm ?? ""}
+              inputMode="numeric"
+              min="0"
+              name="minMileageKm"
+              step="1"
+              type="number"
+            />
+          </label>
+
+          <label>
+            Km máxima
+            <input
+              defaultValue={maxMileageKm ?? ""}
+              inputMode="numeric"
+              min="0"
+              name="maxMileageKm"
+              step="1"
               type="number"
             />
           </label>
