@@ -48,6 +48,8 @@ export type PublicListingSearch = {
   maxModelYear?: number;
   minPrice?: number;
   maxPrice?: number;
+  minMileageKm?: number;
+  maxMileageKm?: number;
   query?: string;
   skip?: number;
   take?: number;
@@ -108,6 +110,8 @@ export async function getPublicListings(
   setNumber(url.searchParams, "MaxModelYear", input.maxModelYear);
   setNumber(url.searchParams, "MinPrice", input.minPrice);
   setNumber(url.searchParams, "MaxPrice", input.maxPrice);
+  setNumber(url.searchParams, "MinMileageKm", input.minMileageKm);
+  setNumber(url.searchParams, "MaxMileageKm", input.maxMileageKm);
   setText(url.searchParams, "Query", input.query);
   setNumber(url.searchParams, "Skip", input.skip ?? 0);
   setNumber(url.searchParams, "Take", input.take ?? 24);

@@ -12,6 +12,8 @@ public sealed class PublicListingSearchInput
     public int? MaxModelYear { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
+    public int? MinMileageKm { get; init; }
+    public int? MaxMileageKm { get; init; }
     public string? Query { get; init; }
     public int Skip { get; init; }
     public int Take { get; init; } = 20;
