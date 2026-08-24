@@ -249,14 +249,87 @@ if grep -Fq "$OWNER_DRAFT_TITLE" "$SELLER_HTML"; then echo "Seller Hub leaked ow
 if grep -Fq "$OTHER_TITLE" "$SELLER_HTML"; then echo "Seller Hub leaked other Seller Listing" >&2; exit 1; fi
 grep -Fq "<title>$OWNER_NAME | Bom Pra Ti</title>" "$SELLER_HTML" || { echo "Seller Hub metadata title missing" >&2; exit 1; }
 grep -Fq "href=\"$WEB_BASE/vendedores/$OWNER_ID\"" "$SELLER_HTML" || { echo "Seller Hub canonical missing" >&2; exit 1; }
+python3 - "$SELLER_HTML" "$OWNER_NAME" "$WEB_BASE/vendedores/$OWNER_ID" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class MetaParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.meta = []
+        self.title_parts = []
+        self.in_title = False
+        self.canonical = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "title":
+            self.in_title = True
+        elif tag == "meta":
+            self.meta.append(attrs)
+        elif tag == "link" and attrs.get("rel") == "canonical":
+            self.canonical = attrs.get("href")
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self.in_title = False
+
+    def handle_data(self, data):
+        if self.in_title:
+            self.title_parts.append(data)
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    parser = MetaParser()
+    parser.feed(handle.read())
+
+owner_name = sys.argv[2]
+canonical = sys.argv[3]
+normal_title = "".join(parser.title_parts).strip()
+expected_title = f"{owner_name} | Bom Pra Ti"
+expected_description = f"1 anúncio(s) público(s) de {owner_name} no Bom Pra Ti."
+
+if normal_title != expected_title:
+    raise SystemExit(f"Unexpected normal title: {normal_title!r}")
+if parser.canonical != canonical:
+    raise SystemExit(f"Unexpected canonical: {parser.canonical!r}")
+
+values = {}
+for attrs in parser.meta:
+    key = attrs.get("property") or attrs.get("name")
+    if key:
+        values.setdefault(key, []).append(attrs.get("content", ""))
+
+def require(key, expected):
+    actual = values.get(key, [])
+    if expected not in actual:
+        raise SystemExit(f"Missing {key}={expected!r}; got {actual!r}")
+
+require("description", expected_description)
+require("og:type", "website")
+require("og:title", owner_name)
+require("og:description", expected_description)
+require("og:url", canonical)
+require("twitter:card", "summary")
+require("twitter:title", owner_name)
+require("twitter:description", expected_description)
+
+if values.get("og:image"):
+    raise SystemExit(f"Seller Hub must not invent og:image: {values['og:image']!r}")
+if values.get("twitter:image"):
+    raise SystemExit(f"Seller Hub must not invent twitter:image: {values['twitter:image']!r}")
+PY
+echo "PUBLIC_SELLER_HUB_SHARE_METADATA: PASS"
+echo "PUBLIC_SELLER_HUB_SHARE_METADATA_NO_IMAGE: PASS"
 echo "PUBLIC_SELLER_HUB_VISIBLE: PASS"
 echo "PUBLIC_SELLER_HUB_ISOLATED: PASS"
 
 UNKNOWN_ID="00000000-0000-4000-8000-000000000001"
 status="$(curl --silent --show-error --output "$SELLER_HTML" --write-out '%{http_code}' "$WEB_BASE/vendedores/$UNKNOWN_ID")"
 [[ "$status" == "404" ]] || { echo "Unknown Seller Hub expected 404, got $status" >&2; exit 1; }
+if grep -Fq 'property="og:url"' "$SELLER_HTML"; then echo "Unknown Seller Hub leaked og:url" >&2; exit 1; fi
 status="$(curl --silent --show-error --output "$SELLER_HTML" --write-out '%{http_code}' "$WEB_BASE/vendedores/not-a-guid")"
 [[ "$status" == "404" ]] || { echo "Invalid Seller Hub id expected 404, got $status" >&2; exit 1; }
+echo "PUBLIC_SELLER_HUB_SHARE_METADATA_UNKNOWN_404: PASS"
 echo "PUBLIC_SELLER_HUB_UNKNOWN_HIDDEN: PASS"
 
 status="$(request_json POST "/api/app/listing-command/pause/$OWNER_LISTING_ID" "$OWNER_TOKEN")"
@@ -272,6 +345,8 @@ if data.get("totalCount") != 0 or data.get("items") not in ([], None):
 PY
 status="$(curl --silent --show-error --output "$SELLER_HTML" --write-out '%{http_code}' "$WEB_BASE/vendedores/$OWNER_ID")"
 [[ "$status" == "404" ]] || { echo "Seller Hub without public Listing expected 404, got $status" >&2; exit 1; }
+if grep -Fq 'property="og:url"' "$SELLER_HTML"; then echo "Empty Seller Hub leaked og:url" >&2; exit 1; fi
+echo "PUBLIC_SELLER_HUB_SHARE_METADATA_EMPTY_404: PASS"
 echo "PUBLIC_SELLER_HUB_EMPTY_HIDDEN: PASS"
 
 status="$(request_json POST "/api/app/listing-command/pause/$OTHER_LISTING_ID" "$OTHER_TOKEN")"
