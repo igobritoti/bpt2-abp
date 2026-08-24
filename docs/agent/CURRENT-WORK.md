@@ -6,23 +6,24 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0026 ativo. O menor gap comprovado é adicionar faixa de quilometragem à descoberta pública usando somente `Listing.MileageKm`, já persistido e já projetado no DTO público:
+Execution Plan 0026 concluído. A descoberta pública agora aceita faixa de quilometragem usando somente `Listing.MileageKm`, já persistido e projetado:
 
 `MileageKm existente → MinMileageKm/MaxMileageKm → home SSR → resultados públicos filtrados`
 
-O slice não decide cor, ranking, facets, engine externa ou qualquer semântica nova de catálogo/geografia.
+Os limites são inclusivos, Listings sem quilometragem ficam fora quando um limite está ativo, range invertido retorna vazio e a paginação preserva os filtros. Nenhuma semântica nova de cor, ranking, facets, busca externa ou geografia foi criada.
 
-Próximo acceptance target: provar por HTTP real range inclusivo de quilometragem, range invertido vazio, Draft privado e preservação do filtro na paginação.
+Próximo acceptance target: auditar a prontidão do MVP e classificar os gaps restantes em `bloqueia MVP` ou `pós-MVP`, antes de abrir novo execution plan funcional.
 
 ## Active plan
 
-[`../exec-plans/active/0026-public-discovery-mileage-filters.md`](../exec-plans/active/0026-public-discovery-mileage-filters.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico da descoberta por quilometragem: [`../exec-plans/completed/0026-public-discovery-mileage-filters.md`](../exec-plans/completed/0026-public-discovery-mileage-filters.md).
 - Histórico da metadata social da home: [`../exec-plans/completed/0025-public-home-share-metadata.md`](../exec-plans/completed/0025-public-home-share-metadata.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
