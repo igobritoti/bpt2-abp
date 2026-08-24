@@ -6,8 +6,11 @@ on:
       - 'modules/catalog/**'
       - 'modules/sellers/**'
       - 'modules/marketplace/**'
+      - 'modules/ingestion/**'
       - 'main/**'
+      - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/product-api-smoke.sh'
+      - 'scripts/ingestion-candidate-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/product-api-gate.yml'
 
@@ -38,6 +41,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Syntax check product HTTP smokes
+        run: |
+          bash -n scripts/product-api-smoke.sh
+          bash -n scripts/ingestion-candidate-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -48,5 +55,14 @@ jobs:
           export ASPNETCORE_ENVIRONMENT=Development
           cd main/BomPraTi
           dotnet run --configuration Release --no-build -- --migrate-database
+      - name: Seed canonical Vehicle fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          vehicle_id="$(dotnet run --project tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj --configuration Release | tail -n 1)"
+          test -n "$vehicle_id"
+          echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
       - name: Verify real product API surfaces
         run: bash scripts/product-api-smoke.sh
+      - name: Exercise Ingestion candidate reconciliation
+        run: bash scripts/ingestion-candidate-http-smoke.sh
