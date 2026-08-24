@@ -163,13 +163,19 @@ O Plan 0020 fechou o primeiro ponto de entrada comum das superfícies administra
 
 A Razor Page `/admin` vive no mesmo host e exige a mesma role `admin` das superfícies que agrega. Ela não consulta dados nem duplica application services: apenas liga o operador a `/moderacao` e `/ingestao`. Anônimo é enviado ao Account Login, usuário autenticado sem `admin` é bloqueado e admin acessa o hub e os dois destinos com a mesma sessão. Menu global do tema, layout compartilhado, dashboard/métricas, permissões granulares e frontend admin separado continuam abertos.
 
+O Plan 0021 fechou os primeiros filtros públicos de localização usando somente dados já canônicos do Listing:
+
+`Listing publicado com City/StateCode → filtros Cidade/UF → home SSR → resultados públicos localizados`
+
+`PublicListingSearchInput` agora aceita `City` e `StateCode`, e a query pública aplica comparação textual exata após trim/case-folding sem criar normalização geográfica paralela. A home SSR expõe Cidade e UF no formulário GET e preserva ambos na query string/paginação. O gate real comprovou Listings publicados em SP/PR, combinação de localização com preço e Draft em MG permanecendo invisível. GPS/geocoding, raio/distância, bairros/CEP, autocomplete, facets, ranking por proximidade e landing pages locais continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado possui um hub comum para acessar as superfícies de Moderação e Ingestão sem receber nova autoridade de negócio. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e do Vehicle Hub público, e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui fila e superfície visual interna para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado possui um hub comum para acessar as superfícies de Moderação e Ingestão sem receber nova autoridade de negócio. O public web oferece descoberta SSR com Query/Brand/Model/ano/preço e agora Cidade/UF, publica descoberta SEO técnica mínima, metadata social do Listing público e do Vehicle Hub público, e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui fila e superfície visual interna para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, geolocalização avançada, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0020. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de administração, SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0021. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de discovery, administração, SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -185,7 +191,8 @@ Nenhum execution plan está ativo após o fechamento do Plan 0020. O próximo sl
 - A primeira experiência autenticada Buyer usa cliente OIDC público dedicado `BomPraTi_BuyerWeb`, também com Authorization Code + PKCE.
 - Favorite pertence ao usuário autenticado derivado no servidor; o cliente não escolhe `UserId`.
 - Favorite só é criado para Listing atualmente público e a lista do Buyer só projeta Listings que continuam públicos.
-- A primeira experiência de discovery usa somente o contrato público já existente e mantém query string como estado SSR/compartilhável.
+- A primeira experiência de discovery mantém query string como estado SSR/compartilhável e consome o contrato público da aplicação.
+- Os primeiros filtros públicos de localização usam somente `City` e `StateCode` já persistidos no Listing, com correspondência textual exata após trim/case-folding e preservação na query string; isso não implica geocoding, radius ou normalização geográfica nova.
 - O primeiro contato público Buyer → Seller usa o WhatsApp canônico pertencente a Sellers.
 - O contato WhatsApp persiste Lead no Marketplace somente para Listing atualmente público; `UserId` continua opcional para contato anônimo.
 - Se uma sessão Buyer válida já existir, o CTA pode encaminhá-la ao Lead API para que `ICurrentUser` atribua o `UserId`; login não é iniciado nem exigido pelo contato.
@@ -217,6 +224,7 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 - taxonomia/motivo de denúncia, workflow e política de suspensão/remoção, scoring e notificações de moderação;
 - menu/layout administrativo compartilhado, dashboard/métricas, permissões administrativas granulares e eventual frontend admin separado;
 - JSON-LD/schema.org, metadata social da home/páginas agregadas, geração dedicada de social image, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
+- geocoding/GPS, raio/distância, bairros/CEP, autocomplete/facets de localização, ranking por proximidade e landing pages/SEO locais;
 - connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e autocomplete/busca de Vehicle;
 - promoções;
 - enrichment do Vehicle Hub (specs, equipamentos, segurança, consumo, preço/mercado, editorial e imagens enriquecidas), páginas agregadas, slug final e sitemap completo do catálogo;
