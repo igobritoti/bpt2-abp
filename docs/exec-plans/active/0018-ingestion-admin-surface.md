@@ -54,8 +54,8 @@ Fechar a primeira superfície visual operacional de Ingestion reutilizando o loo
 - [x] `main` remoto confirmado em `092475e16e046bc92e13e89aa23cecded66e12b1`.
 - [x] backend e gaps de Ingestion revalidados.
 - [x] branch `feat/ingestion-admin-surface` criada.
-- [ ] abrir draft PR.
-- [ ] implementar Razor Page e prova HTTP focal.
+- [x] abrir draft PR #37.
+- [x] implementar Razor Page e prova HTTP focal.
 - [ ] corrigir somente falhas observadas.
 - [ ] fechar docs, exigir CI fresco, review/base refresh e merge verde.
 
@@ -70,3 +70,5 @@ Fechar a primeira superfície visual operacional de Ingestion reutilizando o loo
 - 2026-08-24: `main` remoto confirmado em `092475e16e046bc92e13e89aa23cecded66e12b1` após o Plan 0017.
 - 2026-08-24: auditoria confirmou `GetPendingAsync` + `ReconcileAsync` como implementação parcial suficiente e UI de Ingestion como menor gap componível sem novo subsistema.
 - 2026-08-24: branch `feat/ingestion-admin-surface` criada a partir do `main` corrente.
+- 2026-08-24: draft PR #37 aberto antes da implementação funcional.
+- 2026-08-24: `/ingestao` implementado como Razor Page `admin` consumindo somente `IIngestionCandidateAppService`; o smoke existente foi ampliado preservando integralmente a prova API do Plan 0014 e adicionando uma candidate separada para a prova UI.
