@@ -6,23 +6,24 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0019 ativo. Fechar a metadata social mínima do Vehicle Hub público:
+Execution Plan 0019 concluído. A metadata social mínima do Vehicle Hub público está fechada:
 
 `Vehicle canônico → /veiculos/{id} → metadata social SSR → link compartilhável coerente`
 
-A mudança deve reutilizar `generateMetadata`, identidade canônica do Catalog e canonical já existentes. Não deve buscar Listing/foto extra, criar imagem social paralela, backend, contrato, schema ou migration.
+Open Graph/Twitter reutilizam title, description e canonical já derivados da identidade canônica do Catalog. Sem asset canônico próprio, o Hub não inventa imagem social nem reutiliza foto de Listing. Vehicle inexistente permanece 404/noindex sem URL social válida.
 
-Próximo acceptance target: provar Open Graph/Twitter coerentes no Vehicle Hub existente e preservar 404/noindex para Vehicle inexistente.
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
 ## Active plan
 
-[`../exec-plans/active/0019-public-vehicle-hub-share-metadata.md`](../exec-plans/active/0019-public-vehicle-hub-share-metadata.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico de Vehicle Hub share metadata: [`../exec-plans/completed/0019-public-vehicle-hub-share-metadata.md`](../exec-plans/completed/0019-public-vehicle-hub-share-metadata.md).
 - Histórico de Ingestion Admin Surface: [`../exec-plans/completed/0018-ingestion-admin-surface.md`](../exec-plans/completed/0018-ingestion-admin-surface.md).
 - Histórico de Moderation Admin Surface: [`../exec-plans/completed/0017-moderation-admin-surface.md`](../exec-plans/completed/0017-moderation-admin-surface.md).
 - Histórico de Listing share metadata: [`../exec-plans/completed/0016-public-listing-share-metadata.md`](../exec-plans/completed/0016-public-listing-share-metadata.md).
