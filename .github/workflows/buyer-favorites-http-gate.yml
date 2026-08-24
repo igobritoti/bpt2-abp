@@ -5,6 +5,7 @@ on:
     paths:
       - 'modules/marketplace/**'
       - 'main/BomPraTi/Data/**'
+      - 'main/BomPraTi/Pages/**'
       - 'main/BomPraTi/appsettings.json'
       - 'public-web/**'
       - 'scripts/buyer-favorites-http-smoke.sh'
@@ -68,5 +69,5 @@ jobs:
         run: bash scripts/buyer-favorites-http-smoke.sh
       - name: Exercise Buyer Listing Reports over HTTP
         run: bash scripts/buyer-listing-report-http-smoke.sh
-      - name: Exercise Moderation Report Inbox over HTTP
+      - name: Exercise Moderation Report Inbox and Admin Surface over HTTP
         run: bash scripts/moderation-report-inbox-http-smoke.sh

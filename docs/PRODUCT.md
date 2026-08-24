@@ -139,13 +139,19 @@ O Plan 0016 fechou a primeira fatia explícita de metadata de compartilhamento d
 
 O detalhe público reutiliza exatamente title, description e canonical já derivados da projeção pública para Open Graph e Twitter. Quando existe foto, a primeira foto pública do Listing é reutilizada como imagem social e o Twitter usa `summary_large_image`; sem foto não se inventa asset paralelo. Draft/Pause/Archive continuam sem detalhe público e sem URL social indexável do Listing. JSON-LD, metadata social do Vehicle Hub/home/páginas agregadas, geração dedicada de social image, conteúdo/keywords e analytics continuam abertos.
 
+O Plan 0017 fechou a primeira superfície visual operacional de moderação sem introduzir política de decisão:
+
+`Buyer sinaliza Listing → report persistido → admin login no host → /moderacao → reports read-only`
+
+A Razor Page `/moderacao` vive no host ABP já autenticado, exige role `admin` e consome exclusivamente `IModerationListingReportQuery`. Anônimo é enviado ao Account Login; usuário autenticado sem `admin` é bloqueado pelo fluxo de AccessDenied; admin autenticado pelo Account Web real vê somente ReportId, ListingId, título/status corrente e CreatedAtUtc, sem identidade/PII Buyer. Reports históricos continuam visíveis após Pause. Aprovar/rejeitar, taxonomia/motivo, política de suspensão/remoção, workflow, scoring, notificações e um shell administrativo genérico continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado pode consultar a inbox read-only pela API e pela primeira superfície visual interna sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0016. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0017. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de moderação, SEO, Vehicle Hub, Ingestion ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -173,6 +179,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0016. O próximo sl
 - ListingReport pertence ao Buyer autenticado derivado no servidor; o cliente não escolhe `UserId`.
 - Novo ListingReport só é criado para Listing atualmente público, é idempotente por Buyer+Listing e permanece como histórico depois que o Listing deixa de estar público.
 - A primeira inbox de moderação é read-only, restrita à role `admin`, não expõe identidade/PII Buyer e preserva reports históricos mesmo quando o Listing deixa de estar público.
+- A primeira superfície visual de moderação vive no host ABP existente em `/moderacao`, exige role `admin`, consome somente a inbox read-only já existente e não expõe identidade/PII Buyer.
 - A primeira fatia de SEO técnico reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui, Pause remove e o detalhe público publica canonical absoluto.
 - A primeira superfície operacional de Ingestion é interna e restrita a `admin`; `(Source, ExternalId)` identifica o registro externo sem duplicação e reconciliation só aceita `Vehicle` confirmado por `Catalog.Contracts`.
 - O primeiro Vehicle Hub usa `/veiculos/{id}` para um `Vehicle` canônico, lê sua identidade somente do Catalog e deriva ofertas somente da projeção pública filtrada por `VehicleId`; ausência de oferta não remove o Hub.
@@ -186,7 +193,7 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
-- taxonomia/motivo de denúncia, frontend/painel administrativo, workflow e política de suspensão/remoção, scoring e notificações de moderação;
+- taxonomia/motivo de denúncia, workflow e política de suspensão/remoção, scoring, notificações de moderação e shell administrativo genérico;
 - JSON-LD/schema.org, metadata social do Vehicle Hub/home/páginas agregadas, geração dedicada de social image, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
 - connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI de Ingestion;
 - promoções;

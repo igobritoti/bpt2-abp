@@ -6,6 +6,8 @@ PORT="${BPT_MODERATION_API_PORT:-5102}"
 BASE="http://127.0.0.1:${PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-moderation-report-inbox"
 RESPONSE="$TMP/response.json"; LOG="$TMP/api.log"; SWAGGER="$TMP/swagger.json"
+PAGE_HTML="$TMP/moderation.html"; LOGIN_HTML="$TMP/login.html"; HEADERS="$TMP/headers.txt"
+ADMIN_COOKIES="$TMP/admin-cookies.txt"; BUYER_COOKIES="$TMP/buyer-cookies.txt"
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 : "${BPT_FIXTURE_VEHICLE_ID:?BPT_FIXTURE_VEHICLE_ID is required}"
 rm -rf "$TMP"; mkdir -p "$TMP"
@@ -28,10 +30,35 @@ PY
 
 request(){ local method="$1" path="$2" token="${3:-}" body="${4:-}"; local a=(--silent --show-error --output "$RESPONSE" --write-out '%{http_code}' --request "$method"); [[ -z "$token" ]] || a+=(-H "Authorization: Bearer $token"); [[ -z "$body" ]] || a+=(-H 'Content-Type: application/json' --data "$body"); curl "${a[@]}" "$BASE$path"; }
 token(){ curl --silent -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode "username=$1" --data-urlencode "password=$2" --data-urlencode 'scope=BomPraTi' | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])'; }
+login_cookie(){
+  local username="$1" password="$2" jar="$3" login_url effective verification status
+  login_url="$BASE/Account/Login?returnUrl=%2Fmoderacao"
+  effective="$(curl --silent --show-error --location --max-redirs 5 --cookie-jar "$jar" --output "$LOGIN_HTML" --write-out '%{url_effective}' "$login_url")"
+  verification="$(python3 - "$LOGIN_HTML" <<'PY'
+from html.parser import HTMLParser
+import sys
+class P(HTMLParser):
+    value=None
+    def handle_starttag(self,tag,attrs):
+        values=dict(attrs)
+        if tag.lower()=='input' and values.get('name')=='__RequestVerificationToken': self.value=values.get('value')
+p=P(); p.feed(open(sys.argv[1],encoding='utf-8').read())
+if not p.value: raise SystemExit('Login antiforgery token not found')
+print(p.value)
+PY
+)"
+  status="$(curl --silent --show-error --output "$RESPONSE" --dump-header "$HEADERS" --cookie "$jar" --cookie-jar "$jar" --write-out '%{http_code}' --request POST "$effective" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "__RequestVerificationToken=$verification" --data-urlencode "LoginInput.UserNameOrEmailAddress=$username" --data-urlencode "LoginInput.Password=$password" --data-urlencode 'LoginInput.RememberMe=false' --data-urlencode 'Action=Login')"
+  [[ "$status" == 302 ]] || { echo "Account login for $username expected 302 got $status" >&2; cat "$RESPONSE" >&2; exit 1; }
+}
+
 ADMIN_TOKEN="$(token admin '1q2w3E*')"
 INBOX='/api/app/moderation-listing-report-query'
 status="$(request GET "$INBOX")"; [[ "$status" == 401 ]] || { echo "Anonymous inbox expected 401 got $status" >&2; exit 1; }
 echo 'MODERATION_REPORT_ANONYMOUS_BLOCKED: PASS'
+status="$(curl --silent --show-error --output "$PAGE_HTML" --dump-header "$HEADERS" --write-out '%{http_code}' "$BASE/moderacao")"
+[[ "$status" == 302 ]] || { echo "Anonymous moderation page expected 302 got $status" >&2; cat "$PAGE_HTML" >&2; exit 1; }
+grep -Fqi '/Account/Login' "$HEADERS" || { echo 'Anonymous moderation page did not redirect to Account login.' >&2; cat "$HEADERS" >&2; exit 1; }
+echo 'MODERATION_PAGE_ANONYMOUS_BLOCKED: PASS'
 
 create_user(){
   local username="$1" password="$2" email="${1}@example.invalid" body status
@@ -48,6 +75,19 @@ create_user "$BUYER" "$BUYER_PASSWORD"
 BUYER_TOKEN="$(token "$BUYER" "$BUYER_PASSWORD")"
 status="$(request GET "$INBOX" "$BUYER_TOKEN")"; [[ "$status" == 403 ]] || { echo "Buyer inbox expected 403 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'MODERATION_REPORT_NON_ADMIN_BLOCKED: PASS'
+login_cookie "$BUYER" "$BUYER_PASSWORD" "$BUYER_COOKIES"
+status="$(curl --silent --show-error --output "$PAGE_HTML" --dump-header "$HEADERS" --write-out '%{http_code}' --cookie "$BUYER_COOKIES" "$BASE/moderacao")"
+if [[ "$status" == 403 ]]; then
+  :
+elif [[ "$status" == 302 ]] && grep -Fqi 'AccessDenied' "$HEADERS"; then
+  :
+else
+  echo "Buyer moderation page expected 403 or AccessDenied redirect, got $status" >&2
+  cat "$HEADERS" >&2
+  cat "$PAGE_HTML" >&2
+  exit 1
+fi
+echo 'MODERATION_PAGE_NON_ADMIN_BLOCKED: PASS'
 
 request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Moderation Fixture","whatsAppNumber":"5511999993333"}' >/dev/null
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
@@ -80,6 +120,16 @@ print('MODERATION_REPORT_ADMIN_VISIBLE: PASS')
 print('MODERATION_REPORT_BUYER_PII_HIDDEN: PASS')
 PY
 
+login_cookie admin '1q2w3E*' "$ADMIN_COOKIES"
+status="$(curl --silent --show-error --output "$PAGE_HTML" --write-out '%{http_code}' --cookie "$ADMIN_COOKIES" "$BASE/moderacao")"
+[[ "$status" == 200 ]] || { echo "Admin moderation page expected 200 got $status" >&2; cat "$PAGE_HTML" >&2; exit 1; }
+grep -Fq 'Moderação de anúncios' "$PAGE_HTML" || { echo 'Moderation page title missing.' >&2; exit 1; }
+grep -Fq 'Moderation queue fixture' "$PAGE_HTML" || { echo 'Moderation report Listing title missing from page.' >&2; exit 1; }
+grep -Fq "$LISTING_ID" "$PAGE_HTML" || { echo 'Moderation report Listing id missing from page.' >&2; exit 1; }
+if grep -Fq "$BUYER" "$PAGE_HTML"; then echo 'Buyer identity leaked into moderation page.' >&2; exit 1; fi
+echo 'MODERATION_PAGE_ADMIN_VISIBLE: PASS'
+echo 'MODERATION_PAGE_BUYER_PII_HIDDEN: PASS'
+
 status="$(request POST "/api/app/listing-command/pause/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 status="$(request GET "$INBOX" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
@@ -90,5 +140,10 @@ assert len(match)==1, items
 assert match[0]['listingStatus']=='Paused', match[0]
 print('MODERATION_REPORT_HISTORY_PRESERVED: PASS')
 PY
+status="$(curl --silent --show-error --output "$PAGE_HTML" --write-out '%{http_code}' --cookie "$ADMIN_COOKIES" "$BASE/moderacao")"
+[[ "$status" == 200 ]] || { echo "Paused moderation page expected 200 got $status" >&2; exit 1; }
+grep -Fq 'Paused' "$PAGE_HTML" || { echo 'Paused status missing from moderation page.' >&2; exit 1; }
+grep -Fq "$LISTING_ID" "$PAGE_HTML" || { echo 'Historical report missing after pause.' >&2; exit 1; }
+echo 'MODERATION_PAGE_HISTORY_PRESERVED: PASS'
 
 echo 'MODERATION REPORT INBOX HTTP: PASSED'
