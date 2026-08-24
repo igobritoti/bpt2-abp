@@ -107,6 +107,11 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
             return EmptyPage();
         }
 
+        if (input.MinMileageKm.HasValue && input.MaxMileageKm.HasValue && input.MinMileageKm > input.MaxMileageKm)
+        {
+            return EmptyPage();
+        }
+
         var listings = ListingVisibility.PublicOnly(_dbContext.Listings.AsNoTracking());
 
         if (input.VehicleId.HasValue)
@@ -157,6 +162,16 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
         if (input.MaxPrice.HasValue)
         {
             listings = listings.Where(x => x.Price <= input.MaxPrice.Value);
+        }
+
+        if (input.MinMileageKm.HasValue)
+        {
+            listings = listings.Where(x => x.MileageKm.HasValue && x.MileageKm.Value >= input.MinMileageKm.Value);
+        }
+
+        if (input.MaxMileageKm.HasValue)
+        {
+            listings = listings.Where(x => x.MileageKm.HasValue && x.MileageKm.Value <= input.MaxMileageKm.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(input.Query))
