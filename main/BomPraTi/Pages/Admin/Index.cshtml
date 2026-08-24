@@ -1,0 +1,31 @@
+@page "/admin"
+@model BomPraTi.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Operações administrativas";
+}
+
+<div class="container py-4">
+    <h1>Operações administrativas</h1>
+    <p>Acesse as superfícies operacionais internas já disponíveis no Bom Pra Ti.</p>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <section class="card h-100" aria-labelledby="moderacao-title">
+                <div class="card-body d-flex flex-column">
+                    <h2 id="moderacao-title" class="h4">Moderação de anúncios</h2>
+                    <p class="card-text">Consulte os reports recebidos sobre anúncios.</p>
+                    <a class="btn btn-primary mt-auto align-self-start" href="/moderacao">Abrir moderação</a>
+                </div>
+            </section>
+        </div>
+        <div class="col-md-6">
+            <section class="card h-100" aria-labelledby="ingestao-title">
+                <div class="card-body d-flex flex-column">
+                    <h2 id="ingestao-title" class="h4">Ingestão de veículos</h2>
+                    <p class="card-text">Reconcilie candidates externos com Vehicles canônicos.</p>
+                    <a class="btn btn-primary mt-auto align-self-start" href="/ingestao">Abrir ingestão</a>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
