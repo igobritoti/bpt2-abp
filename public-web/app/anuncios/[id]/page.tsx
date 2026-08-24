@@ -13,6 +13,7 @@ import {
   vehicleLabel,
   whatsAppUrl,
 } from "@/lib/public-listings";
+import { publicUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +24,20 @@ type PageProps = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const listing = await loadListing(id);
-  if (!listing) return { title: "Anúncio não encontrado" };
+  if (!listing) {
+    return {
+      title: "Anúncio não encontrado",
+      robots: { index: false, follow: false },
+    };
+  }
+
   const vehicle = vehicleLabel(listing);
-  return { title: listing.title, description: `${vehicle} em ${listing.city}/${listing.stateCode}. ${formatPrice(listing.price)}.` };
+  return {
+    title: listing.title,
+    description: `${vehicle} em ${listing.city}/${listing.stateCode}. ${formatPrice(listing.price)}.`,
+    alternates: { canonical: publicUrl(`/anuncios/${listing.id}`) },
+    robots: { index: true, follow: true },
+  };
 }
 
 export default async function ListingDetailPage({ params }: PageProps) {
