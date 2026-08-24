@@ -192,3 +192,13 @@ ADR-0010 define uma regra transversal para qualquer nova capacidade de infraestr
 `necessidade comprovada -> avaliação de soluções maduras -> experimento mínimo se ainda necessário -> decisão adopt/build documentada`.
 
 A avaliação deve considerar opções nativas da plataforma/framework, OSS/self-hosted e gerenciadas/comerciais quando aplicáveis. Isso não cria preferência automática por SaaS nem proíbe construção própria; impede que custom build seja o experimento padrão sem antes verificar soluções maduras e seus trade-offs.
+
+A decisão final de adoção ou construção deve registrar necessidade, alternativas, rationale, boundary/ownership, consequências operacionais e estratégia de reversibilidade/saída. Decisões atualmente adiadas, como distributed locking, background jobs e engine externa de busca, continuam adiadas; ADR-0010 governa o processo quando alguma delas for aberta.
+
+## Regra de decisão
+
+Para regra de domínio/aplicação: documentação/código/standard -> capacidade comprovada -> teste mínimo se a decisão específica do BPT não estiver resolvida -> PASS/FAIL -> decisão registrada.
+
+Para nova infraestrutura: necessidade/constraints comprovados -> avaliação de soluções maduras -> experimento/benchmark mínimo somente se necessário -> decisão adopt/build documentada.
+
+Inferência, popularidade de mercado ou preferência não vira requisito arquitetural sem evidência.
