@@ -32,7 +32,7 @@
                 <tbody>
                 @foreach (var candidate in Model.Pending)
                 {
-                    <tr data-record-id="@candidate.Id" data-confidence="@candidate.Confidence.ToString(CultureInfo.InvariantCulture)">
+                    <tr data-record-id="@candidate.Id" data-confidence="@candidate.Confidence.ToString("0.###", CultureInfo.InvariantCulture)">
                         <td>@candidate.Source</td>
                         <td>@candidate.ExternalId</td>
                         <td>@candidate.RawIdentity</td>
