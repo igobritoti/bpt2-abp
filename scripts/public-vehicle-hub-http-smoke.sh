@@ -89,7 +89,9 @@ curl --fail --silent "$WEB_BASE" >/dev/null || { cat "$WEB_LOG" >&2; exit 1; }
 UNKNOWN_VEHICLE="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$UNKNOWN_VEHICLE")"
 [[ "$status" == 404 ]] || { echo "Unknown Vehicle Hub expected 404 got $status" >&2; exit 1; }
+grep -Fq 'noindex' "$HUB_HTML" || { echo 'Unknown Vehicle Hub is missing noindex metadata' >&2; exit 1; }
 echo 'VEHICLE_HUB_UNKNOWN_404: PASS'
+echo 'VEHICLE_HUB_UNKNOWN_NOINDEX: PASS'
 
 status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID")"
 [[ "$status" == 200 ]] || { echo "Canonical Vehicle Hub expected 200 got $status" >&2; cat "$WEB_LOG" >&2; exit 1; }
@@ -97,9 +99,11 @@ grep -Fq 'HTTP Lifecycle Model' "$HUB_HTML" || { echo 'Canonical model missing f
 grep -Fq 'HTTP-G1' "$HUB_HTML" || { echo 'Canonical generation missing from Hub' >&2; exit 1; }
 grep -Fq 'HTTP Lifecycle Version' "$HUB_HTML" || { echo 'Canonical version missing from Hub' >&2; exit 1; }
 grep -Fq '>2025<' "$HUB_HTML" || { echo 'Canonical model year missing from Hub' >&2; exit 1; }
+grep -Fq 'HTTP Lifecycle Model HTTP Lifecycle Version 2025 | Bom Pra Ti</title>' "$HUB_HTML" || { echo 'Vehicle Hub metadata title missing' >&2; exit 1; }
 grep -Fq "rel=\"canonical\" href=\"$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID\"" "$HUB_HTML" || { echo 'Vehicle Hub canonical missing' >&2; exit 1; }
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Draft Listing leaked into Vehicle Hub' >&2; exit 1; fi
 echo 'VEHICLE_HUB_CANONICAL_IDENTITY: PASS'
+echo 'VEHICLE_HUB_METADATA: PASS'
 echo 'VEHICLE_HUB_DRAFT_PRIVATE: PASS'
 
 status="$(request_json POST "$API_BASE/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"
