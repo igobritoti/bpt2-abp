@@ -58,6 +58,8 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
   setText("query", search.query);
   setText("brand", search.brand);
   setText("model", search.model);
+  setText("city", search.city);
+  setText("stateCode", search.stateCode);
   setNumber("minModelYear", search.minModelYear);
   setNumber("maxModelYear", search.maxModelYear);
   setNumber("minPrice", search.minPrice);
@@ -75,6 +77,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const query = textParam(raw, "query");
   const brand = textParam(raw, "brand");
   const model = textParam(raw, "model");
+  const city = textParam(raw, "city");
+  const stateCode = textParam(raw, "stateCode");
   const minModelYear = integerParam(raw, "minModelYear");
   const maxModelYear = integerParam(raw, "maxModelYear");
   const minPrice = numberParam(raw, "minPrice");
@@ -89,6 +93,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     query: query || undefined,
     brand: brand || undefined,
     model: model || undefined,
+    city: city || undefined,
+    stateCode: stateCode || undefined,
     minModelYear,
     maxModelYear,
     minPrice,
@@ -101,6 +107,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     query ||
       brand ||
       model ||
+      city ||
+      stateCode ||
       minModelYear !== undefined ||
       maxModelYear !== undefined ||
       minPrice !== undefined ||
@@ -117,7 +125,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <p className="eyebrow">Bom Pra Ti</p>
         <h1>Encontre o próximo carro.</h1>
         <p className="lede">
-          Busque anúncios públicos, refine pelo veículo e preço e fale direto com o vendedor.
+          Busque anúncios públicos, refine pelo veículo, localização e preço e fale direto com o vendedor.
         </p>
       </header>
 
@@ -153,6 +161,22 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <label>
             Modelo
             <input defaultValue={model} name="model" placeholder="Ex.: Civic" />
+          </label>
+
+          <label>
+            Cidade
+            <input defaultValue={city} name="city" placeholder="Ex.: São Paulo" />
+          </label>
+
+          <label>
+            UF
+            <input
+              autoCapitalize="characters"
+              defaultValue={stateCode}
+              maxLength={2}
+              name="stateCode"
+              placeholder="Ex.: SP"
+            />
           </label>
 
           <label>

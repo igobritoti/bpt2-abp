@@ -41,6 +41,8 @@ export type PublicListingSearch = {
   vehicleId?: string;
   brand?: string;
   model?: string;
+  city?: string;
+  stateCode?: string;
   minModelYear?: number;
   maxModelYear?: number;
   minPrice?: number;
@@ -98,6 +100,8 @@ export async function getPublicListings(
   setText(url.searchParams, "VehicleId", input.vehicleId);
   setText(url.searchParams, "Brand", input.brand);
   setText(url.searchParams, "Model", input.model);
+  setText(url.searchParams, "City", input.city);
+  setText(url.searchParams, "StateCode", input.stateCode);
   setNumber(url.searchParams, "MinModelYear", input.minModelYear);
   setNumber(url.searchParams, "MaxModelYear", input.maxModelYear);
   setNumber(url.searchParams, "MinPrice", input.minPrice);
