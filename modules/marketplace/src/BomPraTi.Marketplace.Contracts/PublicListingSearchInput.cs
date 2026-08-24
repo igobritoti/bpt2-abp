@@ -5,6 +5,8 @@ public sealed class PublicListingSearchInput
     public Guid? VehicleId { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
+    public string? City { get; init; }
+    public string? StateCode { get; init; }
     public int? MinModelYear { get; init; }
     public int? MaxModelYear { get; init; }
     public decimal? MinPrice { get; init; }

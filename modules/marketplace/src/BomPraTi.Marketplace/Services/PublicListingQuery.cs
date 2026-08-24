@@ -132,6 +132,18 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
             listings = listings.Where(x => vehicleIds.Contains(x.VehicleId));
         }
 
+        if (!string.IsNullOrWhiteSpace(input.City))
+        {
+            var normalizedCity = input.City.Trim().ToLowerInvariant();
+            listings = listings.Where(x => x.City.ToLower() == normalizedCity);
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.StateCode))
+        {
+            var normalizedStateCode = input.StateCode.Trim().ToUpperInvariant();
+            listings = listings.Where(x => x.StateCode == normalizedStateCode);
+        }
+
         if (input.MinPrice.HasValue)
         {
             listings = listings.Where(x => x.Price >= input.MinPrice.Value);
