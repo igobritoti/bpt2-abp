@@ -6,11 +6,11 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0023 concluído. O Seller Hub público agora reutiliza sua metadata normal para compartilhamento social:
+Execution Plan 0024 concluído. O sitemap público agora inclui o Seller Hub somente enquanto o Seller possui ao menos uma oferta pública:
 
-`Seller com oferta pública → /vendedores/{sellerId} → metadata social SSR → link compartilhável coerente`
+`Listing público → seller projetado → sitemap.xml → /vendedores/{sellerId}`
 
-Open Graph/Twitter derivam somente de `displayName`, description e canonical já existentes. Sem asset canônico próprio, não há imagem social inventada. Nenhum backend, schema, migration, contrato ou perfil público paralelo foi criado.
+A implementação reutiliza a paginação pública já existente, deduplica `sellerId` e remove a URL do Hub quando a última oferta deixa de ser pública. Não cria endpoint, contrato, backend, schema, migration, slug ou ranking.
 
 Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
@@ -23,9 +23,9 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do sitemap do Seller Hub: [`../exec-plans/completed/0024-public-seller-hub-sitemap.md`](../exec-plans/completed/0024-public-seller-hub-sitemap.md).
 - Histórico da metadata social do Seller Hub: [`../exec-plans/completed/0023-public-seller-hub-share-metadata.md`](../exec-plans/completed/0023-public-seller-hub-share-metadata.md).
 - Histórico do Public Seller Hub: [`../exec-plans/completed/0022-public-seller-hub.md`](../exec-plans/completed/0022-public-seller-hub.md).
-- Histórico de Vehicle Hub share metadata: [`../exec-plans/completed/0019-public-vehicle-hub-share-metadata.md`](../exec-plans/completed/0019-public-vehicle-hub-share-metadata.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
