@@ -68,17 +68,18 @@ PY
 }
 
 create_listing() {
-  local title="$1" price="$2" city="$3" state_code="$4"
+  local title="$1" price="$2" city="$3" state_code="$4" mileage_km="$5"
   local body status
-  body="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" "$title" "$price" "$city" "$state_code" <<'PY'
+  body="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" "$title" "$price" "$city" "$state_code" "$mileage_km" <<'PY'
 import json, sys
+mileage = None if sys.argv[6] == "null" else int(sys.argv[6])
 print(json.dumps({
     "vehicleId": sys.argv[1],
     "title": sys.argv[2],
     "price": float(sys.argv[3]),
     "description": "Fixture de discovery público.",
     "manufactureYear": 2024,
-    "mileageKm": 10000,
+    "mileageKm": mileage,
     "color": "Cinza",
     "city": sys.argv[4],
     "stateCode": sys.argv[5]
@@ -166,14 +167,17 @@ PY
 ALPHA_TITLE="Discovery Alpha"
 BETA_TITLE="Discovery Beta"
 GAMMA_TITLE="Discovery Gamma"
+DELTA_TITLE="Discovery Delta No Mileage"
 HIDDEN_TITLE="Discovery Hidden Draft"
-ALPHA_ID="$(create_listing "$ALPHA_TITLE" 101000 'São Paulo' SP)"
-BETA_ID="$(create_listing "$BETA_TITLE" 202000 Curitiba PR)"
-GAMMA_ID="$(create_listing "$GAMMA_TITLE" 303000 Campinas SP)"
-create_listing "$HIDDEN_TITLE" 404000 'Belo Horizonte' MG >/dev/null
+ALPHA_ID="$(create_listing "$ALPHA_TITLE" 101000 'São Paulo' SP 5000)"
+BETA_ID="$(create_listing "$BETA_TITLE" 202000 Curitiba PR 20000)"
+GAMMA_ID="$(create_listing "$GAMMA_TITLE" 303000 Campinas SP 40000)"
+DELTA_ID="$(create_listing "$DELTA_TITLE" 404000 'Rio de Janeiro' RJ null)"
+create_listing "$HIDDEN_TITLE" 505000 'Belo Horizonte' MG 25000 >/dev/null
 publish_listing "$ALPHA_ID"
 publish_listing "$BETA_ID"
 publish_listing "$GAMMA_ID"
+publish_listing "$DELTA_ID"
 echo "PUBLIC_DISCOVERY_FIXTURES: PASS"
 
 pushd "$ROOT/public-web" >/dev/null
@@ -195,7 +199,7 @@ for _ in $(seq 1 60); do
 done
 curl --fail --silent --show-error "$WEB_BASE" -o "$PAGE_ONE" || { cat "$WEB_LOG" >&2; exit 1; }
 
-for field in query brand model city stateCode minModelYear maxModelYear minPrice maxPrice; do
+for field in query brand model city stateCode minModelYear maxModelYear minMileageKm maxMileageKm minPrice maxPrice; do
   grep -Fq "name=\"$field\"" "$PAGE_ONE" || { echo "Discovery form missing $field" >&2; exit 1; }
 done
 echo "PUBLIC_DISCOVERY_FORM: PASS"
@@ -203,12 +207,14 @@ echo "PUBLIC_DISCOVERY_FORM: PASS"
 curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'query=Discovery' \
   --data-urlencode 'stateCode=sp' \
+  --data-urlencode 'minMileageKm=0' \
+  --data-urlencode 'maxMileageKm=50000' \
   --data-urlencode 'take=1' \
   -o "$PAGE_ONE"
 
 assert_visible_text "$PAGE_ONE" '2 anúncio(s)'
-if grep -Fq "$BETA_TITLE" "$PAGE_ONE" || grep -Fq "$HIDDEN_TITLE" "$PAGE_ONE"; then
-  echo "State-filtered pagination leaked non-SP or Draft listing" >&2
+if grep -Fq "$BETA_TITLE" "$PAGE_ONE" || grep -Fq "$DELTA_TITLE" "$PAGE_ONE" || grep -Fq "$HIDDEN_TITLE" "$PAGE_ONE"; then
+  echo "State+mileage pagination leaked non-SP, null-mileage or Draft listing" >&2
   exit 1
 fi
 
@@ -234,25 +240,34 @@ with open(sys.argv[1], encoding="utf-8") as handle:
 if not parser.href:
     raise SystemExit("Next pagination link not found")
 query = parse_qs(urlparse(parser.href).query)
-if query.get("query") != ["Discovery"] or query.get("stateCode") != ["sp"] or query.get("take") != ["1"] or query.get("skip") != ["1"]:
-    raise SystemExit(f"Pagination did not preserve location filters: {parser.href}")
+expected = {
+    "query": ["Discovery"],
+    "stateCode": ["sp"],
+    "minMileageKm": ["0"],
+    "maxMileageKm": ["50000"],
+    "take": ["1"],
+    "skip": ["1"],
+}
+for key, value in expected.items():
+    if query.get(key) != value:
+        raise SystemExit(f"Pagination did not preserve {key}: {parser.href}")
 print(parser.href)
 PY
 )"
 curl --fail --silent --show-error "$WEB_BASE$NEXT_HREF" -o "$PAGE_TWO"
-python3 - "$PAGE_ONE" "$PAGE_TWO" "$ALPHA_TITLE" "$GAMMA_TITLE" "$BETA_TITLE" "$HIDDEN_TITLE" <<'PY'
+python3 - "$PAGE_ONE" "$PAGE_TWO" "$ALPHA_TITLE" "$GAMMA_TITLE" "$BETA_TITLE" "$DELTA_TITLE" "$HIDDEN_TITLE" <<'PY'
 import sys
 texts = []
 for path in sys.argv[1:3]:
     with open(path, encoding="utf-8") as handle:
         texts.append(handle.read())
-alpha, gamma, beta, hidden = sys.argv[3:]
+alpha, gamma, beta, delta, hidden = sys.argv[3:]
 for index, text in enumerate(texts, start=1):
     present = [title for title in (alpha, gamma) if title in text]
     if len(present) != 1:
         raise SystemExit(f"Page {index} expected exactly one SP fixture, got {present}")
-    if beta in text or hidden in text:
-        raise SystemExit(f"State-filtered pagination leaked non-SP or Draft fixture on page {index}")
+    if beta in text or delta in text or hidden in text:
+        raise SystemExit(f"State+mileage pagination leaked another fixture on page {index}")
 if (alpha in texts[0]) == (alpha in texts[1]):
     raise SystemExit("Pagination pages did not advance to the other SP listing")
 PY
@@ -264,7 +279,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   -o "$FILTERED"
 assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$ALPHA_TITLE" "$FILTERED" || { echo "Query filter missing Alpha" >&2; exit 1; }
-if grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED"; then echo "Query filter leaked another listing" >&2; exit 1; fi
+if grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED"; then echo "Query filter leaked another listing" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_QUERY: PASS"
 
 curl --fail --silent --show-error --get "$WEB_BASE/" \
@@ -273,7 +288,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   -o "$FILTERED"
 assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Price filter missing Beta" >&2; exit 1; }
-if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED"; then echo "Price filter leaked another listing" >&2; exit 1; fi
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED"; then echo "Price filter leaked another listing" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_PRICE: PASS"
 
 curl --fail --silent --show-error --get "$WEB_BASE/" \
@@ -282,7 +297,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode "minModelYear=$VEHICLE_YEAR" \
   --data-urlencode "maxModelYear=$VEHICLE_YEAR" \
   -o "$FILTERED"
-assert_visible_text "$FILTERED" '3 anúncio(s)'
+assert_visible_text "$FILTERED" '4 anúncio(s)'
 if grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then echo "Catalog filters leaked Draft" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_CATALOG: PASS"
 
@@ -291,7 +306,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   -o "$FILTERED"
 assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "State filter missing PR listing" >&2; exit 1; }
-if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
   echo "State filter leaked another location or Draft" >&2
   exit 1
 fi
@@ -302,7 +317,7 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   -o "$FILTERED"
 assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$GAMMA_TITLE" "$FILTERED" || { echo "City filter missing Campinas listing" >&2; exit 1; }
-if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
   echo "City filter leaked another location or Draft" >&2
   exit 1
 fi
@@ -315,11 +330,56 @@ curl --fail --silent --show-error --get "$WEB_BASE/" \
   -o "$FILTERED"
 assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$GAMMA_TITLE" "$FILTERED" || { echo "Combined location+price filter missing Gamma" >&2; exit 1; }
-if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
   echo "Combined location+price filter leaked another listing" >&2
   exit 1
 fi
 echo "PUBLIC_DISCOVERY_LOCATION_COMBINED: PASS"
+
+curl --fail --silent --show-error --get "$WEB_BASE/" \
+  --data-urlencode 'minMileageKm=20000' \
+  -o "$FILTERED"
+assert_visible_text "$FILTERED" '2 anúncio(s)'
+grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Minimum mileage filter missing Beta boundary" >&2; exit 1; }
+grep -Fq "$GAMMA_TITLE" "$FILTERED" || { echo "Minimum mileage filter missing Gamma" >&2; exit 1; }
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+  echo "Minimum mileage filter leaked below-bound, null-mileage or Draft listing" >&2
+  exit 1
+fi
+echo "PUBLIC_DISCOVERY_MILEAGE_MIN: PASS"
+
+curl --fail --silent --show-error --get "$WEB_BASE/" \
+  --data-urlencode 'maxMileageKm=20000' \
+  -o "$FILTERED"
+assert_visible_text "$FILTERED" '2 anúncio(s)'
+grep -Fq "$ALPHA_TITLE" "$FILTERED" || { echo "Maximum mileage filter missing Alpha" >&2; exit 1; }
+grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Maximum mileage filter missing Beta boundary" >&2; exit 1; }
+if grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+  echo "Maximum mileage filter leaked above-bound, null-mileage or Draft listing" >&2
+  exit 1
+fi
+echo "PUBLIC_DISCOVERY_MILEAGE_MAX: PASS"
+
+curl --fail --silent --show-error --get "$WEB_BASE/" \
+  --data-urlencode 'minMileageKm=20000' \
+  --data-urlencode 'maxMileageKm=40000' \
+  -o "$FILTERED"
+assert_visible_text "$FILTERED" '2 anúncio(s)'
+grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Mileage range missing lower boundary" >&2; exit 1; }
+grep -Fq "$GAMMA_TITLE" "$FILTERED" || { echo "Mileage range missing upper boundary" >&2; exit 1; }
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+  echo "Mileage range leaked outside, null-mileage or Draft listing" >&2
+  exit 1
+fi
+echo "PUBLIC_DISCOVERY_MILEAGE_RANGE: PASS"
+
+curl --fail --silent --show-error --get "$WEB_BASE/" \
+  --data-urlencode 'minMileageKm=50000' \
+  --data-urlencode 'maxMileageKm=10000' \
+  -o "$FILTERED"
+assert_visible_text "$FILTERED" '0 anúncio(s)'
+grep -Fq 'Nenhum anúncio encontrado.' "$FILTERED" || { echo "Mileage invalid-range empty state missing" >&2; exit 1; }
+echo "PUBLIC_DISCOVERY_MILEAGE_INVALID_RANGE: PASS"
 
 curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'minPrice=350000' \
