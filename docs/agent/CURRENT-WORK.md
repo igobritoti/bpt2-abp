@@ -6,23 +6,24 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0018 ativo. Fechar a primeira superfície visual operacional de Ingestion:
+Execution Plan 0018 concluído. A primeira superfície visual operacional de Ingestion está fechada:
 
 `candidate externo → fila pendente → admin login no host → /ingestao → reconciliar com Vehicle canônico`
 
-A página deve reutilizar Account Web + role `admin` já existentes e consumir somente `IIngestionCandidateAppService`. Não há novo domínio, schema, migration, frontend ou cliente OIDC neste slice.
+A página reutiliza Account Web + role `admin` já existentes e consome somente `IIngestionCandidateAppService`. Vehicle inexistente permanece pendente; Vehicle canônico validado pelo backend é reconciliado e sai da fila. Não foi criado domínio, schema, migration, frontend ou cliente OIDC novo.
 
-Próximo acceptance target: provar fila pendente + reconciliação canônica pela UI interna real.
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
 ## Active plan
 
-[`../exec-plans/active/0018-ingestion-admin-surface.md`](../exec-plans/active/0018-ingestion-admin-surface.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico de Ingestion Admin Surface: [`../exec-plans/completed/0018-ingestion-admin-surface.md`](../exec-plans/completed/0018-ingestion-admin-surface.md).
 - Histórico de Moderation Admin Surface: [`../exec-plans/completed/0017-moderation-admin-surface.md`](../exec-plans/completed/0017-moderation-admin-surface.md).
 - Histórico de Listing share metadata: [`../exec-plans/completed/0016-public-listing-share-metadata.md`](../exec-plans/completed/0016-public-listing-share-metadata.md).
 - Histórico do Vehicle Hub: [`../exec-plans/completed/0015-public-vehicle-hub.md`](../exec-plans/completed/0015-public-vehicle-hub.md).
