@@ -125,7 +125,7 @@ O Plan 0014 fechou o primeiro loop operacional real de Ingestion sem introduzir 
 
 `candidate externo → registro persistido → fila pendente → operador admin reconcilia com Vehicle canônico`
 
-Ingestion expõe application service restrito à role `admin`, reutiliza `(Source, ExternalId)` como identidade externa deduplicada já expressa no schema e lista apenas registros ainda não reconciliados. A reconciliação só persiste `ReconciledVehicleId` depois que `IVehicleCatalogReader`, via `Catalog.Contracts`, confirma que o Vehicle canônico existe. O primeiro payload permanece imutável porque o aggregate existente só oferece `ReconcileTo`; connector/source concreto, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI continuam não decididos.
+Ingestion expõe application service restrito à role `admin`, reutiliza `(Source, ExternalId)` como identidade externa deduplicada já expressa no schema e lista apenas registros ainda não reconciliados. A reconciliação só persiste `ReconciledVehicleId` depois que `IVehicleCatalogReader`, via `Catalog.Contracts`, confirma que o Vehicle canônico existe. O primeiro payload permanece imutável porque o aggregate existente só oferece `ReconcileTo`; connector/source concreto, matching automático, threshold de confidence, workflow de aprovação e background jobs continuam não decididos.
 
 O Plan 0015 abriu a primeira fatia real de Vehicle Hub sem criar novo contrato backend:
 
@@ -145,13 +145,19 @@ O Plan 0017 fechou a primeira superfície visual operacional de moderação sem 
 
 A Razor Page `/moderacao` vive no host ABP já autenticado, exige role `admin` e consome exclusivamente `IModerationListingReportQuery`. Anônimo é enviado ao Account Login; usuário autenticado sem `admin` é bloqueado pelo fluxo de AccessDenied; admin autenticado pelo Account Web real vê somente ReportId, ListingId, título/status corrente e CreatedAtUtc, sem identidade/PII Buyer. Reports históricos continuam visíveis após Pause. Aprovar/rejeitar, taxonomia/motivo, política de suspensão/remoção, workflow, scoring, notificações e um shell administrativo genérico continuam abertos.
 
+O Plan 0018 fechou a primeira superfície visual operacional de Ingestion sem criar autoridade ou workflow paralelo:
+
+`candidate externo → fila pendente → admin login no host → /ingestao → reconciliar com Vehicle canônico`
+
+A Razor Page `/ingestao` vive no host ABP já autenticado, exige role `admin` e consome exclusivamente `IIngestionCandidateAppService`. A fila exibe os campos já persistidos de identity/provenance/confidence; o operador informa um `VehicleId`, mas a validade canônica continua sendo decidida pelo backend via Catalog. Vehicle inexistente mantém o candidate pendente e mostra erro de validação; Vehicle canônico reconciliado remove o registro da fila pendente. Connector/source concreto, matching automático, threshold de confidence, workflow de aprovação, background jobs, autocomplete/busca de Vehicle e shell administrativo genérico continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado pode consultar a inbox read-only pela API e pela primeira superfície visual interna sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado pode consultar a inbox read-only pela API e pela primeira superfície visual interna sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui fila e primeira superfície visual interna para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0017. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de moderação, SEO, Vehicle Hub, Ingestion ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0018. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de Ingestion, moderação, SEO, Vehicle Hub ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -182,6 +188,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0017. O próximo sl
 - A primeira superfície visual de moderação vive no host ABP existente em `/moderacao`, exige role `admin`, consome somente a inbox read-only já existente e não expõe identidade/PII Buyer.
 - A primeira fatia de SEO técnico reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui, Pause remove e o detalhe público publica canonical absoluto.
 - A primeira superfície operacional de Ingestion é interna e restrita a `admin`; `(Source, ExternalId)` identifica o registro externo sem duplicação e reconciliation só aceita `Vehicle` confirmado por `Catalog.Contracts`.
+- A primeira superfície visual de Ingestion vive no host ABP existente em `/ingestao`, exige role `admin`, consome somente `IIngestionCandidateAppService` e não substitui a validação canônica do Catalog.
 - O primeiro Vehicle Hub usa `/veiculos/{id}` para um `Vehicle` canônico, lê sua identidade somente do Catalog e deriva ofertas somente da projeção pública filtrada por `VehicleId`; ausência de oferta não remove o Hub.
 - Metadata social do Listing público deriva exclusivamente da mesma projeção pública e dos mesmos title/description/canonical; a primeira foto pública pode ser reutilizada como imagem social e ausência de foto não cria asset paralelo.
 
@@ -195,7 +202,7 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 - perfil Buyer, alertas e extensões de Favorites;
 - taxonomia/motivo de denúncia, workflow e política de suspensão/remoção, scoring, notificações de moderação e shell administrativo genérico;
 - JSON-LD/schema.org, metadata social do Vehicle Hub/home/páginas agregadas, geração dedicada de social image, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
-- connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI de Ingestion;
+- connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e autocomplete/busca de Vehicle;
 - promoções;
 - enrichment do Vehicle Hub (specs, equipamentos, segurança, consumo, preço/mercado, editorial e imagens enriquecidas), páginas agregadas, slug final e sitemap completo do catálogo;
 - schemas PostgreSQL separados por módulo;

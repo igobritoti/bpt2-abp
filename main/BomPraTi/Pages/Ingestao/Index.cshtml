@@ -1,0 +1,70 @@
+@page "/ingestao"
+@model BomPraTi.Pages.Ingestao.IndexModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Ingestão de veículos";
+}
+
+<div class="container py-4">
+    <h1>Ingestão de veículos</h1>
+    <p>Candidates pendentes de reconciliação com o catálogo canônico.</p>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">
+            @foreach (var state in ViewData.ModelState.Values)
+            {
+                foreach (var error in state.Errors)
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            }
+            </ul>
+        </div>
+    }
+
+    @if (Model.Pending.Count == 0)
+    {
+        <div class="alert alert-secondary" role="status">Nenhum candidate pendente.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Source</th>
+                        <th scope="col">ExternalId</th>
+                        <th scope="col">Identidade recebida</th>
+                        <th scope="col">Confidence</th>
+                        <th scope="col">Provenance</th>
+                        <th scope="col">Vehicle canônico</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var candidate in Model.Pending)
+                {
+                    var confidence = candidate.Confidence.ToString("0.###", CultureInfo.InvariantCulture);
+                    <tr data-record-id="@candidate.Id" data-confidence="@confidence">
+                        <td>@candidate.Source</td>
+                        <td>@candidate.ExternalId</td>
+                        <td>@candidate.RawIdentity</td>
+                        <td>@confidence</td>
+                        <td>@candidate.Provenance</td>
+                        <td>
+                            <form method="post" action="/ingestao?handler=Reconcile" class="d-flex gap-2 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="RecordId" value="@candidate.Id" />
+                                <label class="visually-hidden" for="vehicle-@candidate.Id">VehicleId canônico</label>
+                                <input id="vehicle-@candidate.Id" name="VehicleId" type="text" class="form-control" placeholder="VehicleId canônico" required />
+                                <button type="submit" class="btn btn-primary">Reconciliar</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
