@@ -101,7 +101,7 @@ O Plan 0010 adicionou o primeiro estado operacional mínimo de atendimento sem t
 
 `Lead novo → Seller owner marca como atendido → inbox preserva ContactedAtUtc`
 
-`Lead.ContactedAtUtc` é nulo enquanto o contato é novo e recebe o primeiro instante UTC quando o Seller owner marca o atendimento. O command deriva o Seller de `ICurrentUser` e só encontra Leads ligados a Listings próprios; outro Seller recebe 404 e o browser nunca informa `SellerId`. A operação é monotônica/idempotente: chamadas repetidas preservam o primeiro timestamp. O shell `/vender` exibe Novo/Atendido e oferece a ação apenas para Leads ainda não atendidos. Notas, pipeline comercial, CRM, scoring e resolução de PII Buyer continuam fora do slice.
+`Lead.ContactedAtUtc` é nulo enquanto o contato está novo e recebe o primeiro instante UTC quando o Seller owner marca o atendimento. O command deriva o Seller de `ICurrentUser` e só encontra Leads ligados a Listings próprios; outro Seller recebe 404 e o browser nunca informa `SellerId`. A operação é monotônica/idempotente: chamadas repetidas preservam o primeiro timestamp. O shell `/vender` exibe Novo/Atendido e oferece a ação apenas para Leads ainda não atendidos. Notas, pipeline comercial, CRM, scoring e resolução de PII Buyer continuam fora do slice.
 
 O Plan 0011 abriu a primeira capacidade real de moderação sem inventar política operacional prematura:
 
@@ -157,13 +157,19 @@ O Plan 0019 fechou a metadata social mínima do Vehicle Hub público sem criar f
 
 O Hub reutiliza exatamente title, description e canonical já derivados da identidade canônica do Catalog para Open Graph e Twitter. Como ainda não existe asset canônico próprio do Vehicle Hub, a primeira versão usa `summary` sem `og:image`/`twitter:image` e não reaproveita foto de Listing como se fosse identidade visual do Vehicle. Vehicle inexistente continua 404/noindex sem URL social válida. JSON-LD, imagem social dedicada, metadata social da home/páginas agregadas e estratégia editorial continuam abertos.
 
+O Plan 0020 fechou o primeiro ponto de entrada comum das superfícies administrativas já existentes:
+
+`admin login no host → /admin → Moderação / Ingestão`
+
+A Razor Page `/admin` vive no mesmo host e exige a mesma role `admin` das superfícies que agrega. Ela não consulta dados nem duplica application services: apenas liga o operador a `/moderacao` e `/ingestao`. Anônimo é enviado ao Account Login, usuário autenticado sem `admin` é bloqueado e admin acessa o hub e os dois destinos com a mesma sessão. Menu global do tema, layout compartilhado, dashboard/métricas, permissões granulares e frontend admin separado continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado pode consultar a inbox read-only pela API e pela primeira superfície visual interna sem receber PII Buyer. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e do Vehicle Hub público, e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui fila e primeira superfície visual interna para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público; um operador admin autenticado possui um hub comum para acessar as superfícies de Moderação e Ingestão sem receber nova autoridade de negócio. O public web publica descoberta SEO técnica mínima, metadata social do Listing público e do Vehicle Hub público, e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui fila e superfície visual interna para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0019. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0020. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de administração, SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -198,6 +204,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0019. O próximo sl
 - O primeiro Vehicle Hub usa `/veiculos/{id}` para um `Vehicle` canônico, lê sua identidade somente do Catalog e deriva ofertas somente da projeção pública filtrada por `VehicleId`; ausência de oferta não remove o Hub.
 - Metadata social do Listing público deriva exclusivamente da mesma projeção pública e dos mesmos title/description/canonical; a primeira foto pública pode ser reutilizada como imagem social e ausência de foto não cria asset paralelo.
 - Metadata social do Vehicle Hub deriva exclusivamente dos mesmos title/description/canonical da identidade canônica do Catalog; sem asset canônico próprio, não inventa imagem nem reutiliza foto de Listing como imagem do Vehicle.
+- O primeiro hub administrativo vive em `/admin`, exige a role `admin` já existente e apenas navega para `/moderacao` e `/ingestao`; não consulta dados nem cria autoridade de negócio paralela.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/` quando uma decisão exigir formalização adicional.
 
@@ -207,7 +214,8 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas de atendimento, exportação e resolução de perfil/PII Buyer para Leads;
 - perfil Buyer, alertas e extensões de Favorites;
-- taxonomia/motivo de denúncia, workflow e política de suspensão/remoção, scoring, notificações de moderação e shell administrativo genérico;
+- taxonomia/motivo de denúncia, workflow e política de suspensão/remoção, scoring e notificações de moderação;
+- menu/layout administrativo compartilhado, dashboard/métricas, permissões administrativas granulares e eventual frontend admin separado;
 - JSON-LD/schema.org, metadata social da home/páginas agregadas, geração dedicada de social image, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
 - connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e autocomplete/busca de Vehicle;
 - promoções;
