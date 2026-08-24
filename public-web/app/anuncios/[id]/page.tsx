@@ -32,11 +32,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const vehicle = vehicleLabel(listing);
+  const description = `${vehicle} em ${listing.city}/${listing.stateCode}. ${formatPrice(listing.price)}.`;
+  const canonical = publicUrl(`/anuncios/${listing.id}`);
+  const firstPhoto = listing.photos[0];
+  const socialImage = firstPhoto ? publicPhotoUrl(listing.id, firstPhoto.id) : undefined;
+
   return {
     title: listing.title,
-    description: `${vehicle} em ${listing.city}/${listing.stateCode}. ${formatPrice(listing.price)}.`,
-    alternates: { canonical: publicUrl(`/anuncios/${listing.id}`) },
+    description,
+    alternates: { canonical },
     robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      title: listing.title,
+      description,
+      url: canonical,
+      images: socialImage ? [{ url: socialImage, alt: listing.title }] : undefined,
+    },
+    twitter: {
+      card: socialImage ? "summary_large_image" : "summary",
+      title: listing.title,
+      description,
+      images: socialImage ? [socialImage] : undefined,
+    },
   };
 }
 
