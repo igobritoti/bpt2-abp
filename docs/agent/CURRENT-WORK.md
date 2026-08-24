@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0023 concluído. O Seller Hub público agora reutiliza sua metadata normal para compartilhamento social:
+Execution Plan 0024 ativo. O menor gap público selecionado fecha a descoberta por sitemap do Seller Hub já entregue:
 
-`Seller com oferta pública → /vendedores/{sellerId} → metadata social SSR → link compartilhável coerente`
+`Listing público → seller projetado → sitemap.xml → /vendedores/{sellerId}`
 
-Open Graph/Twitter derivam somente de `displayName`, description e canonical já existentes. Sem asset canônico próprio, não há imagem social inventada. Nenhum backend, schema, migration, contrato ou perfil público paralelo foi criado.
+O boundary reutiliza somente a varredura pública já existente do sitemap e `sellerId` já projetado em cada Listing público. Não cria endpoint, contrato, backend, schema, migration, slug ou regra de ranking.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar por HTTP real que Draft não cria URL de Seller, Publish inclui uma URL deduplicada e Pause da última oferta a remove.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0024-public-seller-hub-sitemap.md`](../exec-plans/active/0024-public-seller-hub-sitemap.md)
 
 ## Source of runtime truth
 
