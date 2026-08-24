@@ -7,7 +7,7 @@ WEB_PORT="${BPT_SEO_WEB_PORT:-3098}"
 API_BASE="http://127.0.0.1:${API_PORT}"
 WEB_BASE="http://127.0.0.1:${WEB_PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-public-seo"
-RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"; HOME="$TMP/home.html"; UTILITY="$TMP/utility.html"
+RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"; HOME_HTML="$TMP/home.html"; UTILITY="$TMP/utility.html"
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 : "${BPT_FIXTURE_VEHICLE_ID:?BPT_FIXTURE_VEHICLE_ID is required}"
 rm -rf "$TMP"; mkdir -p "$TMP"
@@ -58,8 +58,8 @@ curl --fail --silent "$WEB_BASE/robots.txt" -o "$ROBOTS" || { cat "$WEB_LOG" >&2
 grep -Fq 'Disallow: /favoritos' "$ROBOTS" && grep -Fq 'Disallow: /vender' "$ROBOTS" && grep -Fq 'Disallow: /api/' "$ROBOTS" && grep -Fq "Sitemap: $WEB_BASE/sitemap.xml" "$ROBOTS" || { cat "$ROBOTS" >&2; exit 1; }
 echo 'PUBLIC_SEO_ROBOTS: PASS'
 
-curl --fail --silent "$WEB_BASE/" -o "$HOME"
-python3 - "$HOME" "$WEB_BASE/" <<'PY'
+curl --fail --silent "$WEB_BASE/" -o "$HOME_HTML"
+python3 - "$HOME_HTML" "$WEB_BASE/" <<'PY'
 from html.parser import HTMLParser
 import sys
 
