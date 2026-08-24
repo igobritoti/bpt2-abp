@@ -32,11 +32,12 @@
                 <tbody>
                 @foreach (var candidate in Model.Pending)
                 {
-                    <tr data-record-id="@candidate.Id" data-confidence="@candidate.Confidence.ToString("0.###", CultureInfo.InvariantCulture)">
+                    var confidence = candidate.Confidence.ToString("0.###", CultureInfo.InvariantCulture);
+                    <tr data-record-id="@candidate.Id" data-confidence="@confidence">
                         <td>@candidate.Source</td>
                         <td>@candidate.ExternalId</td>
                         <td>@candidate.RawIdentity</td>
-                        <td>@candidate.Confidence.ToString("0.###", CultureInfo.InvariantCulture)</td>
+                        <td>@confidence</td>
                         <td>@candidate.Provenance</td>
                         <td>
                             <form method="post" asp-page-handler="Reconcile" class="d-flex gap-2 align-items-center">
