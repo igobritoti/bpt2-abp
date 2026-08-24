@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0014 concluído. O primeiro loop operacional real de Ingestion está fechado:
+Execution Plan 0015 em execução. Outcome corrente:
 
-`candidate externo → registro persistido → fila pendente → operador admin reconcilia com Vehicle canônico`
+`Listing público → Vehicle canônico → Hub público do Vehicle → Listings publicados desse Vehicle`
 
-Ingestion preserva a identidade externa `(Source, ExternalId)`, restringe a superfície operacional a `admin` e valida o destino exclusivamente por `Catalog.Contracts`. Connector externo, matching automático, background job e UI continuam abertos até existir necessidade/evidência.
+O slice reutiliza o `Vehicle` já canônico do Catalog e o filtro público existente por `VehicleId`. Specs, enrichment, páginas agregadas, slug final e sitemap completo do catálogo permanecem fora do boundary.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar por HTTP real que o Hub existe independentemente do estado comercial do Listing, mostra somente dados canônicos e acompanha Publish/Pause pela projeção pública existente.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0015-public-vehicle-hub.md`](../exec-plans/active/0015-public-vehicle-hub.md)
 
 ## Source of runtime truth
 
