@@ -70,6 +70,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical },
     robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      title: displayName,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      card: "summary",
+      title: displayName,
+      description,
+    },
   };
 }
 
