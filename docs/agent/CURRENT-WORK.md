@@ -6,11 +6,11 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0014 concluído. O primeiro loop operacional real de Ingestion está fechado:
+Execution Plan 0015 concluído. A primeira fatia real de Vehicle Hub está fechada:
 
-`candidate externo → registro persistido → fila pendente → operador admin reconcilia com Vehicle canônico`
+`Listing público → Vehicle canônico → Hub público do Vehicle → Listings publicados desse Vehicle`
 
-Ingestion preserva a identidade externa `(Source, ExternalId)`, restringe a superfície operacional a `admin` e valida o destino exclusivamente por `Catalog.Contracts`. Connector externo, matching automático, background job e UI continuam abertos até existir necessidade/evidência.
+O Hub usa o Catalog como única autoridade da identidade automotiva e a projeção pública existente para disponibilidade comercial. Draft/Pause/Archive não aparecem; o Vehicle continua existindo no Hub mesmo sem oferta ativa. Enrichment, páginas agregadas, slug final e sitemap completo do catálogo continuam abertos.
 
 Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
@@ -23,8 +23,8 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico do Vehicle Hub: [`../exec-plans/completed/0015-public-vehicle-hub.md`](../exec-plans/completed/0015-public-vehicle-hub.md).
 - Histórico de Ingestion reconciliation: [`../exec-plans/completed/0014-ingestion-candidate-reconciliation.md`](../exec-plans/completed/0014-ingestion-candidate-reconciliation.md).
-- Histórico de SEO técnico: [`../exec-plans/completed/0013-public-seo-discovery.md`](../exec-plans/completed/0013-public-seo-discovery.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 

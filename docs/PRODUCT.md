@@ -127,13 +127,19 @@ O Plan 0014 fechou o primeiro loop operacional real de Ingestion sem introduzir 
 
 Ingestion expõe application service restrito à role `admin`, reutiliza `(Source, ExternalId)` como identidade externa deduplicada já expressa no schema e lista apenas registros ainda não reconciliados. A reconciliação só persiste `ReconciledVehicleId` depois que `IVehicleCatalogReader`, via `Catalog.Contracts`, confirma que o Vehicle canônico existe. O primeiro payload permanece imutável porque o aggregate existente só oferece `ReconcileTo`; connector/source concreto, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI continuam não decididos.
 
+O Plan 0015 abriu a primeira fatia real de Vehicle Hub sem criar novo contrato backend:
+
+`Listing público → Vehicle canônico → Hub público do Vehicle → Listings publicados desse Vehicle`
+
+O public web carrega a identidade automotiva exclusivamente pelo `Vehicle` do Catalog e usa o filtro público já existente por `VehicleId` para disponibilidade. `/veiculos/{id}` continua 200 mesmo sem oferta ativa; Draft não aparece, Publish inclui o Listing e Pause o remove sem remover o Hub. O detalhe público liga a identidade do veículo ao Hub, e o Hub publica title/canonical para Vehicle existente e 404/noindex para id inexistente. Specs, equipamentos, consumo, preço de mercado, conteúdo editorial, páginas agregadas, slugs semânticos e sitemap completo do catálogo continuam abertos.
+
 A experiência pública, a experiência Buyer autenticada e a experiência Seller continuam clientes da aplicação por HTTP conforme ADR-0004. A primeira implementação permanece no Next.js 16 Active LTS/App Router conforme ADR-0009, mantendo os boundaries OIDC/HTTP reversíveis.
 
-O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web também publica a descoberta SEO técnica mínima, e Ingestion agora possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico sem alterar a autoridade do Catalog. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação e ingestão automática continuam fora do baseline até necessidade comprovada.
+O domínio Sellers modela e normaliza `WhatsAppNumber`; a projeção pública de Listing entrega esse valor ao public web. O contato WhatsApp registra o Lead mínimo no Marketplace antes de abrir `https://wa.me/{digits}` e pode preservar a identidade Buyer quando já houver sessão. O Seller autenticado consulta o histórico de Leads dos próprios anúncios e pode registrar o primeiro instante de atendimento. O Buyer autenticado pode registrar um sinal mínimo de moderação sobre Listing público, e um operador admin autenticado pode consultar a inbox read-only desses sinais sem receber PII Buyer. O public web publica descoberta SEO técnica mínima e um primeiro Vehicle Hub derivado da autoridade do Catalog; Ingestion possui uma fila interna mínima para reconciliar identidades externas com Vehicle canônico. Analytics agregados, CRM, deduplicação/scoring comercial, resolução de perfil/PII Buyer, política operacional de moderação, enrichment do Vehicle Hub e ingestão automática continuam fora do baseline até necessidade comprovada.
 
 ## Slice ativo
 
-Nenhum execution plan está ativo após o fechamento do Plan 0014. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de Ingestion, SEO, moderação ou qualquer candidato específico.
+Nenhum execution plan está ativo após o fechamento do Plan 0015. O próximo slice deve ser escolhido como o menor gap real de produto por evidência, sem presumir continuação de Vehicle Hub, Ingestion, SEO, moderação ou qualquer candidato específico.
 
 ## Requisitos já congelados
 
@@ -163,6 +169,7 @@ Nenhum execution plan está ativo após o fechamento do Plan 0014. O próximo sl
 - A primeira inbox de moderação é read-only, restrita à role `admin`, não expõe identidade/PII Buyer e preserva reports históricos mesmo quando o Listing deixa de estar público.
 - A primeira fatia de SEO técnico reutiliza a API pública como autoridade de indexabilidade: Draft/private não entra no sitemap, Publish inclui, Pause remove e o detalhe público publica canonical absoluto.
 - A primeira superfície operacional de Ingestion é interna e restrita a `admin`; `(Source, ExternalId)` identifica o registro externo sem duplicação e reconciliation só aceita `Vehicle` confirmado por `Catalog.Contracts`.
+- O primeiro Vehicle Hub usa `/veiculos/{id}` para um `Vehicle` canônico, lê sua identidade somente do Catalog e deriva ofertas somente da projeção pública filtrada por `VehicleId`; ausência de oferta não remove o Hub.
 
 O estado formal e a evidência dessas decisões ficam em `MDV.md` e `adr/` quando uma decisão exigir formalização adicional.
 
@@ -175,7 +182,8 @@ Só devem ser resolvidas quando houver necessidade de produto e evidência sufic
 - taxonomia/motivo de denúncia, frontend/painel administrativo, workflow e política de suspensão/remoção, scoring e notificações de moderação;
 - JSON-LD/schema.org, Open Graph/Twitter cards, landing pages, estratégia de keywords/conteúdo, Search Console/analytics, cache/revalidation específica de sitemap e ranking SEO/search;
 - connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação, background jobs e UI de Ingestion;
-- promoções e Vehicle Hub;
+- promoções;
+- enrichment do Vehicle Hub (specs, equipamentos, segurança, consumo, preço/mercado, editorial e imagens enriquecidas), páginas agregadas, slug final e sitemap completo do catálogo;
 - schemas PostgreSQL separados por módulo;
 - FK física entre módulos;
 - estratégia final de busca quando benchmark exigir;

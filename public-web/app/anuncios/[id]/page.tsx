@@ -51,7 +51,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
       <nav className="back-nav" aria-label="Voltar para anúncios"><Link href="/">← Todos os anúncios</Link></nav>
       <article>
         <header className="detail-header">
-          <div><p className="eyebrow">{vehicleLabel(listing)}</p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>
+          <div><p className="eyebrow"><Link href={`/veiculos/${listing.vehicleId}`}>{vehicleLabel(listing)}</Link></p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>
           <p className="detail-price">{formatPrice(listing.price)}</p>
         </header>
         <section aria-label="Fotos do anúncio" className="photo-grid">
