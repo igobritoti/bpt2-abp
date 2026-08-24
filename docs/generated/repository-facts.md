@@ -9,6 +9,6 @@
 - Test project files under `tests/`: **2**
 - Business module directories: **5** — `catalog`, `ingestion`, `marketplace`, `media`, `sellers`
 - GitHub workflow files: **16** — `architecture-gate.yml`, `buyer-favorites-http-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `listing-http-lifecycle-gate.yml`, `listing-photo-http-gate.yml`, `product-api-gate.yml`, `public-buyer-http-gate.yml`, `public-discovery-http-gate.yml`, `public-web-gate.yml`, `seller-auth-http-gate.yml`, `seller-draft-edit-http-gate.yml`, `seller-publish-http-gate.yml`, `seller-shell-http-gate.yml`
-- Active execution plans: **0** — none
+- Active execution plans: **1** — 0018-ingestion-admin-surface.md
 
 Runtime readiness is intentionally not copied here. Use the checks on the current commit/PR as defined by `docs/QUALITY.md`.
