@@ -57,9 +57,9 @@ O slice deve criar uma página pública estável para um `Vehicle` canônico sem
 - [x] refetch do `main` remoto em `4057a770c77d42146a7679d103846a9ec009699d`.
 - [x] auditar Promoções, Vehicle Hub e capabilities já modeladas.
 - [x] confirmar que Catalog GET + filtro público por `VehicleId` já cobrem os dados necessários.
-- [ ] abrir draft PR.
-- [ ] implementar helper + Hub + link do detalhe.
-- [ ] ampliar a prova HTTP existente somente com assertions do Hub.
+- [x] abrir draft PR.
+- [x] implementar helper + Hub + link do detalhe.
+- [x] adicionar prova HTTP focal ao Public Buyer HTTP Gate existente.
 - [ ] corrigir apenas falhas observadas.
 - [ ] self-review e fechamento documental.
 - [ ] exigir CI fresco no head final e merge somente verde.
@@ -68,6 +68,13 @@ O slice deve criar uma página pública estável para um `Vehicle` canônico sem
 ## Decisões abertas necessárias
 
 Nenhuma decisão arquitetural nova. Conteúdo/enrichment do Vehicle Hub, estratégia de URLs semânticas e enumeração em sitemap permanecem abertas até existir dados e caso real.
+
+## Progress log
+
+- 2026-08-24: `main` remoto confirmado em `4057a770c77d42146a7679d103846a9ec009699d` após o fechamento do Plan 0014.
+- 2026-08-24: auditoria encontrou Catalog e busca pública já capazes de fornecer o primeiro Hub por composição, sem backend/schema novos; Promoções não tinha implementação parcial equivalente.
+- 2026-08-24: branch `feat/public-vehicle-hub` e draft PR #34 abertos; helper Catalog, rota `/veiculos/[id]`, link no detalhe e smoke HTTP focal adicionados.
+- 2026-08-24: Public Web Gate passou no primeiro head funcional; Harness falhou apenas porque esta seção obrigatória ainda não existia, sem falha funcional observada.
 
 ## Decision log
 
