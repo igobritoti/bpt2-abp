@@ -42,11 +42,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = `${vehicleRefLabel(vehicle)}${vehicle.modelYear ? ` ${vehicle.modelYear}` : ""}`;
+  const description = `Veja a identidade canônica e os anúncios publicados de ${title}.`;
+  const canonical = publicUrl(`/veiculos/${vehicle.id}`);
+
   return {
     title,
-    description: `Veja a identidade canônica e os anúncios publicados de ${title}.`,
-    alternates: { canonical: publicUrl(`/veiculos/${vehicle.id}`) },
+    description,
+    alternates: { canonical },
     robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 
