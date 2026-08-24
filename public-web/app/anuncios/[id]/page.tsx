@@ -92,7 +92,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
             <section className="detail-section" aria-labelledby="description-title"><p className="eyebrow">Descrição</p><h2 id="description-title">Sobre este veículo</h2><p className="description-text">{listing.description}</p></section>
           </div>
           <aside className="seller-card" aria-labelledby="seller-title">
-            <p className="eyebrow">Vendedor</p><h2 id="seller-title">{listing.seller.displayName ?? "Vendedor"}</h2><p>Fale diretamente com o responsável por este anúncio.</p>
+            <p className="eyebrow">Vendedor</p><h2 id="seller-title"><Link href={`/vendedores/${listing.seller.sellerId}`}>{listing.seller.displayName ?? "Vendedor"}</Link></h2><p>Fale diretamente com o responsável por este anúncio.</p>
             <FavoriteButton listingId={listing.id} />
             <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
             {contactUrl ? <WhatsAppContactButton listingId={listing.id} /> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
