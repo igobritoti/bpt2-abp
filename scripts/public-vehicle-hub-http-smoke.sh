@@ -115,12 +115,22 @@ class MetaParser(HTMLParser):
         super().__init__()
         self.meta = []
         self.links = []
+        self.title_parts = []
+        self.in_title = False
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
         if tag == "meta":
             self.meta.append(values)
         elif tag == "link":
             self.links.append(values)
+        elif tag == "title":
+            self.in_title = True
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self.in_title = False
+    def handle_data(self, data):
+        if self.in_title:
+            self.title_parts.append(data)
 
 parser = MetaParser()
 with open(sys.argv[1], encoding="utf-8") as handle:
@@ -133,12 +143,16 @@ def meta(key, value):
     return None
 
 canonical = sys.argv[2]
-title = "HTTP Lifecycle Model HTTP Lifecycle Version 2025"
+rendered_title = "".join(parser.title_parts).strip()
+suffix = " | Bom Pra Ti"
+if not rendered_title.endswith(suffix):
+    raise SystemExit(f"Vehicle Hub normal title metadata malformed: {rendered_title!r}")
+title = rendered_title[:-len(suffix)]
 description = meta("name", "description")
 if not description:
     raise SystemExit("Vehicle Hub normal description metadata missing")
 if meta("property", "og:title") != title:
-    raise SystemExit(f"Vehicle Hub Open Graph title mismatch: {meta('property', 'og:title')!r}")
+    raise SystemExit(f"Vehicle Hub Open Graph title diverged from normal title: {meta('property', 'og:title')!r} != {title!r}")
 if meta("property", "og:description") != description:
     raise SystemExit("Vehicle Hub Open Graph description diverged from normal description")
 if meta("property", "og:url") != canonical:
@@ -148,7 +162,7 @@ if meta("property", "og:image") is not None:
 if meta("name", "twitter:card") != "summary":
     raise SystemExit(f"Vehicle Hub Twitter card mismatch: {meta('name', 'twitter:card')!r}")
 if meta("name", "twitter:title") != title:
-    raise SystemExit("Vehicle Hub Twitter title mismatch")
+    raise SystemExit("Vehicle Hub Twitter title diverged from normal title")
 if meta("name", "twitter:description") != description:
     raise SystemExit("Vehicle Hub Twitter description diverged from normal description")
 if meta("name", "twitter:image") is not None:
