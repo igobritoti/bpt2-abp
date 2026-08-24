@@ -6,21 +6,24 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0016 ativo. O acceptance target é fechar a primeira fatia explícita de metadata de compartilhamento do detalhe público do Listing:
+Execution Plan 0016 concluído. A primeira fatia explícita de metadata de compartilhamento do Listing público está fechada:
 
 `Listing publicado → metadata social SSR → link compartilhado com título/descrição/foto`
 
-O slice reutiliza somente a projeção pública atual, canonical existente e primeira foto pública quando houver. Não cria backend, schema, asset social paralelo ou integração externa.
+Open Graph e Twitter derivam exclusivamente da mesma projeção pública, title, description e canonical já usados pelo detalhe. Quando existe foto, a primeira foto pública é reutilizada; não existe asset social paralelo. Draft/Pause/Archive continuam sem detalhe público e sem URL social do Listing.
+
+Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
 
 ## Active plan
 
-[`../exec-plans/active/0016-public-listing-share-metadata.md`](../exec-plans/active/0016-public-listing-share-metadata.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Histórico de Listing share metadata: [`../exec-plans/completed/0016-public-listing-share-metadata.md`](../exec-plans/completed/0016-public-listing-share-metadata.md).
 - Histórico do Vehicle Hub: [`../exec-plans/completed/0015-public-vehicle-hub.md`](../exec-plans/completed/0015-public-vehicle-hub.md).
 - Histórico de Ingestion reconciliation: [`../exec-plans/completed/0014-ingestion-candidate-reconciliation.md`](../exec-plans/completed/0014-ingestion-candidate-reconciliation.md).
 
