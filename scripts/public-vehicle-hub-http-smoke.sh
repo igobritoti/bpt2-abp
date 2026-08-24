@@ -90,8 +90,13 @@ UNKNOWN_VEHICLE="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$UNKNOWN_VEHICLE")"
 [[ "$status" == 404 ]] || { echo "Unknown Vehicle Hub expected 404 got $status" >&2; exit 1; }
 grep -Fq 'noindex' "$HUB_HTML" || { echo 'Unknown Vehicle Hub is missing noindex metadata' >&2; exit 1; }
+if grep -Fq "property=\"og:url\" content=\"$WEB_BASE/veiculos/$UNKNOWN_VEHICLE\"" "$HUB_HTML"; then
+  echo 'Unknown Vehicle Hub leaked social URL metadata' >&2
+  exit 1
+fi
 echo 'VEHICLE_HUB_UNKNOWN_404: PASS'
 echo 'VEHICLE_HUB_UNKNOWN_NOINDEX: PASS'
+echo 'VEHICLE_HUB_SHARE_METADATA_UNKNOWN_404: PASS'
 
 status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID")"
 [[ "$status" == 200 ]] || { echo "Canonical Vehicle Hub expected 200 got $status" >&2; cat "$WEB_LOG" >&2; exit 1; }
@@ -101,9 +106,61 @@ grep -Fq 'HTTP Lifecycle Version' "$HUB_HTML" || { echo 'Canonical version missi
 grep -Fq '>2025<' "$HUB_HTML" || { echo 'Canonical model year missing from Hub' >&2; exit 1; }
 grep -Fq 'HTTP Lifecycle Model HTTP Lifecycle Version 2025 | Bom Pra Ti</title>' "$HUB_HTML" || { echo 'Vehicle Hub metadata title missing' >&2; exit 1; }
 grep -Fq "rel=\"canonical\" href=\"$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID\"" "$HUB_HTML" || { echo 'Vehicle Hub canonical missing' >&2; exit 1; }
+python3 - "$HUB_HTML" "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class MetaParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.meta = []
+        self.links = []
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if tag == "meta":
+            self.meta.append(values)
+        elif tag == "link":
+            self.links.append(values)
+
+parser = MetaParser()
+with open(sys.argv[1], encoding="utf-8") as handle:
+    parser.feed(handle.read())
+
+def meta(key, value):
+    for item in parser.meta:
+        if item.get(key) == value:
+            return item.get("content")
+    return None
+
+canonical = sys.argv[2]
+title = "HTTP Lifecycle Model HTTP Lifecycle Version 2025"
+description = meta("name", "description")
+if not description:
+    raise SystemExit("Vehicle Hub normal description metadata missing")
+if meta("property", "og:title") != title:
+    raise SystemExit(f"Vehicle Hub Open Graph title mismatch: {meta('property', 'og:title')!r}")
+if meta("property", "og:description") != description:
+    raise SystemExit("Vehicle Hub Open Graph description diverged from normal description")
+if meta("property", "og:url") != canonical:
+    raise SystemExit(f"Vehicle Hub Open Graph URL mismatch: {meta('property', 'og:url')!r}")
+if meta("property", "og:image") is not None:
+    raise SystemExit("Vehicle Hub invented Open Graph image without a canonical Vehicle asset")
+if meta("name", "twitter:card") != "summary":
+    raise SystemExit(f"Vehicle Hub Twitter card mismatch: {meta('name', 'twitter:card')!r}")
+if meta("name", "twitter:title") != title:
+    raise SystemExit("Vehicle Hub Twitter title mismatch")
+if meta("name", "twitter:description") != description:
+    raise SystemExit("Vehicle Hub Twitter description diverged from normal description")
+if meta("name", "twitter:image") is not None:
+    raise SystemExit("Vehicle Hub invented Twitter image without a canonical Vehicle asset")
+canonical_link = next((x.get("href") for x in parser.links if x.get("rel") == "canonical"), None)
+if canonical_link != canonical:
+    raise SystemExit(f"Vehicle Hub canonical mismatch: {canonical_link!r}")
+PY
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Draft Listing leaked into Vehicle Hub' >&2; exit 1; fi
 echo 'VEHICLE_HUB_CANONICAL_IDENTITY: PASS'
 echo 'VEHICLE_HUB_METADATA: PASS'
+echo 'VEHICLE_HUB_SHARE_METADATA: PASS'
 echo 'VEHICLE_HUB_DRAFT_PRIVATE: PASS'
 
 status="$(request_json POST "$API_BASE/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"
