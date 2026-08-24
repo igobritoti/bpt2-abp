@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0020 concluído. O primeiro ponto de entrada comum das superfícies administrativas está fechado:
+Execution Plan 0021 ativo. Fechar filtros públicos de localização usando somente os dados já canônicos do Listing:
 
-`admin login no host → /admin → Moderação / Ingestão`
+`Listing publicado com City/StateCode → filtros Cidade/UF → home SSR → resultados públicos localizados`
 
-`/admin` reutiliza a role `admin` e o Account Web já existentes e contém somente navegação para as superfícies operacionais atuais. Não consulta dados nem cria autoridade, permission model, backend ou schema paralelo.
+O slice deve ampliar o contrato/query de discovery e a home existente sem criar geolocalização, geocoder, novo aggregate, schema ou infraestrutura de busca.
 
-Próximo acceptance target: auditar novamente o menor gap real de produto antes de abrir novo execution plan.
+Próximo acceptance target: provar Cidade/UF no backend e na home real, inclusive preservação em query string/paginação e Draft invisível.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0021-public-discovery-location-filters.md`](../exec-plans/active/0021-public-discovery-location-filters.md)
 
 ## Source of runtime truth
 
