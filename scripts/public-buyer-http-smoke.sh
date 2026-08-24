@@ -175,8 +175,8 @@ PY
 
 pushd "$ROOT/public-web" >/dev/null
 npm install --no-audit --no-fund
-BPT_API_BASE_URL="$API_BASE" NEXT_PUBLIC_BPT_API_BASE_URL="$API_BASE" npm run build
-BPT_API_BASE_URL="$API_BASE" NEXT_PUBLIC_BPT_API_BASE_URL="$API_BASE" npm run start -- -p "$WEB_PORT" >"$WEB_LOG" 2>&1 &
+BPT_API_BASE_URL="$API_BASE" NEXT_PUBLIC_BPT_API_BASE_URL="$API_BASE" BPT_PUBLIC_BASE_URL="$WEB_BASE" npm run build
+BPT_API_BASE_URL="$API_BASE" NEXT_PUBLIC_BPT_API_BASE_URL="$API_BASE" BPT_PUBLIC_BASE_URL="$WEB_BASE" npm run start -- -p "$WEB_PORT" >"$WEB_LOG" 2>&1 &
 WEB_PID=$!
 popd >/dev/null
 
@@ -198,6 +198,10 @@ if grep -Fq "$LISTING_TITLE" "$HOME_HTML"; then
 fi
 status="$(curl --silent --show-error --output "$DETAIL_HTML" --write-out '%{http_code}' "$WEB_BASE/anuncios/$LISTING_ID")"
 [[ "$status" == "404" ]] || { echo "Draft Listing public detail expected 404, got $status" >&2; exit 1; }
+if grep -Fq "property=\"og:url\" content=\"$WEB_BASE/anuncios/$LISTING_ID\"" "$DETAIL_HTML"; then
+  echo "Draft Listing leaked social URL metadata." >&2
+  exit 1
+fi
 echo "PUBLIC_WEB_DRAFT_PRIVATE: PASS"
 
 status="$(request_json POST "$API_BASE/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"
@@ -239,6 +243,58 @@ grep -Fq "<title>$LISTING_TITLE | Bom Pra Ti</title>" "$DETAIL_HTML" || { echo "
 echo "PUBLIC_WEB_DETAIL: PASS"
 echo "PUBLIC_WEB_METADATA: PASS"
 
+python3 - "$DETAIL_HTML" "$LISTING_TITLE" "$WEB_BASE/anuncios/$LISTING_ID" "$API_BASE/api/app/public-listing/$LISTING_ID/photo/$PHOTO_ID" <<'PY'
+from html.parser import HTMLParser
+import sys
+
+class MetaParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.meta = []
+        self.links = []
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if tag == "meta":
+            self.meta.append(values)
+        elif tag == "link":
+            self.links.append(values)
+
+parser = MetaParser()
+with open(sys.argv[1], encoding="utf-8") as handle:
+    parser.feed(handle.read())
+
+def meta(key, value):
+    for item in parser.meta:
+        if item.get(key) == value:
+            return item.get("content")
+    return None
+
+title, canonical, image = sys.argv[2:5]
+description = meta("name", "description")
+if not description:
+    raise SystemExit("Normal description metadata missing")
+if meta("property", "og:title") != title:
+    raise SystemExit(f"Open Graph title mismatch: {meta('property', 'og:title')!r}")
+if meta("property", "og:description") != description:
+    raise SystemExit("Open Graph description diverged from normal description")
+if meta("property", "og:url") != canonical:
+    raise SystemExit(f"Open Graph URL mismatch: {meta('property', 'og:url')!r}")
+if meta("property", "og:image") != image:
+    raise SystemExit(f"Open Graph image mismatch: {meta('property', 'og:image')!r}")
+if meta("name", "twitter:card") != "summary_large_image":
+    raise SystemExit(f"Twitter card mismatch: {meta('name', 'twitter:card')!r}")
+if meta("name", "twitter:title") != title:
+    raise SystemExit("Twitter title mismatch")
+if meta("name", "twitter:description") != description:
+    raise SystemExit("Twitter description diverged from normal description")
+if meta("name", "twitter:image") != image:
+    raise SystemExit(f"Twitter image mismatch: {meta('name', 'twitter:image')!r}")
+canonical_link = next((x.get("href") for x in parser.links if x.get("rel") == "canonical"), None)
+if canonical_link != canonical:
+    raise SystemExit(f"Canonical mismatch: {canonical_link!r}")
+PY
+echo "PUBLIC_WEB_SHARE_METADATA: PASS"
+
 status="$(curl --silent --show-error --output "$RESPONSE" --dump-header "$CONTACT_HEADERS" --write-out '%{http_code}' \
   -X POST "$WEB_BASE/api/contact/whatsapp" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -256,7 +312,14 @@ status="$(request_json POST "$API_BASE/api/app/listing-command/pause/$LISTING_ID
 [[ "$status" == "200" ]] || { echo "Listing pause expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request_json POST "$API_BASE/api/app/lead?listingId=$LISTING_ID")"
 [[ "$status" == "404" ]] || { echo "Paused Lead create expected 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(curl --silent --show-error --output "$DETAIL_HTML" --write-out '%{http_code}' "$WEB_BASE/anuncios/$LISTING_ID")"
+[[ "$status" == "404" ]] || { echo "Paused Listing public detail expected 404, got $status" >&2; exit 1; }
+if grep -Fq "property=\"og:url\" content=\"$WEB_BASE/anuncios/$LISTING_ID\"" "$DETAIL_HTML"; then
+  echo "Paused Listing retained social URL metadata." >&2
+  exit 1
+fi
 echo "PUBLIC_LEAD_PAUSED_BLOCKED: PASS"
+echo "PUBLIC_WEB_SHARE_METADATA_PAUSED_PRIVATE: PASS"
 
 status="$(request_json POST "$API_BASE/api/app/listing-command/archive/$LISTING_ID" "$ADMIN_TOKEN")"
 [[ "$status" == "200" ]] || { echo "Listing archive expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
