@@ -26,6 +26,7 @@ expected={
  '/api/app/moderation-listing-command/withdraw/{listingId}':'post',
  '/api/app/moderation-listing-command/restore/{listingId}':'post',
  '/api/app/listing-report/report/{listingId}':'post',
+ '/api/app/listing-command/{listingId}':'put',
  '/api/app/public-listing/{id}':'get',
 }
 for path,verb in expected.items():
@@ -88,6 +89,10 @@ LISTING_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys; print(json.load(open(sys.argv[1]))['id'])
 PY
 )"
+LISTING_STAMP="$(python3 - "$RESPONSE" <<'PY'
+import json,sys; print(json.load(open(sys.argv[1]))['concurrencyStamp'])
+PY
+)"
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Publish failed $status" >&2; exit 1; }
 status="$(request POST "/api/app/listing-report/report/$LISTING_ID" "$BUYER_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || { echo "Report failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 
@@ -108,7 +113,7 @@ PY
 status="$(request GET "/api/app/public-listing/$LISTING_ID")"
 if [[ "$status" == 200 ]]; then
   python3 - "$RESPONSE" <<'PY'
-import json,sys
+import sys
 raw=open(sys.argv[1],encoding='utf-8').read().strip()
 if raw not in ('','null'):
     raise SystemExit(f'Moderated listing leaked publicly: {raw}')
@@ -122,6 +127,16 @@ status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TO
 [[ "$status" != 200 && "$status" != 201 && "$status" != 204 ]] || { echo 'Seller publish unexpectedly reversed moderation.' >&2; exit 1; }
 grep -Fq 'Marketplace:ListingModerated' "$RESPONSE" || { echo "Seller publish blocked without expected moderation code: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'MODERATION_AUTHORITY_SELLER_PUBLISH_BLOCKED: PASS'
+
+UPDATE_BODY="$(python3 - "$LISTING_STAMP" <<'PY'
+import json,sys
+print(json.dumps({'title':'Seller attempted moderated edit','price':146000,'description':'Fixture moderation authority','manufactureYear':2024,'mileageKm':5000,'color':'Prata','city':'São Paulo','stateCode':'SP','concurrencyStamp':sys.argv[1]}))
+PY
+)"
+status="$(request PUT "/api/app/listing-command/$LISTING_ID" "$ADMIN_TOKEN" "$UPDATE_BODY")"
+[[ "$status" != 200 && "$status" != 201 && "$status" != 204 ]] || { echo 'Seller edit unexpectedly changed moderated listing.' >&2; exit 1; }
+grep -Fq 'Marketplace:ListingModerated' "$RESPONSE" || { echo "Seller edit blocked without expected moderation code: $(cat "$RESPONSE")" >&2; exit 1; }
+echo 'MODERATION_AUTHORITY_SELLER_EDIT_BLOCKED: PASS'
 
 INBOX='/api/app/moderation-listing-report-query'
 status="$(request GET "$INBOX" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Admin inbox expected 200 got $status" >&2; exit 1; }
