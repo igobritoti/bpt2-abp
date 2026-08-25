@@ -16,6 +16,9 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 12;
 const loadVehicle = cache((id: string) => getVehicle(id));
+const loadVehicleIdentityListing = cache((vehicleId: string) =>
+  getPublicListings({ vehicleId, skip: 0, take: 1 }),
+);
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -63,6 +66,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${vehicleRefLabel(vehicle)}${vehicle.modelYear ? ` ${vehicle.modelYear}` : ""}`;
   const description = `Veja a identidade canônica e os anúncios publicados de ${title}.`;
   const canonical = publicUrl(`/veiculos/${vehicle.id}`);
+  const listingPage = await loadVehicleIdentityListing(vehicle.id);
+  const firstListing = listingPage.items[0];
+  const firstPhoto = firstListing?.photos[0];
+  const socialImage = firstListing && firstPhoto
+    ? publicPhotoUrl(firstListing.id, firstPhoto.id)
+    : undefined;
 
   return {
     title,
@@ -74,11 +83,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url: canonical,
+      images: socialImage ? [{ url: socialImage, alt: title }] : undefined,
     },
     twitter: {
-      card: "summary",
+      card: socialImage ? "summary_large_image" : "summary",
       title,
       description,
+      images: socialImage ? [socialImage] : undefined,
     },
   };
 }
