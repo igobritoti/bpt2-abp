@@ -62,6 +62,42 @@ if "S256" not in data.get("code_challenge_methods_supported", []):
 PY
 echo "SELLER_SHELL_OIDC_DISCOVERY: PASS"
 
+SELLER_SUFFIX="$(date +%s)$$"
+SELLER_USERNAME="seller${SELLER_SUFFIX}"
+SELLER_EMAIL="${SELLER_USERNAME}@example.test"
+SELLER_PASSWORD='Bpt2Seller!2026Aa'
+REGISTER_BODY="$(python3 - "$SELLER_USERNAME" "$SELLER_EMAIL" "$SELLER_PASSWORD" <<'PY'
+import json, sys
+print(json.dumps({
+    "userName": sys.argv[1],
+    "emailAddress": sys.argv[2],
+    "password": sys.argv[3],
+    "appName": "MVC",
+}))
+PY
+)"
+register_status="$(curl --silent --show-error --output "$RESPONSE" --write-out '%{http_code}' \
+  --request POST "$BASE/api/account/register" \
+  -H 'Content-Type: application/json' \
+  --data "$REGISTER_BODY")"
+[[ "$register_status" == "200" || "$register_status" == "201" ]] || {
+  echo "Seller self-registration expected 200/201, got $register_status: $(cat "$RESPONSE")" >&2
+  exit 1
+}
+python3 - "$RESPONSE" "$SELLER_USERNAME" "$SELLER_EMAIL" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+if not data.get("id"):
+    raise SystemExit(f"Seller self-registration response missing id: {data}")
+if data.get("userName") != sys.argv[2]:
+    raise SystemExit(f"Seller self-registration username mismatch: {data}")
+email = data.get("email") or data.get("emailAddress")
+if email != sys.argv[3]:
+    raise SystemExit(f"Seller self-registration email mismatch: {data}")
+PY
+echo "SELLER_SHELL_SELF_REGISTRATION: PASS"
+
 location() {
   python3 - "$1" <<'PY'
 import sys
@@ -137,8 +173,8 @@ status="$(curl --silent --show-error --output "$RESPONSE" --dump-header "$HEADER
   --request POST "$LOGIN_EFFECTIVE" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   --data-urlencode "__RequestVerificationToken=$REQUEST_TOKEN" \
-  --data-urlencode 'LoginInput.UserNameOrEmailAddress=admin' \
-  --data-urlencode 'LoginInput.Password=1q2w3E*' \
+  --data-urlencode "LoginInput.UserNameOrEmailAddress=$SELLER_USERNAME" \
+  --data-urlencode "LoginInput.Password=$SELLER_PASSWORD" \
   --data-urlencode 'LoginInput.RememberMe=false' \
   --data-urlencode 'Action=Login')"
 [[ "$status" == "302" ]] || { cat "$RESPONSE" >&2; echo "Account login expected 302, got $status" >&2; exit 1; }
