@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 foi concluído: a busca livre pública agora cobre `Listing.Title` e identidade canônica de Vehicle (Brand/Model/Generation/Version), preservando os filtros específicos existentes como AND.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 foi concluído: a busca livre pública cobre `Listing.Title` e identidade canônica de Vehicle, preservando filtros específicos como AND.
 
-Próximo acceptance target: refetchar o `main` depois do merge do PR #53 e escolher o próximo gap pós-MVP por evidência do repositório atual.
+Próximo acceptance target: concluir a auditoria da jornada pública de discovery e escolher por evidência exatamente um próximo gap pequeno, sem reabrir comportamentos já provados.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0035-public-search-quality-audit.md`](../exec-plans/active/0035-public-search-quality-audit.md)
 
 ## Source of runtime truth
 
@@ -32,7 +32,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0035 é pós-MVP e audita cobertura/qualidade da descoberta pública.
 
 ## Update rule
 
