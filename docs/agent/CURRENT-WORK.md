@@ -6,15 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 estão fechados. O primeiro slice pós-MVP priorizado por evidência é melhorar a capacidade central de descoberta sem introduzir ranking subjetivo ou infraestrutura nova.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O primeiro slice pós-MVP priorizado por evidência também foi concluído:
 
-Plan 0030: adicionar ordenação pública explícita por preço sobre a busca/filtros já existentes, preservando paginação determinística e estado em query string.
+- Plan 0030 — descoberta pública agora suporta ordenação explícita por preço crescente/decrescente, antes da paginação, preservando `sort` na query string e mantendo `Id` como desempate determinístico.
 
-Próximo acceptance target: provar por HTTP/SSR que o comprador escolhe menor/maior preço, a API ordena antes da paginação com desempate estável e os links de paginação preservam `sort` junto com os filtros.
+Ranking/relevância, recência e proximidade **não** foram classificados como resolvidos por esse slice.
+
+Próximo acceptance target: refetchar o `main` e priorizar o próximo gap pós-MVP por evidência de produto, preferindo o menor slice vertical que melhore um ciclo real sem antecipar infraestrutura ou política ainda não necessária.
 
 ## Active plan
 
-[`../exec-plans/active/0030-public-price-sort.md`](../exec-plans/active/0030-public-price-sort.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -24,12 +26,13 @@ Próximo acceptance target: provar por HTTP/SSR que o comprador escolhe menor/ma
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
 - Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
 - Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
+- Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0030 é pós-MVP.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices são pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
