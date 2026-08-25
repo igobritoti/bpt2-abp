@@ -50,6 +50,34 @@ if not token: raise SystemExit(f'Missing access_token: {data}')
 print(token)
 PY
 }
+self_register(){
+  local username="$1" email="$2" password="$3" body status
+  body="$(python3 - "$username" "$email" "$password" <<'PY'
+import json,sys
+print(json.dumps({'userName':sys.argv[1],'emailAddress':sys.argv[2],'password':sys.argv[3],'appName':'MVC'}))
+PY
+)"
+  status="$(request POST '/api/account/register' '' "$body")"
+  [[ "$status" == 200 || "$status" == 201 ]] || { echo "Self-registration for $username failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+  python3 - "$RESPONSE" "$username" "$email" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1])); expected_user=sys.argv[2]; expected_email=sys.argv[3]
+assert x.get('id'), x
+assert x.get('userName') == expected_user, x
+assert (x.get('email') or x.get('emailAddress')) == expected_email, x
+PY
+}
+
+BUYER_USER="buyer-favorite-main-$(python3 - <<'PY'
+import uuid
+print(uuid.uuid4().hex[:10])
+PY
+)"
+BUYER_PASSWORD='Bpt2-BuyerFavorite-9!m'
+BUYER_EMAIL="${BUYER_USER}@example.invalid"
+self_register "$BUYER_USER" "$BUYER_EMAIL" "$BUYER_PASSWORD"
+echo 'BUYER_FAVORITE_SELF_REGISTRATION: PASS'
+
 request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Buyer Favorite Fixture","whatsAppNumber":"5511999991111"}' >/dev/null
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
@@ -95,7 +123,7 @@ class P(HTMLParser):
 p=P(); p.feed(open(sys.argv[1],encoding='utf-8').read()); print(p.v or '')
 PY
 )"; [[ -n "$TOKEN_FIELD" ]] || exit 1
-status="$(curl --silent --output "$RESPONSE" --dump-header "$HEADERS" --cookie "$COOKIES" --cookie-jar "$COOKIES" --write-out '%{http_code}' -X POST "$LOGIN_EFFECTIVE" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "__RequestVerificationToken=$TOKEN_FIELD" --data-urlencode 'LoginInput.UserNameOrEmailAddress=admin' --data-urlencode 'LoginInput.Password=1q2w3E*' --data-urlencode 'LoginInput.RememberMe=false' --data-urlencode 'Action=Login')"; [[ "$status" == 302 ]] || exit 1
+status="$(curl --silent --output "$RESPONSE" --dump-header "$HEADERS" --cookie "$COOKIES" --cookie-jar "$COOKIES" --write-out '%{http_code}' -X POST "$LOGIN_EFFECTIVE" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "__RequestVerificationToken=$TOKEN_FIELD" --data-urlencode "LoginInput.UserNameOrEmailAddress=$BUYER_USER" --data-urlencode "LoginInput.Password=$BUYER_PASSWORD" --data-urlencode 'LoginInput.RememberMe=false' --data-urlencode 'Action=Login')"; [[ "$status" == 302 ]] || exit 1
 AUTHORIZED="$(python3 - "$BASE" "$(location "$HEADERS")" <<'PY'
 import sys; from urllib.parse import urljoin; print(urljoin(sys.argv[1]+'/',sys.argv[2]))
 PY
@@ -135,13 +163,8 @@ PY
 )"
 OTHER_PASSWORD='Bpt2-BuyerFavorite-9!x'
 OTHER_EMAIL="${OTHER_USER}@example.invalid"
-OTHER_BODY="$(python3 - "$OTHER_USER" "$OTHER_EMAIL" "$OTHER_PASSWORD" <<'PY'
-import json,sys
-username,email,password=sys.argv[1:]
-print(json.dumps({'userName':username,'name':'Other','surname':'Buyer','email':email,'password':password,'isActive':True,'lockoutEnabled':True,'roleNames':[]}))
-PY
-)"
-status="$(request POST '/api/identity/users' "$ADMIN_TOKEN" "$OTHER_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Second Buyer create failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
+self_register "$OTHER_USER" "$OTHER_EMAIL" "$OTHER_PASSWORD"
+echo 'BUYER_FAVORITE_SECOND_SELF_REGISTRATION: PASS'
 OTHER_TOKEN="$(get_fixture_token "$OTHER_USER" "$OTHER_PASSWORD")"
 status="$(request GET '/api/app/favorite/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Second Buyer unexpectedly saw first Buyer's favorite" >&2; cat "$RESPONSE"; exit 1; }
 status="$(request GET "/api/app/favorite/is-favorite/$LISTING_ID" "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == false ]] || { echo "Second Buyer favorite state leaked" >&2; cat "$RESPONSE"; exit 1; }
