@@ -1,3 +1,4 @@
+using BomPraTi.Catalog.Contracts;
 using BomPraTi.Ingestion.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,9 +10,16 @@ namespace BomPraTi.Pages.Ingestao;
 [Authorize(Roles = "admin")]
 public class IndexModel : PageModel
 {
+    private const int MaxVehicleMatches = 20;
+
     private readonly IIngestionCandidateAppService _candidates;
+    private readonly IVehicleCatalogReader _vehicleCatalog;
 
     public IReadOnlyList<IngestionRecordDto> Pending { get; private set; } = [];
+    public IReadOnlyList<VehicleRefDto> VehicleMatches { get; private set; } = [];
+
+    [BindProperty(SupportsGet = true)]
+    public string? VehicleQuery { get; set; }
 
     [BindProperty]
     public Guid RecordId { get; set; }
@@ -19,14 +27,17 @@ public class IndexModel : PageModel
     [BindProperty]
     public Guid VehicleId { get; set; }
 
-    public IndexModel(IIngestionCandidateAppService candidates)
+    public IndexModel(
+        IIngestionCandidateAppService candidates,
+        IVehicleCatalogReader vehicleCatalog)
     {
         _candidates = candidates;
+        _vehicleCatalog = vehicleCatalog;
     }
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        await LoadPendingAsync(cancellationToken);
+        await LoadPageAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostReconcileAsync(CancellationToken cancellationToken)
@@ -43,7 +54,7 @@ public class IndexModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            await LoadPendingAsync(cancellationToken);
+            await LoadPageAsync(cancellationToken);
             return Page();
         }
 
@@ -54,15 +65,33 @@ public class IndexModel : PageModel
         catch (EntityNotFoundException)
         {
             ModelState.AddModelError(nameof(VehicleId), "Registro de ingestão ou Vehicle canônico não encontrado.");
-            await LoadPendingAsync(cancellationToken);
+            await LoadPageAsync(cancellationToken);
             return Page();
         }
 
-        return RedirectToPage();
+        return RedirectToPage(new { VehicleQuery });
     }
 
-    private async Task LoadPendingAsync(CancellationToken cancellationToken)
+    private async Task LoadPageAsync(CancellationToken cancellationToken)
     {
         Pending = await _candidates.GetPendingAsync(cancellationToken);
+        VehicleMatches = await FindVehicleMatchesAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<VehicleRefDto>> FindVehicleMatchesAsync(CancellationToken cancellationToken)
+    {
+        var query = VehicleQuery?.Trim();
+        if (string.IsNullOrEmpty(query))
+        {
+            return [];
+        }
+
+        var ids = await _vehicleCatalog.FindIdsByTextAsync(query, cancellationToken);
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await _vehicleCatalog.GetManyAsync(ids.Take(MaxVehicleMatches).ToArray(), cancellationToken);
     }
 }
