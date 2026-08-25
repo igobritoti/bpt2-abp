@@ -166,21 +166,24 @@ Preferir: alto valor + alta dependência desbloqueada + baixo/medio risco + test
 
 ## Próxima decisão operacional
 
-Antes de abrir código do próximo slice, atualizar a matriz pós-CRM/Podium e escolher **um único** item entre:
+Checkpoint executado em `docs/audits/2026-08-25-post-0048-capability-implementation-matrix.md`.
 
-1. publication mapping/enrichment mínimo Podium → BPT2;
-2. outra lacuna independente de produto se o mapping exigir trabalho externo no Podium.
+Resultado:
 
-Comparator só entra imediatamente se o enrichment necessário já estiver disponível no contrato atual do Podium e puder ser projetado sem perda.
+- o identity contract Podium `2.0` é suficiente para mapping de identidade, mas não congela ficha técnica ampla;
+- enrichment interno verificado do Podium ainda não constitui um read contract técnico suficiente para um Comparador útil;
+- iniciar Comparador agora foi **REPROVADO** para evitar matriz pobre ou Listing fallback;
+- próximo slice recomendado: **publication mapping + enrichment read contract mínimo Podium → BPT2**;
+- se houver blocker material externo no Podium, avançar para **Saved Search** como gap independente e retornar depois.
 
 ## Critérios de aceite do Plan 0049
 
-- [ ] matriz restante atualizada removendo itens já concluídos;
-- [ ] próximo slice único selecionado por dependência/valor;
+- [x] matriz restante atualizada removendo itens já concluídos;
+- [x] próximo slice único selecionado por dependência/valor;
 - [ ] cada slice concluído somente com CI fresco e documentação;
 - [ ] inventário Carros na Web criado quando houver acesso verificável suficiente;
 - [ ] cobertura Carros na Web calculada sem denominador artificial;
-- [ ] decisões monorepo/.NET não bloqueiam produto e só reabrem pelos triggers registrados;
+- [x] decisões monorepo/.NET não bloqueiam produto e só reabrem pelos triggers registrados;
 - [ ] roadmap termina com todos os itens classificados como entregue, excluído justificadamente, adiado com blocker explícito ou promovido a plano próprio.
 
 ## Decision log
@@ -189,6 +192,7 @@ Comparator só entra imediatamente se o enrichment necessário já estiver dispo
 - 2026-08-25 — monorepo polyglot é viável, mas migração agora não desbloqueia Comparator/moderação/banco; decisão adiada.
 - 2026-08-25 — intenção de produto registrada: >=90% das capabilities úteis/elegíveis do Carros na Web, ambição 100%.
 - 2026-08-25 — cobertura do benchmark não autoriza cópia técnica/conteúdo nem implementação sem custo/valor/provenance.
+- 2026-08-25 — identity contract Podium atual não é confundido com ficha técnica; Comparador continua atrás de enrichment publicado suficiente.
 
 ## Progress log
 
@@ -196,3 +200,4 @@ Comparator só entra imediatamente se o enrichment necessário já estiver dispo
 - 2026-08-25 — Plan 0047 entregou Lead closing mínimo.
 - 2026-08-25 — Plan 0048 provou boundary Podium e fixture de projection/replay/redirect/cardinality.
 - 2026-08-25 — Plan 0049 aberto para concluir o restante do roadmap por blocos funcionais.
+- 2026-08-25 — primeira matriz pós-0048 concluída; próximo slice selecionado como publication mapping + enrichment contract mínimo.
