@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0038 foi concluído: o Buyer Favorites E2E agora usa Buyers comuns auto-cadastrados no caminho positivo e na prova de isolamento, mantendo `admin` somente como fixture Seller/Listing.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0039 está fortalecendo a prova do ciclo Buyer Listing Report: os Buyers do E2E devem ser usuários comuns auto-cadastrados, mantendo `admin` somente como fixture Seller/Listing.
 
-Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir self-registration, Seller Shell ou Buyer Favorites sem nova evidência de comportamento incompleto.
+Próximo acceptance target: `self-registration → Buyer token → Listing Report → is-reported / isolation / history`, preservando anonymous blocked, Draft blocked, idempotência e histórico sem regra/schema novo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0039-self-registered-buyer-reports.md`](../exec-plans/active/0039-self-registered-buyer-reports.md)
 
 ## Source of runtime truth
 
@@ -36,7 +36,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0039 é pós-MVP/hardening.
 
 ## Update rule
 
