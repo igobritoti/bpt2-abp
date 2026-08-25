@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0041 foi concluído: o admin de Ingestion agora localiza Vehicle canônico por Brand/Model/Generation/Version na própria `/ingestao`, inspeciona a identidade legível e reutiliza o `VehicleId` real no fluxo de reconciliação existente.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0042 está fechando a primeira fatia do dashboard administrativo explicitamente adiada no Plan 0020: `/admin` deve resumir Vehicles canônicos, reports recebidos e candidates pendentes usando somente contracts read-only já existentes.
 
-Próximo acceptance target: após o merge do Plan 0041, refetch de `main` e nova auditoria curta de gap pós-MVP por evidência. Matching automático, confidence threshold, connector concreto e autocomplete continuam adiados sem nova evidência.
+Próximo acceptance target: `admin login → /admin → contagens operacionais reais → links /catalogo /moderacao /ingestao`, sem estado de resolução de report, analytics ou endpoint de métricas novo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0042-admin-operations-summary.md`](../exec-plans/active/0042-admin-operations-summary.md)
 
 ## Source of runtime truth
 
@@ -39,7 +39,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0041 foi pós-MVP e não adicionou nova autoridade de decisão.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0042 é pós-MVP e read-only.
 
 ## Update rule
 
