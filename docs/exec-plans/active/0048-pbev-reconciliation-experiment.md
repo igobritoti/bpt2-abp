@@ -37,8 +37,8 @@ O PBEV é uma fonte oficial forte para consumo, eficiência, propulsão e emiss�
 1. confirmar contrato/campos da fonte oficial atual e disponibilidade estruturada (CSV quando acessível);
 2. congelar os campos mínimos de provenance necessários: fonte, ciclo/data, identificadores/nome bruto e métricas observadas;
 3. extrair uma amostra reproduzível de registros PBEV;
-4. comparar contra Brand/Model/VehicleVersion/Vehicle atuais do BPT2;
-5. medir exact match, normalized match, unmatched e ambiguous;
+4. comparar contra Brand/Model/VehicleVersion/Vehicle atuais do BPT2 quando houver corpus canônico real versionado;
+5. medir exact match, normalized match, unmatched e ambiguous sem confundir fixture sintético com coverage real;
 6. identificar classes reais de divergência textual;
 7. testar se alguma regra adicional é determinística e generalizável, sem fuzzy opaco;
 8. decidir o target correto de persistência/reconciliação (`VehicleVersion`, `Vehicle`, observation independente ou combinação);
@@ -93,6 +93,30 @@ Apenas `PBEV 2026` não é provenance suficiente: a página oficial indicava atu
 
 O Inmetro informa que há CSV no dados.gov.br. A página do dataset foi localizada, porém o navegador deste checkpoint recebeu apenas a aplicação dependente de JavaScript e não recuperou diretamente o recurso CSV. Isso fica como problema de aquisição do recurso, não como licença para usar scraping heurístico ou declarar o CSV inspecionado.
 
+## Baseline BPT2 observado
+
+O módulo Catalog contém domínio, DbContext, leitura e criação administrativa, mas não contém seed/import/data file automotivo real versionado. O serviço administrativo cria Brand/Model/Generation/Version/Vehicle sob demanda e é idempotente pelas identidades atuais.
+
+Os gates do repositório usam catálogo sintético para provar comportamento. O smoke canônico cria explicitamente `Bom Pra Ti Motors / MVP One / G1 / 1.0 Turbo / ModelYear 2026`; portanto esses registros são fixtures de teste, não um corpus automotivo representativo.
+
+O módulo Ingestion também não contém dataset externo embutido. Seu contrato atual persiste candidatos arbitrários e só reconcilia para `ReconciledVehicleId`, validando o alvo por `IVehicleCatalogReader`. Não há hoje target de reconciliation para `VehicleVersion` nem corpus canônico versionado que permita medir coverage PBEV real.
+
+Consequência metodológica:
+
+- CP2 pode congelar o **algoritmo/boundaries** atuais;
+- CP3 pode provar a mecânica de classificação com fixture explícito e amostra oficial reproduzível;
+- CP3 **não pode** declarar taxa de coverage contra “o catálogo BPT2 real” enquanto esse corpus não existir/versionar;
+- qualquer percentual calculado apenas contra fixtures sintéticos será rotulado como teste mecânico, nunca como evidência de coverage de produto.
+
+### Baseline de matching congelado
+
+1. target primário experimental: chave de `VehicleVersion` por `Brand.NormalizedName + Model.NormalizedName + VehicleVersion.NormalizedName`, respeitando `ModelId`/`GenerationId?` e exigindo unicidade;
+2. normalização baseline = comportamento BPT2 atual: trim + uppercase, sem remoção de acento, pontuação, tokens, potência/equipamento ou aliases;
+3. zero match => `unmatched`;
+4. mais de um target possível => `ambiguous`;
+5. exatamente um target pela chave baseline => `exact/normalized-current`;
+6. nenhuma promoção automática a `Vehicle` quando existirem múltiplos `ModelYear` ou quando a fonte não declarar ano-modelo.
+
 ## Critérios de aceite
 
 1. fonte oficial atual e campos usados estão registrados com data/status;
@@ -113,14 +137,15 @@ O Inmetro informa que há CSV no dados.gov.br. A página do dataset foi localiza
 - baseline 1: igualdade canônica atual (`trim + uppercase`);
 - baseline 2: somente normalizações determinísticas justificadas por casos observados;
 - reportar contagens e exemplos por classe, não apenas percentual agregado;
+- distinguir explicitamente teste mecânico em fixture de teste de coverage em corpus real;
 - não usar fuzzy score sem threshold previamente justificado e casos adversariais;
 - não escrever em tabelas de produção durante o experimento.
 
 ## Checkpoints
 
 - [x] CP1 — fonte oficial e schema observado congelados; aquisição direta do CSV permanece pendente e explicitamente separada;
-- [ ] CP2 — catálogo BPT2 e algoritmo baseline congelados;
-- [ ] CP3 — amostra reproduzível reconciliada e classes de falha medidas;
+- [x] CP2 — catálogo BPT2 e algoritmo baseline congelados; ausência de corpus automotivo real versionado registrada como limitação de coverage;
+- [ ] CP3 — amostra reproduzível reconciliada e classes de falha medidas em teste mecânico; coverage real permanece condicionado a corpus canônico real;
 - [ ] CP4 — regras determinísticas adicionais testadas, se necessárias;
 - [ ] CP5 — target de domínio/provenance decidido;
 - [ ] CP6 — decisão final: desbloqueia enrichment mínimo, exige revisão humana/dataset adicional, ou bloqueia.
@@ -132,6 +157,8 @@ O Inmetro informa que há CSV no dados.gov.br. A página do dataset foi localiza
 - ano/ciclo PBEV não será tratado como `ModelYear` sem campo/evidência explícita;
 - fonte externa será preservada com provenance e temporalidade;
 - revision/artifact identity faz parte da provenance porque fontes oficiais do mesmo ciclo podem divergir em contagem/revisão;
+- fixtures sintéticos do repositório não serão tratados como corpus real para métricas de coverage;
+- o contrato Ingestion atual `ReconciledVehicleId` é uma limitação observada, não um motivo para forçar PBEV a `Vehicle`;
 - unmatched/ambiguous são resultados válidos do experimento, não erros a esconder;
 - Comparador continua fora de escopo.
 
@@ -143,3 +170,7 @@ O Inmetro informa que há CSV no dados.gov.br. A página do dataset foi localiza
 - 2026-08-25 — artefato oficial PBEV inspecionado visualmente: cabeçalho declara `Tabela Ano 2026`, `ATUALIZAÇÃO 14-Aug-26`, 43 marcas e 965 modelos/versões; schema de identidade começa por categoria/marca/modelo/versão e não expõe `ModelYear`.
 - 2026-08-25 — divergência 959 vs 965 registrada como evidência de que provenance precisa identificar revisão/artefato, não apenas ciclo.
 - 2026-08-25 — página oficial do dataset no dados.gov.br localizada; recurso CSV direto ainda não recuperado no navegador devido à camada JavaScript do portal.
+- 2026-08-25 — árvore Catalog inspecionada: sem seed/import/data file real; criação canônica é administrativa e sob demanda.
+- 2026-08-25 — smoke administrativo confirmado como sintético (`Bom Pra Ti Motors / MVP One / 1.0 Turbo`).
+- 2026-08-25 — Ingestion inspecionado: sem corpus embutido e reconciliation existente somente para `VehicleId`.
+- 2026-08-25 — CP2 fechado com separação explícita entre teste mecânico e coverage real.
