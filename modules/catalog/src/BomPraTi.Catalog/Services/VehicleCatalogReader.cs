@@ -105,6 +105,36 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> FindIdsByTextAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Array.Empty<Guid>();
+        }
+
+        var normalized = query.Trim().ToLowerInvariant();
+        var vehicles =
+            from vehicle in _dbContext.Vehicles.AsNoTracking()
+            join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
+            join model in _dbContext.Models.AsNoTracking() on vehicle.ModelId equals model.Id
+            join version in _dbContext.Versions.AsNoTracking() on vehicle.VersionId equals version.Id
+            join generation in _dbContext.Generations.AsNoTracking()
+                on vehicle.GenerationId equals (Guid?)generation.Id into generationRows
+            from generation in generationRows.DefaultIfEmpty()
+            where brand.Name.ToLower().Contains(normalized)
+                || model.Name.ToLower().Contains(normalized)
+                || version.Name.ToLower().Contains(normalized)
+                || (generation != null && generation.Name.ToLower().Contains(normalized))
+            orderby vehicle.Id
+            select vehicle.Id;
+
+        return await vehicles
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<VehicleRefDto>> SearchAsync(
         VehicleCatalogSearchInput input,
         int take = 50,

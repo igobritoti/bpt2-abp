@@ -7,6 +7,7 @@ public interface IVehicleCatalogReader
         IReadOnlyCollection<Guid> vehicleIds,
         CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Guid>> FindIdsAsync(VehicleCatalogSearchInput input, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> FindIdsByTextAsync(string query, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<VehicleRefDto>> SearchAsync(
         VehicleCatalogSearchInput input,
         int take = 50,
