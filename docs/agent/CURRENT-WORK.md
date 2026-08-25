@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0042 foi concluído: `/admin` agora resume Vehicles canônicos, reports recebidos e candidates pendentes usando somente contracts read-only existentes, preservando as superfícies operacionais específicas como autoridade.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 está fechando o gap administrativo pós-MVP de navegação global: o usuário `admin` deve alcançar o hub `/admin` pelo menu principal nativo do host ABP/LeptonXLite, sem customizar layout nem criar permission nova.
 
-Próximo acceptance target: após o merge do Plan 0042, refetch de `main` e seleção do próximo gap pós-MVP por evidência explícita. Não promover estado de resolução de report, analytics, Promoções, matching automático ou connector concreto sem regra/evidência suficiente.
+Próximo acceptance target: `admin autenticado → menu principal → Operações → /admin`, mantendo usuário autenticado sem role `admin` sem esse item e preservando a autorização server-side atual.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0043-admin-global-navigation.md`](../exec-plans/active/0043-admin-global-navigation.md)
 
 ## Source of runtime truth
 
@@ -40,7 +40,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0042 foi pós-MVP e read-only.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0043 é pós-MVP e altera somente descoberta/navegação do host.
 
 ## Update rule
 
