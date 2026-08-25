@@ -6,9 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 foi concluído: a busca livre pública agora cobre `Listing.Title` e identidade canônica de Vehicle (Brand/Model/Generation/Version), preservando os filtros específicos existentes como AND.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0035 foi concluído: a jornada pública de discovery já possui prova suficiente para busca, filtros, paginação, sort, exclusão de Draft e zero-results; nenhum novo slice nessa superfície foi justificado.
 
-Próximo acceptance target: refetchar o `main` depois do merge do PR #53 e escolher o próximo gap pós-MVP por evidência do repositório atual.
+Próximo acceptance target: escolher o próximo gap pós-MVP fora de public discovery somente quando houver evidência adicional de valor ou comportamento incompleto.
 
 ## Active plan
 
@@ -27,6 +27,7 @@ Nenhum.
 - Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
 - Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
 - Busca pública por identidade canônica: [`../exec-plans/completed/0034-public-vehicle-text-search.md`](../exec-plans/completed/0034-public-vehicle-text-search.md).
+- Auditoria de qualidade da busca pública: [`../exec-plans/completed/0035-public-search-quality-audit.md`](../exec-plans/completed/0035-public-search-quality-audit.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
