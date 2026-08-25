@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0042 está fechando a primeira fatia do dashboard administrativo explicitamente adiada no Plan 0020: `/admin` deve resumir Vehicles canônicos, reports recebidos e candidates pendentes usando somente contracts read-only já existentes.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0042 foi concluído: `/admin` agora resume Vehicles canônicos, reports recebidos e candidates pendentes usando somente contracts read-only existentes, preservando as superfícies operacionais específicas como autoridade.
 
-Próximo acceptance target: `admin login → /admin → contagens operacionais reais → links /catalogo /moderacao /ingestao`, sem estado de resolução de report, analytics ou endpoint de métricas novo.
+Próximo acceptance target: após o merge do Plan 0042, refetch de `main` e seleção do próximo gap pós-MVP por evidência explícita. Não promover estado de resolução de report, analytics, Promoções, matching automático ou connector concreto sem regra/evidência suficiente.
 
 ## Active plan
 
-[`../exec-plans/active/0042-admin-operations-summary.md`](../exec-plans/active/0042-admin-operations-summary.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -34,12 +34,13 @@ Próximo acceptance target: `admin login → /admin → contagens operacionais r
 - Buyer Listing Reports com usuários auto-cadastrados: [`../exec-plans/completed/0039-self-registered-buyer-reports.md`](../exec-plans/completed/0039-self-registered-buyer-reports.md).
 - Lead autenticado com UserId real: [`../exec-plans/completed/0040-authenticated-lead-userid-proof.md`](../exec-plans/completed/0040-authenticated-lead-userid-proof.md).
 - Lookup de Vehicle canônico na Ingestion: [`../exec-plans/completed/0041-ingestion-vehicle-lookup.md`](../exec-plans/completed/0041-ingestion-vehicle-lookup.md).
+- Resumo operacional administrativo: [`../exec-plans/completed/0042-admin-operations-summary.md`](../exec-plans/completed/0042-admin-operations-summary.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0042 é pós-MVP e read-only.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0042 foi pós-MVP e read-only.
 
 ## Update rule
 
