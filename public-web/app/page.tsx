@@ -5,6 +5,7 @@ import {
   formatPrice,
   getPublicListings,
   type PublicListingSearch,
+  type PublicListingSort,
   publicPhotoUrl,
   vehicleLabel,
 } from "@/lib/public-listings";
@@ -60,6 +61,11 @@ function integerParam(params: RawSearchParams, name: string): number | undefined
   return value !== undefined && Number.isInteger(value) ? value : undefined;
 }
 
+function sortParam(params: RawSearchParams): PublicListingSort | undefined {
+  const value = textParam(params, "sort").toLowerCase();
+  return value === "price-asc" || value === "price-desc" ? value : undefined;
+}
+
 function discoveryHref(search: PublicListingSearch, skip: number, take: number): string {
   const params = new URLSearchParams();
 
@@ -85,6 +91,7 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
   setNumber("maxPrice", search.maxPrice);
   setNumber("minMileageKm", search.minMileageKm);
   setNumber("maxMileageKm", search.maxMileageKm);
+  setText("sort", search.sort);
   if (skip > 0) {
     params.set("skip", String(skip));
   }
@@ -106,6 +113,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const maxPrice = numberParam(raw, "maxPrice");
   const minMileageKm = integerParam(raw, "minMileageKm");
   const maxMileageKm = integerParam(raw, "maxMileageKm");
+  const sort = sortParam(raw);
   const skip = Math.max(0, integerParam(raw, "skip") ?? 0);
   const take = Math.min(
     MAX_UI_TAKE,
@@ -124,6 +132,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     maxPrice,
     minMileageKm,
     maxMileageKm,
+    sort,
     skip,
     take,
   };
@@ -139,7 +148,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       minPrice !== undefined ||
       maxPrice !== undefined ||
       minMileageKm !== undefined ||
-      maxMileageKm !== undefined,
+      maxMileageKm !== undefined ||
+      sort,
   );
   const hasPrevious = skip > 0;
   const hasNext = skip + page.items.length < page.totalCount;
@@ -272,6 +282,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               step="0.01"
               type="number"
             />
+          </label>
+
+          <label>
+            Ordenar
+            <select defaultValue={sort ?? ""} name="sort">
+              <option value="">Padrão</option>
+              <option value="price-asc">Menor preço</option>
+              <option value="price-desc">Maior preço</option>
+            </select>
           </label>
 
           <input name="take" type="hidden" value={take} />
