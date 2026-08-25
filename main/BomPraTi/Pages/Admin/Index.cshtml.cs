@@ -29,7 +29,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        CanonicalVehicleCount = (await _vehicleCatalog.GetAllIdsAsync(cancellationToken)).Count;
+        CanonicalVehicleCount = (await _vehicleCatalog.FindIdsAsync(new VehicleCatalogSearchInput(), cancellationToken)).Count;
         ModerationReportCount = (await _moderationReports.GetAsync(cancellationToken)).Count;
         PendingIngestionCount = (await _ingestionCandidates.GetPendingAsync(cancellationToken)).Count;
     }
