@@ -26,7 +26,7 @@ expected={
  '/api/app/moderation-listing-command/withdraw/{listingId}':'post',
  '/api/app/moderation-listing-command/restore/{listingId}':'post',
  '/api/app/listing-report/report/{listingId}':'post',
- '/api/app/listing-command/{listingId}':'put',
+ '/api/app/listing-command':'put',
  '/api/app/public-listing/{id}':'get',
 }
 for path,verb in expected.items():
@@ -133,7 +133,7 @@ import json,sys
 print(json.dumps({'title':'Seller attempted moderated edit','price':146000,'description':'Fixture moderation authority','manufactureYear':2024,'mileageKm':5000,'color':'Prata','city':'São Paulo','stateCode':'SP','concurrencyStamp':sys.argv[1]}))
 PY
 )"
-status="$(request PUT "/api/app/listing-command/$LISTING_ID" "$ADMIN_TOKEN" "$UPDATE_BODY")"
+status="$(request PUT "/api/app/listing-command?listingId=$LISTING_ID" "$ADMIN_TOKEN" "$UPDATE_BODY")"
 [[ "$status" != 200 && "$status" != 201 && "$status" != 204 ]] || { echo 'Seller edit unexpectedly changed moderated listing.' >&2; exit 1; }
 grep -Fq 'Marketplace:ListingModerated' "$RESPONSE" || { echo "Seller edit blocked without expected moderation code: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'MODERATION_AUTHORITY_SELLER_EDIT_BLOCKED: PASS'
