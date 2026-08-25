@@ -2,7 +2,7 @@
 
 Status: **ATIVO**
 
-## Outcome
+## Objetivo
 
 Fechar o menor gap operacional de CRM promovido pelo Plan 0046: permitir que o Seller encerre um Lead próprio com resultado explícito `Won` ou `Lost`, preservando o estado mínimo já comprovado de contato e sem transplantar o pipeline de cinco estados do BPT1.
 
@@ -46,7 +46,7 @@ O Seller consegue registrar que um Lead foi atendido, mas não consegue represen
 - alteração de Buyer/contact flow;
 - CRM/admin novo.
 
-## Acceptance criteria
+## Critérios de aceite
 
 Um Seller autenticado consegue, somente sobre Leads dos próprios Listings:
 
@@ -73,17 +73,28 @@ Quando um gate falhar, investigar um por vez.
 
 ## Checkpoints
 
-- [ ] CP1 — contrato/domínio mínimo definido e testado.
-- [ ] CP2 — persistência/migration consistente.
-- [ ] CP3 — command/read Seller com ownership e idempotência comprovados.
-- [ ] CP4 — superfície Seller necessária atualizada sem ampliar escopo.
-- [ ] CP5 — docs/fatos derivados reconciliados.
+- [x] CP1 — contrato/domínio mínimo definido;
+- [ ] CP2 — persistência/fresh migration consistente;
+- [ ] CP3 — command/read Seller com ownership e idempotência comprovados por HTTP;
+- [x] CP4 — superfície Seller necessária atualizada sem ampliar escopo;
+- [x] CP5 — docs/fatos derivados reconciliados;
 - [ ] CP6 — CI final fresco, review/base refresh e merge somente verde.
 
-## Decisões congeladas
+## Decision log
 
 - outcome inicial contém somente `Won` e `Lost`;
 - Lead fechado não reabre neste slice;
 - conflito de outcome não é last-write-wins;
+- fechamento não marca contato implicitamente porque contato e outcome são fatos distintos;
+- ownership continua sendo aplicado pelo boundary Seller existente via Listing do Seller;
 - `NEGOCIACAO` só poderá ser promovido futuramente com ação/SLA/fila real que dependa desse estágio;
-- facts de domínio não dependerão de analytics events.
+- facts de domínio não dependerão de analytics events;
+- o Seller Shell HTTP smoke existente foi estendido em vez de criar um novo framework de teste.
+
+## Progress log
+
+- 2026-08-25 — branch `feat/minimal-lead-closing` criada do `main` integrado pelo PR #66 e draft PR #67 aberto.
+- 2026-08-25 — domínio/contrato implementados com `LeadOutcome`, `ClosedAtUtc`, fechamento idempotente e conflito determinístico.
+- 2026-08-25 — leitura e UI Seller atualizadas para estados `Novo`, `Atendido` e `Fechado` com `Won/Lost`.
+- 2026-08-25 — fixture e Seller Shell HTTP smoke estendidos para contato idempotente, fechamento idempotente, conflito, histórico após Archive e ownership.
+- 2026-08-25 — Architecture Gate e Public Web Gate passaram no head anterior; Harness Gate #458 falhou somente por headings canônicos ausentes neste plano. Este commit normaliza essas seções sem alterar escopo funcional.
