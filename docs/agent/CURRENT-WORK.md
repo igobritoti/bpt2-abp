@@ -6,25 +6,30 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Executar o experimento de **Vehicle Enrichment — reconciliation PBEV** definido pela matriz do Plan 0046, sem implementar Comparador e sem importar dados em produção antes de provar uma reconciliação segura.
+Nenhum execution plan está ativo.
 
-O PR #67 de fechamento mínimo de Lead foi integrado. O experimento atual parte do `main` em `1471de8f69d0216f09d6c42c57a2ccbba900b2d7` e está no draft PR #68.
+O Plan 0048 concluiu a decisão de boundary Podium 7 ↔ BPT2: os projetos permanecem separados e a integração inicial será assíncrona por contrato versionado. A decisão está registrada em [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
+
+O próximo boundary funcional, ainda **não aberto como plano**, é o menor slice BPT2 de publication mapping do Podium: external canonical ID, redirects históricos, cardinalidade zero/um/muitos `VehicleId`, contract version e replay idempotente contra persistência real.
+
+Comparador continua bloqueado até existir catálogo/enrichment publicado suficiente.
 
 ## Active plan
 
-[`../exec-plans/active/0048-pbev-reconciliation-experiment.md`](../exec-plans/active/0048-pbev-reconciliation-experiment.md)
+Nenhum.
 
 ## Acceptance target
 
-Provar ou refutar, com amostra reproduzível, se registros PBEV podem ser reconciliados deterministicamente à identidade canônica BPT2:
+Não há acceptance target ativo até a abertura do próximo execution plan.
 
-- sem inventar `ModelYear`;
-- distinguindo `exact`, `normalized`, `ambiguous` e `unmatched`;
-- preservando source/revision/provenance do artefato oficial;
-- rejeitando ambiguidades em vez de resolvê-las por fuzzy opaco;
-- decidindo por evidência se o target correto é `VehicleVersion`, `Vehicle`, observação independente ou combinação.
+Quando promovido, o próximo slice deve provar com o fixture Podium `2.0` já congelado que a persistência BPT2:
 
-Comparador permanece bloqueado até o enrichment mínimo ser provado.
+- não duplica replay;
+- preserva correção sob o mesmo Podium ID;
+- representa model-year 1:N explicitamente;
+- processa `redirectsFrom` sem recriar duplicatas;
+- não compara labels para resolver identidade;
+- continua sem shared database ou dependência síncrona do Podium.
 
 ## Source of runtime truth
 
@@ -32,16 +37,18 @@ Comparador permanece bloqueado até o enrichment mínimo ser provado.
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Plano ativo: [`../exec-plans/active/0048-pbev-reconciliation-experiment.md`](../exec-plans/active/0048-pbev-reconciliation-experiment.md).
+- Boundary Podium 7 concluída: [`../exec-plans/completed/0048-pbev-reconciliation-experiment.md`](../exec-plans/completed/0048-pbev-reconciliation-experiment.md).
+- Auditoria da integração: [`../audits/2026-08-25-podium7-integration-boundary.md`](../audits/2026-08-25-podium7-integration-boundary.md).
 - Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
-- Matriz final da auditoria: [`../audits/2026-08-25-capability-final-decision-matrix.md`](../audits/2026-08-25-capability-final-decision-matrix.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional externo. A aquisição direta do CSV anunciado pelo Inmetro/dados.gov.br ainda não foi resolvida pelo navegador atual; o schema oficial do artefato PBEV foi congelado pelo PDF oficial e a indisponibilidade do recurso CSV permanece explícita, sem fallback heurístico.
+Nenhum blocker funcional externo.
+
+A aquisição direta do CSV PBEV deixou de ser blocker do BPT2 porque acquisition/reconciliation pertence ao Podium 7 pela boundary decidida. Qualquer problema de aquisição dessa fonte deve ser resolvido no contexto Podium, sem duplicar a pipeline no BPT2.
 
 ## Update rule
 
