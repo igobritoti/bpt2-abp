@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0037 foi concluído: o Seller Shell agora é provado por um usuário comum auto-cadastrado, atravessando SellerWeb Authorization Code + PKCE, SellerProfile, Draft e My Listings sem usar `admin` no caminho positivo.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0038 está fortalecendo a prova do ciclo Buyer: o Buyer Favorites E2E deve ser atravessado por usuários comuns auto-cadastrados, sem usar a identidade privilegiada `admin` como Buyer positivo.
 
-Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir Public Discovery, Seller Hub, self-registration ou Seller Shell sem nova evidência de comportamento incompleto.
+Próximo acceptance target: `self-registration → BuyerWeb Authorization Code + PKCE → Favorite → Meus favoritos`, preservando isolamento entre Buyers, Draft bloqueado, pause/republish e remove sem regra/schema novo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0038-self-registered-buyer-favorites.md`](../exec-plans/active/0038-self-registered-buyer-favorites.md)
 
 ## Source of runtime truth
 
@@ -35,7 +35,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0038 é pós-MVP/hardening.
 
 ## Update rule
 
