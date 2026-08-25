@@ -24,7 +24,7 @@ public class SellerLeadQuery : ISellerLeadQuery, ITransientDependency
         var sellerId = _currentUser.Id
             ?? throw new UnauthorizedAccessException("An authenticated seller is required.");
 
-        return await _dbContext.Leads
+        var rows = await _dbContext.Leads
             .AsNoTracking()
             .Join(
                 _dbContext.Listings.AsNoTracking().Where(listing => listing.SellerId == sellerId),
@@ -33,16 +33,31 @@ public class SellerLeadQuery : ISellerLeadQuery, ITransientDependency
                 (lead, listing) => new { Lead = lead, ListingTitle = listing.Title })
             .OrderByDescending(item => item.Lead.CreatedAtUtc)
             .ThenByDescending(item => item.Lead.Id)
-            .Select(item => new SellerLeadDto(
+            .Select(item => new
+            {
                 item.Lead.Id,
                 item.Lead.ListingId,
                 item.ListingTitle,
-                item.Lead.UserId,
+                BuyerUserId = item.Lead.UserId,
                 item.Lead.Channel,
                 item.Lead.CreatedAtUtc,
                 item.Lead.ContactedAtUtc,
                 item.Lead.ClosedAtUtc,
-                item.Lead.Outcome.HasValue ? item.Lead.Outcome.Value.ToString() : null))
+                item.Lead.Outcome
+            })
             .ToListAsync(cancellationToken);
+
+        return rows
+            .Select(item => new SellerLeadDto(
+                item.Id,
+                item.ListingId,
+                item.ListingTitle,
+                item.BuyerUserId,
+                item.Channel,
+                item.CreatedAtUtc,
+                item.ContactedAtUtc,
+                item.ClosedAtUtc,
+                item.Outcome?.ToString()))
+            .ToList();
     }
 }
