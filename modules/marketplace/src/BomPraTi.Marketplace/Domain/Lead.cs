@@ -1,3 +1,4 @@
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 
 namespace BomPraTi.Marketplace.Domain;
@@ -9,6 +10,8 @@ public sealed class Lead : AggregateRoot<Guid>
     public string Channel { get; private set; } = null!;
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? ContactedAtUtc { get; private set; }
+    public DateTime? ClosedAtUtc { get; private set; }
+    public LeadOutcome? Outcome { get; private set; }
 
     private Lead() { }
 
@@ -25,5 +28,21 @@ public sealed class Lead : AggregateRoot<Guid>
     {
         if (ContactedAtUtc.HasValue) return;
         ContactedAtUtc = DateTime.SpecifyKind(contactedAtUtc, DateTimeKind.Utc);
+    }
+
+    public void Close(LeadOutcome outcome, DateTime closedAtUtc)
+    {
+        if (Outcome.HasValue)
+        {
+            if (Outcome.Value == outcome) return;
+
+            throw new BusinessException("BomPraTi.Marketplace:LeadOutcomeConflict")
+                .WithData("LeadId", Id)
+                .WithData("CurrentOutcome", Outcome.Value.ToString())
+                .WithData("RequestedOutcome", outcome.ToString());
+        }
+
+        Outcome = outcome;
+        ClosedAtUtc = DateTime.SpecifyKind(closedAtUtc, DateTimeKind.Utc);
     }
 }

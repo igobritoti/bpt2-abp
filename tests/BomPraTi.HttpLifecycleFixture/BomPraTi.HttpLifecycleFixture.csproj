@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../modules/catalog/src/BomPraTi.Catalog/BomPraTi.Catalog.csproj" />
+    <ProjectReference Include="../../modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj" />
   </ItemGroup>
 </Project>

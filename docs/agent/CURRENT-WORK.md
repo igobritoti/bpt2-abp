@@ -6,15 +6,19 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0046 concluiu a auditoria BPT1 → BPT2 e foi arquivado em `exec-plans/completed/`.
+Os blockers funcionais do MVP continuam fechados. O Plan 0047 concluiu o **fechamento mínimo de Lead** promovido pelo roadmap, com outcome `Won/Lost`, ownership server-side e idempotência, sem copiar o pipeline de cinco estados do BPT1.
 
-A auditoria promoveu uma única próxima capability: **CRM — fechamento mínimo de Lead**, preservando `MarkContacted` e acrescentando apenas fechamento com outcome `Won/Lost`, sem copiar o pipeline de cinco estados do BPT1.
-
-Esse próximo slice ainda não está ativo neste branch: primeiro o PR de auditoria precisa ser integrado e `main` refetched. Depois deve receber execution plan próprio a partir do novo head de `main`.
+O PR #67 está em fechamento: resta somente CI final fresco no head documental, review/base refresh e merge somente verde.
 
 ## Active plan
 
 Nenhum execution plan ativo.
+
+## Next acceptance target
+
+Após integrar o PR #67 e refetch de `main`, o próximo boundary de investigação definido pela matriz do Plan 0046 é **Vehicle Enrichment — experimento de reconciliation PBEV**.
+
+Isso ainda não autoriza implementação de Comparador nem ingestão automática. O próximo plano deve primeiro provar uma reconciliação segura entre a granularidade oficial `Marca/Modelo/Versão` e a identidade canônica do BPT2, sem inventar `ModelYear` ausente na fonte.
 
 ## Source of runtime truth
 
@@ -22,16 +26,15 @@ Nenhum execution plan ativo.
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
 - Matriz final da auditoria: [`../audits/2026-08-25-capability-final-decision-matrix.md`](../audits/2026-08-25-capability-final-decision-matrix.md).
-- Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
-- Public Hub Social Images: [`../exec-plans/completed/0045-public-hub-social-images.md`](../exec-plans/completed/0045-public-hub-social-images.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto. O próximo slice CRM é uma promoção por evidência do roadmap, não correção de blocker do MVP.
+Nenhum blocker funcional conhecido. O PR #67 depende apenas dos gates finais do head corrente antes de review/merge.
 
 ## Update rule
 

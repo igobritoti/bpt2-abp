@@ -319,6 +319,110 @@ if not match.get("concurrencyStamp"):
 PY
 echo "SELLER_SHELL_MY_LISTINGS: PASS"
 
+LEAD_ID="$(dotnet run --project "$ROOT/tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj" --configuration Release -- lead "$LISTING_ID" | tail -n 1)"
+[[ -n "$LEAD_ID" ]] || { echo "Lead fixture did not return an id" >&2; exit 1; }
+
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+[[ "$status" == "200" ]] || { echo "Seller Leads expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
+import json, sys
+path, lead_id = sys.argv[1:]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+match = next((item for item in data if str(item.get("id", "")).lower() == lead_id.lower()), None)
+if match is None:
+    raise SystemExit(f"Seeded Lead missing from Seller history: {data}")
+if match.get("contactedAtUtc") is not None or match.get("closedAtUtc") is not None or match.get("outcome") is not None:
+    raise SystemExit(f"New Lead must start open/uncontacted: {match}")
+PY
+echo "SELLER_SHELL_LEAD_OPEN: PASS"
+
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID" "$TOKEN")"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Mark contacted expected 200/204, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+CONTACTED_AT="$(python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+lead_id = sys.argv[2]
+match = next(item for item in data if str(item.get("id", "")).lower() == lead_id.lower())
+value = match.get("contactedAtUtc")
+if not value:
+    raise SystemExit(f"Contacted timestamp missing: {match}")
+print(value)
+PY
+)"
+status="$(request_json POST "/api/app/seller-lead-command/mark-contacted/$LEAD_ID" "$TOKEN")"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Repeated mark contacted expected 200/204, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+python3 - "$RESPONSE" "$LEAD_ID" "$CONTACTED_AT" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+lead_id, expected = sys.argv[2:]
+match = next(item for item in data if str(item.get("id", "")).lower() == lead_id.lower())
+if match.get("contactedAtUtc") != expected:
+    raise SystemExit(f"Repeated contact changed timestamp: {match}")
+PY
+echo "SELLER_SHELL_LEAD_CONTACT_IDEMPOTENT: PASS"
+
+status="$(request_json POST "/api/app/seller-lead-command/close/$LEAD_ID" "$TOKEN" '{"outcome":"Won"}')"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Lead close Won expected 200/204, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+CLOSED_AT="$(python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+lead_id = sys.argv[2]
+match = next(item for item in data if str(item.get("id", "")).lower() == lead_id.lower())
+if match.get("outcome") != "Won" or not match.get("closedAtUtc"):
+    raise SystemExit(f"Lead was not closed Won: {match}")
+print(match["closedAtUtc"])
+PY
+)"
+status="$(request_json POST "/api/app/seller-lead-command/close/$LEAD_ID" "$TOKEN" '{"outcome":"Won"}')"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Repeated Lead close Won expected 200/204, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+python3 - "$RESPONSE" "$LEAD_ID" "$CLOSED_AT" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+lead_id, expected = sys.argv[2:]
+match = next(item for item in data if str(item.get("id", "")).lower() == lead_id.lower())
+if match.get("outcome") != "Won" or match.get("closedAtUtc") != expected:
+    raise SystemExit(f"Repeated close changed terminal state: {match}")
+PY
+echo "SELLER_SHELL_LEAD_CLOSE_IDEMPOTENT: PASS"
+
+status="$(request_json POST "/api/app/seller-lead-command/close/$LEAD_ID" "$TOKEN" '{"outcome":"Lost"}')"
+[[ "$status" -ge 400 ]] || { echo "Conflicting Lead outcome must fail, got $status" >&2; exit 1; }
+grep -q 'LeadOutcomeConflict' "$RESPONSE" || { echo "Conflicting outcome response missing LeadOutcomeConflict: $(cat "$RESPONSE")" >&2; exit 1; }
+echo "SELLER_SHELL_LEAD_CLOSE_CONFLICT: PASS"
+
+status="$(request_json POST "/api/app/listing-command/archive/$LISTING_ID" "$TOKEN")"
+[[ "$status" == "200" || "$status" == "204" ]] || { echo "Archive Listing expected 200/204, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request_json GET '/api/app/seller-lead-query/mine' "$TOKEN")"
+[[ "$status" == "200" ]] || { echo "Seller Leads after archive expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+python3 - "$RESPONSE" "$LEAD_ID" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+lead_id = sys.argv[2]
+if not any(str(item.get("id", "")).lower() == lead_id.lower() for item in data):
+    raise SystemExit(f"Closed Lead disappeared after Listing archive: {data}")
+PY
+echo "SELLER_SHELL_LEAD_HISTORY_AFTER_ARCHIVE: PASS"
+
+OTHER_SELLER_ID="$(python3 - <<'PY'
+import uuid
+print(uuid.uuid4())
+PY
+)"
+dotnet run --project "$ROOT/tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj" --configuration Release -- reassign-listing "$LISTING_ID" "$OTHER_SELLER_ID" >/dev/null
+status="$(request_json POST "/api/app/seller-lead-command/close/$LEAD_ID" "$TOKEN" '{"outcome":"Won"}')"
+[[ "$status" == "404" ]] || { echo "Non-owner Lead close expected 404, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+echo "SELLER_SHELL_LEAD_OWNERSHIP: PASS"
+
 END_SESSION_ENDPOINT="$(python3 - "$DISCOVERY" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:

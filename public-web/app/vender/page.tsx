@@ -6,16 +6,25 @@ import type { User } from "oidc-client-ts";
 
 import { formatPrice } from "../../lib/public-listings";
 import {
+  closeSellerLead,
   getMyLeads,
   getMyListings,
   getSellerProfile,
   markSellerLeadContacted,
   type SellerLead,
+  type SellerLeadOutcome,
   type SellerListing,
   type SellerProfile,
   upsertSellerProfile,
 } from "../../lib/seller-api";
 import { getCurrentSellerUser, getSellerUserManager } from "../../lib/seller-auth";
+
+function leadStatusLabel(lead: SellerLead): string {
+  if (lead.closedAtUtc) {
+    return lead.outcome === "Won" ? "Fechado · Vendido" : "Fechado · Sem venda";
+  }
+  return lead.contactedAtUtc ? "Atendido" : "Novo";
+}
 
 export default function SellerEntryPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -88,6 +97,10 @@ export default function SellerEntryPage() {
     }
   }
 
+  async function reloadLeads(accessToken: string) {
+    setLeads(await getMyLeads(accessToken));
+  }
+
   async function markLeadContacted(leadId: string) {
     if (!user) return;
     setError(null);
@@ -95,10 +108,26 @@ export default function SellerEntryPage() {
     setUpdatingLeadId(leadId);
     try {
       await markSellerLeadContacted(user.access_token, leadId);
-      setLeads(await getMyLeads(user.access_token));
+      await reloadLeads(user.access_token);
       setNotice("Lead marcado como atendido.");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o Lead.");
+    } finally {
+      setUpdatingLeadId(null);
+    }
+  }
+
+  async function closeLead(leadId: string, outcome: SellerLeadOutcome) {
+    if (!user) return;
+    setError(null);
+    setNotice(null);
+    setUpdatingLeadId(leadId);
+    try {
+      await closeSellerLead(user.access_token, leadId, outcome);
+      await reloadLeads(user.access_token);
+      setNotice(outcome === "Won" ? "Lead encerrado como vendido." : "Lead encerrado sem venda.");
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível encerrar o Lead.");
     } finally {
       setUpdatingLeadId(null);
     }
@@ -153,14 +182,17 @@ export default function SellerEntryPage() {
                 {leads.map((lead) => (
                   <article className="seller-listing-row" key={lead.id}>
                     <div>
-                      <p className="seller-listing-status">{lead.contactedAtUtc ? "Atendido" : "Novo"} · {lead.channel}</p>
+                      <p className="seller-listing-status">{leadStatusLabel(lead)} · {lead.channel}</p>
                       <h3>{lead.listingTitle}</h3>
                       <p className="seller-listing-location">Recebido em {new Date(lead.createdAtUtc).toLocaleString("pt-BR")}</p>
                       {lead.contactedAtUtc ? <p className="seller-form-help">Atendido em {new Date(lead.contactedAtUtc).toLocaleString("pt-BR")}</p> : null}
+                      {lead.closedAtUtc ? <p className="seller-form-help">Encerrado em {new Date(lead.closedAtUtc).toLocaleString("pt-BR")}</p> : null}
                     </div>
                     <div className="seller-listing-actions">
                       <p className="seller-form-help">{lead.buyerUserId ? "Buyer autenticado" : "Contato anônimo"}</p>
-                      {!lead.contactedAtUtc ? <button className="primary-action" type="button" disabled={updatingLeadId === lead.id} onClick={() => void markLeadContacted(lead.id)}>{updatingLeadId === lead.id ? "Atualizando…" : "Marcar como atendido"}</button> : null}
+                      {!lead.closedAtUtc && !lead.contactedAtUtc ? <button className="primary-action" type="button" disabled={updatingLeadId === lead.id} onClick={() => void markLeadContacted(lead.id)}>{updatingLeadId === lead.id ? "Atualizando…" : "Marcar como atendido"}</button> : null}
+                      {!lead.closedAtUtc ? <button className="primary-action" type="button" disabled={updatingLeadId === lead.id} onClick={() => void closeLead(lead.id, "Won")}>{updatingLeadId === lead.id ? "Atualizando…" : "Marcar como vendido"}</button> : null}
+                      {!lead.closedAtUtc ? <button className="secondary-action" type="button" disabled={updatingLeadId === lead.id} onClick={() => void closeLead(lead.id, "Lost")}>{updatingLeadId === lead.id ? "Atualizando…" : "Encerrar sem venda"}</button> : null}
                       <Link className="secondary-action action-link" href={`/vender/anuncios/${lead.listingId}`}>Ver anúncio</Link>
                     </div>
                   </article>

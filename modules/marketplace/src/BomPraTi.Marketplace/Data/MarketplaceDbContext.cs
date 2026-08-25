@@ -48,6 +48,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
         {
             b.ToTable("MarketplaceLeads");
             b.Property(x => x.Channel).HasMaxLength(64).IsRequired();
+            b.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(16);
             b.HasIndex(x => new { x.ListingId, x.CreatedAtUtc });
         });
 

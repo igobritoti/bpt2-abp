@@ -7,4 +7,6 @@ public sealed record SellerLeadDto(
     Guid? BuyerUserId,
     string Channel,
     DateTime CreatedAtUtc,
-    DateTime? ContactedAtUtc);
+    DateTime? ContactedAtUtc,
+    DateTime? ClosedAtUtc,
+    string? Outcome);
