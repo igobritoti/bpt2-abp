@@ -35,6 +35,39 @@ PY
   [[ "$status" == 302 ]] || { echo "Account login for $username expected 302 got $status" >&2; cat "$RESPONSE" >&2; exit 1; }
 }
 
+assert_admin_anchor(){
+  python3 - "$1" <<'PY'
+from html.parser import HTMLParser
+import sys
+class P(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.depth = 0
+        self.capture_depth = None
+        self.parts = []
+        self.found = False
+    def handle_starttag(self, tag, attrs):
+        self.depth += 1
+        if tag.lower() == 'a' and dict(attrs).get('href') == '/admin':
+            self.capture_depth = self.depth
+            self.parts = []
+    def handle_data(self, data):
+        if self.capture_depth is not None:
+            self.parts.append(data)
+    def handle_endtag(self, tag):
+        if tag.lower() == 'a' and self.capture_depth == self.depth:
+            text = ' '.join(''.join(self.parts).split())
+            if text == 'Operações':
+                self.found = True
+            self.capture_depth = None
+            self.parts = []
+        self.depth -= 1
+p=P(); p.feed(open(sys.argv[1], encoding='utf-8').read())
+if not p.found:
+    raise SystemExit('Admin global navigation anchor with text Operações missing.')
+PY
+}
+
 dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nologo
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$LOG" 2>&1 & HOST_PID=$!
 for _ in $(seq 1 60); do curl --fail --silent "$BASE/swagger/v1/swagger.json" >/dev/null && break; if ! kill -0 "$HOST_PID" >/dev/null 2>&1; then cat "$LOG" >&2; exit 1; fi; sleep 1; done
@@ -53,8 +86,7 @@ status="$(request_json POST '/api/identity/users' "$ADMIN_TOKEN" "$USER_BODY")";
 login_cookie admin '1q2w3E*' "$ADMIN_COOKIES" '%2Fadmin'
 status="$(curl --silent --show-error --output "$PAGE_HTML" --cookie "$ADMIN_COOKIES" --cookie-jar "$ADMIN_COOKIES" --write-out '%{http_code}' "$BASE/admin")"
 [[ "$status" == 200 ]] || { echo "Admin page expected 200 got $status" >&2; exit 1; }
-grep -Fq 'href="/admin"' "$PAGE_HTML" || { echo 'Admin global navigation link missing.' >&2; exit 1; }
-grep -Fq '>Operações<' "$PAGE_HTML" || { echo 'Admin global navigation label missing.' >&2; exit 1; }
+assert_admin_anchor "$PAGE_HTML"
 echo 'ADMIN_GLOBAL_NAV_VISIBLE: PASS'
 
 login_cookie "$USER" "$USER_PASSWORD" "$USER_COOKIES" '%2FAccount%2FManage'
