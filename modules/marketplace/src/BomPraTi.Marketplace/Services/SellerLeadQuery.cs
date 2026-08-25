@@ -40,7 +40,9 @@ public class SellerLeadQuery : ISellerLeadQuery, ITransientDependency
                 item.Lead.UserId,
                 item.Lead.Channel,
                 item.Lead.CreatedAtUtc,
-                item.Lead.ContactedAtUtc))
+                item.Lead.ContactedAtUtc,
+                item.Lead.ClosedAtUtc,
+                item.Lead.Outcome.HasValue ? item.Lead.Outcome.Value.ToString() : null))
             .ToListAsync(cancellationToken);
     }
 }
