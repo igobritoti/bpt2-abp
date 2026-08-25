@@ -45,19 +45,21 @@ REPORT_PATH="/api/app/listing-report/report/$LISTING_ID"
 status="$(request POST "$REPORT_PATH")"; [[ "$status" == 401 ]] || { echo "Anonymous report expected 401 got $status" >&2; exit 1; }
 echo 'BUYER_REPORT_ANONYMOUS_BLOCKED: PASS'
 
-create_user(){
+register_user(){
   local username="$1" password="$2" email="${1}@example.invalid" body status
   body="$(python3 - "$username" "$email" "$password" <<'PY'
 import json,sys
-u,e,p=sys.argv[1:]; print(json.dumps({'userName':u,'name':'Buyer','surname':'Report','email':e,'password':p,'isActive':True,'lockoutEnabled':True,'roleNames':[]}))
+u,e,p=sys.argv[1:]
+print(json.dumps({'userName':u,'emailAddress':e,'password':p,'appName':'BomPraTi'}))
 PY
 )"
-  status="$(request POST '/api/identity/users' "$ADMIN_TOKEN" "$body")"
-  [[ "$status" == 200 || "$status" == 201 ]] || { echo "User create failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+  status="$(request POST '/api/account/register' '' "$body")"
+  [[ "$status" == 200 || "$status" == 201 ]] || { echo "Self-registration failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 }
 U1="buyer-report-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:8])')"; P1='Bpt2-Report-9!a'
 U2="buyer-report-$(python3 -c 'import uuid; print(uuid.uuid4().hex[:8])')"; P2='Bpt2-Report-9!b'
-create_user "$U1" "$P1"; create_user "$U2" "$P2"
+register_user "$U1" "$P1"; register_user "$U2" "$P2"
+echo 'BUYER_REPORT_SELF_REGISTRATION: PASS'
 T1="$(token "$U1" "$P1")"; T2="$(token "$U2" "$P2")"
 
 status="$(request POST "$REPORT_PATH" "$T1")"; [[ "$status" == 404 ]] || { echo "Draft report expected 404 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
