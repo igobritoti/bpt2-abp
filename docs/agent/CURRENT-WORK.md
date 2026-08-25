@@ -6,9 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0040 foi concluído: um Buyer comum auto-cadastrado agora prova Lead autenticado real com `UserId` persistido igual à identidade corrente, enquanto o Lead anônimo e o forwarding autenticado permanecem cobertos.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0041 foi concluído: o admin de Ingestion agora localiza Vehicle canônico por Brand/Model/Generation/Version na própria `/ingestao`, inspeciona a identidade legível e reutiliza o `VehicleId` real no fluxo de reconciliação existente.
 
-Próximo acceptance target: encerrar a linha de hardening de identidades privilegiadas salvo nova evidência concreta; escolher o próximo gap funcional de produto por evidência do repositório atual.
+Próximo acceptance target: após o merge do Plan 0041, refetch de `main` e nova auditoria curta de gap pós-MVP por evidência. Matching automático, confidence threshold, connector concreto e autocomplete continuam adiados sem nova evidência.
 
 ## Active plan
 
@@ -33,12 +33,13 @@ Nenhum.
 - Buyer Favorites com usuários auto-cadastrados: [`../exec-plans/completed/0038-self-registered-buyer-favorites.md`](../exec-plans/completed/0038-self-registered-buyer-favorites.md).
 - Buyer Listing Reports com usuários auto-cadastrados: [`../exec-plans/completed/0039-self-registered-buyer-reports.md`](../exec-plans/completed/0039-self-registered-buyer-reports.md).
 - Lead autenticado com UserId real: [`../exec-plans/completed/0040-authenticated-lead-userid-proof.md`](../exec-plans/completed/0040-authenticated-lead-userid-proof.md).
+- Lookup de Vehicle canônico na Ingestion: [`../exec-plans/completed/0041-ingestion-vehicle-lookup.md`](../exec-plans/completed/0041-ingestion-vehicle-lookup.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0040 foi pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0041 foi pós-MVP e não adicionou nova autoridade de decisão.
 
 ## Update rule
 

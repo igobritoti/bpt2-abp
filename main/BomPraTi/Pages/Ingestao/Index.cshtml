@@ -9,6 +9,46 @@
     <h1>Ingestão de veículos</h1>
     <p>Candidates pendentes de reconciliação com o catálogo canônico.</p>
 
+    <form method="get" action="/ingestao" class="row g-2 align-items-end mb-4">
+        <div class="col-md-8">
+            <label class="form-label" for="vehicle-query">Buscar Vehicle canônico</label>
+            <input id="vehicle-query" name="VehicleQuery" type="search" class="form-control" value="@Model.VehicleQuery" placeholder="Marca, modelo, geração ou versão" />
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-outline-primary">Buscar</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.VehicleQuery))
+    {
+        if (Model.VehicleMatches.Count == 0)
+        {
+            <div class="alert alert-secondary" role="status">Nenhum Vehicle canônico encontrado.</div>
+        }
+        else
+        {
+            <div class="mb-4" aria-label="Vehicles canônicos encontrados">
+                <h2 class="h5">Vehicles canônicos encontrados</h2>
+                <ul class="list-group">
+                @foreach (var vehicle in Model.VehicleMatches)
+                {
+                    <li class="list-group-item" data-vehicle-id="@vehicle.Id">
+                        <code>@vehicle.Id</code>
+                        <span> — @vehicle.Brand @vehicle.Model @vehicle.Generation @vehicle.Version @vehicle.ModelYear</span>
+                    </li>
+                }
+                </ul>
+            </div>
+
+            <datalist id="vehicle-options">
+            @foreach (var vehicle in Model.VehicleMatches)
+            {
+                <option value="@vehicle.Id">@vehicle.Brand @vehicle.Model @vehicle.Generation @vehicle.Version @vehicle.ModelYear</option>
+            }
+            </datalist>
+        }
+    }
+
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger" role="alert">
@@ -56,8 +96,9 @@
                             <form method="post" action="/ingestao?handler=Reconcile" class="d-flex gap-2 align-items-center">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="RecordId" value="@candidate.Id" />
+                                <input type="hidden" name="VehicleQuery" value="@Model.VehicleQuery" />
                                 <label class="visually-hidden" for="vehicle-@candidate.Id">VehicleId canônico</label>
-                                <input id="vehicle-@candidate.Id" name="VehicleId" type="text" class="form-control" placeholder="VehicleId canônico" required />
+                                <input id="vehicle-@candidate.Id" name="VehicleId" type="text" class="form-control" list="vehicle-options" placeholder="VehicleId canônico" required />
                                 <button type="submit" class="btn btn-primary">Reconciliar</button>
                             </form>
                         </td>
