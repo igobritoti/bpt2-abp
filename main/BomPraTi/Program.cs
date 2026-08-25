@@ -1,7 +1,9 @@
 using BomPraTi.Data;
+using BomPraTi.Menus;
 using Serilog;
 using Serilog.Events;
 using Volo.Abp.Data;
+using Volo.Abp.UI.Navigation;
 
 namespace BomPraTi;
 
@@ -44,6 +46,10 @@ public class Program
             }
 
             await builder.AddApplicationAsync<BomPraTiModule>();
+            builder.Services.Configure<AbpNavigationOptions>(options =>
+            {
+                options.MenuContributors.Add(new BomPraTiMenuContributor());
+            });
             ConfigureApiCookieChallenges(builder.Services);
 
             var app = builder.Build();
