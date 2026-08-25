@@ -10,5 +10,6 @@ public interface IVehicleCatalogReader
     Task<IReadOnlyList<VehicleRefDto>> SearchAsync(
         VehicleCatalogSearchInput input,
         int take = 50,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        int skip = 0);
 }

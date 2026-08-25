@@ -6,12 +6,12 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0031 também foi concluído funcionalmente:
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0032 também foi concluído funcionalmente:
 
-- detalhe público de Listing agora emite JSON-LD `Product` + `Vehicle` com `Offer` BRL coerente com o conteúdo visível e serialização segura para texto controlado pelo Seller;
-- nenhum ganho de ranking/rich result é presumido por esse slice.
+- a listagem pública do Catalog agora suporta paginação determinística;
+- o sitemap público percorre todo o Catalog e inclui Vehicle Hubs canônicos mesmo sem oferta ativa e além do antigo limite de 100.
 
-Próximo acceptance target: refetchar o `main` depois do merge e selecionar o próximo gap pós-MVP por evidência de produto, priorizando implementação vertical independente e sem abrir auditoria genérica.
+Próximo acceptance target: refetchar o `main` depois do merge e selecionar diretamente o próximo gap pós-MVP por evidência de produto, continuando implementação vertical sem auditoria intermediária.
 
 ## Active plan
 
@@ -27,6 +27,7 @@ Nenhum.
 - Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
 - Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 - Structured data do Listing: [`../exec-plans/completed/0031-public-listing-structured-data.md`](../exec-plans/completed/0031-public-listing-structured-data.md).
+- Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 

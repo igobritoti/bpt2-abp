@@ -8,5 +8,6 @@ public interface IVehicleCatalogAppService : IApplicationService
     Task<IReadOnlyList<VehicleRefDto>> GetListAsync(
         VehicleCatalogSearchInput input,
         int take = 50,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        int skip = 0);
 }

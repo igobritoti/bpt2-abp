@@ -108,7 +108,8 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
     public async Task<IReadOnlyList<VehicleRefDto>> SearchAsync(
         VehicleCatalogSearchInput input,
         int take = 50,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int skip = 0)
     {
         var vehicles =
             from vehicle in _dbContext.Vehicles.AsNoTracking()
@@ -152,6 +153,8 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             .ThenBy(x => x.Model)
             .ThenBy(x => x.ModelYear)
             .ThenBy(x => x.Version)
+            .ThenBy(x => x.Id)
+            .Skip(Math.Max(skip, 0))
             .Take(Math.Clamp(take, 1, 100))
             .ToListAsync(cancellationToken);
 

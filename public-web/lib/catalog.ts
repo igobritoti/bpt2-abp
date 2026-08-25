@@ -20,6 +20,23 @@ function serverApiBaseUrl(): string {
   return trimTrailingSlash(value);
 }
 
+export async function getVehicleCatalogPage(skip = 0, take = 100): Promise<VehicleRef[]> {
+  const url = new URL("/api/app/vehicle-catalog", `${serverApiBaseUrl()}/`);
+  url.searchParams.set("skip", String(Math.max(0, skip)));
+  url.searchParams.set("take", String(take));
+
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Vehicle Catalog list failed with HTTP ${response.status}.`);
+  }
+
+  return (await response.json()) as VehicleRef[];
+}
+
 export async function getVehicle(id: string): Promise<VehicleRef | null> {
   const response = await fetch(
     new URL(`/api/app/vehicle-catalog/${encodeURIComponent(id)}`, `${serverApiBaseUrl()}/`),

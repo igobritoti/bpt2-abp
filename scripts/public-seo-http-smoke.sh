@@ -7,10 +7,10 @@ WEB_PORT="${BPT_SEO_WEB_PORT:-3098}"
 API_BASE="http://127.0.0.1:${API_PORT}"
 WEB_BASE="http://127.0.0.1:${WEB_PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-public-seo"
-RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"; HOME_HTML="$TMP/home.html"; UTILITY="$TMP/utility.html"
+RESPONSE="$TMP/response.json"; API_LOG="$TMP/api.log"; WEB_LOG="$TMP/web.log"; ROBOTS="$TMP/robots.txt"; SITEMAP="$TMP/sitemap.xml"; DETAIL="$TMP/detail.html"; HOME_HTML="$TMP/home.html"; UTILITY="$TMP/utility.html"; CATALOG_FIRST="$TMP/catalog-first.json"; CATALOG_SECOND="$TMP/catalog-second.json"; CREATED_VEHICLES="$TMP/created-vehicles.txt"
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 : "${BPT_FIXTURE_VEHICLE_ID:?BPT_FIXTURE_VEHICLE_ID is required}"
-rm -rf "$TMP"; mkdir -p "$TMP"
+rm -rf "$TMP"; mkdir -p "$TMP"; : > "$CREATED_VEHICLES"
 
 export ConnectionStrings__Default="$BPT_DB_CONNECTION" ASPNETCORE_URLS="$API_BASE" ASPNETCORE_ENVIRONMENT=Development App__SelfUrl="$API_BASE" AuthServer__Authority="$API_BASE"
 API_PID=""; WEB_PID=""
@@ -33,6 +33,29 @@ import json,sys
 print(json.load(open(sys.argv[1]))['id'])
 PY
 }
+create_vehicle(){
+  local suffix="$1" body status
+  body="$(python3 - "$suffix" <<'PY'
+import json,sys
+suffix=sys.argv[1]
+print(json.dumps({
+  'brandName':'ZZZ BPT Sitemap Motors',
+  'modelName':'Crawler',
+  'generationName':None,
+  'generationStartYear':None,
+  'generationEndYear':None,
+  'versionName':f'Pagination {suffix}',
+  'modelYear':2026,
+}))
+PY
+)"
+  status="$(request POST '/api/app/canonical-vehicle-admin' "$ADMIN_TOKEN" "$body")"
+  [[ "$status" == 200 || "$status" == 201 ]] || { echo "Canonical sitemap fixture $suffix failed with $status" >&2; cat "$RESPONSE" >&2; return 1; }
+  python3 - "$RESPONSE" <<'PY'
+import json,sys
+print(json.load(open(sys.argv[1]))['id'])
+PY
+}
 
 dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nologo
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$API_LOG" 2>&1 & API_PID=$!
@@ -47,6 +70,34 @@ PY
 )"
 LISTING_ID="$(create_listing 'SEO public listing fixture' 99000)"
 SECOND_LISTING_ID="$(create_listing 'SEO second public listing fixture' 109000)"
+
+for i in $(seq 1 101); do
+  printf -v suffix '%03d' "$i"
+  create_vehicle "$suffix" >> "$CREATED_VEHICLES"
+done
+
+status="$(request GET '/api/app/vehicle-catalog?take=100&skip=0')"; [[ "$status" == 200 ]] || { echo "Catalog first page expected 200 got $status" >&2; cat "$RESPONSE" >&2; exit 1; }; cp "$RESPONSE" "$CATALOG_FIRST"
+status="$(request GET '/api/app/vehicle-catalog?take=100&skip=100')"; [[ "$status" == 200 ]] || { echo "Catalog second page expected 200 got $status" >&2; cat "$RESPONSE" >&2; exit 1; }; cp "$RESPONSE" "$CATALOG_SECOND"
+SECOND_PAGE_VEHICLE_ID="$(python3 - "$CATALOG_FIRST" "$CATALOG_SECOND" "$CREATED_VEHICLES" <<'PY'
+import json,sys
+first=json.load(open(sys.argv[1], encoding='utf-8'))
+second=json.load(open(sys.argv[2], encoding='utf-8'))
+created={line.strip().lower() for line in open(sys.argv[3], encoding='utf-8') if line.strip()}
+if len(first) != 100:
+    raise SystemExit(f'Expected first catalog page length 100, got {len(first)}')
+if not second:
+    raise SystemExit('Expected non-empty second catalog page after creating >100 Vehicles')
+first_ids={str(item['id']).lower() for item in first}
+second_ids={str(item['id']).lower() for item in second}
+if first_ids & second_ids:
+    raise SystemExit('Catalog pages overlap; pagination boundary is not deterministic')
+selected=next((str(item['id']) for item in second if str(item['id']).lower() in created), None)
+if not selected:
+    raise SystemExit('No no-listing sitemap fixture reached the second Catalog page')
+print(selected)
+PY
+)"
+echo 'PUBLIC_SEO_VEHICLE_CATALOG_PAGINATION: PASS'
 
 pushd "$ROOT/public-web" >/dev/null
 npm install --no-audit --no-fund
@@ -140,8 +191,12 @@ curl --fail --silent "$WEB_BASE/sitemap.xml" -o "$SITEMAP"
 grep -Fq "<loc>$WEB_BASE/</loc>" "$SITEMAP" || { cat "$SITEMAP" >&2; exit 1; }
 if grep -Fq "/anuncios/$LISTING_ID" "$SITEMAP" || grep -Fq "/anuncios/$SECOND_LISTING_ID" "$SITEMAP"; then echo 'Draft Listing leaked into sitemap.' >&2; exit 1; fi
 if grep -Fq "/vendedores/$SELLER_ID" "$SITEMAP"; then echo 'Draft-only Seller leaked into sitemap.' >&2; exit 1; fi
+[[ "$(grep -Fc "<loc>$WEB_BASE/veiculos/$SECOND_PAGE_VEHICLE_ID</loc>" "$SITEMAP")" == "1" ]] || { echo "Second-page Vehicle Hub missing or duplicated in sitemap: $SECOND_PAGE_VEHICLE_ID" >&2; cat "$SITEMAP" >&2; exit 1; }
+status="$(curl --silent --show-error --output "$DETAIL" --write-out '%{http_code}' "$WEB_BASE/veiculos/$SECOND_PAGE_VEHICLE_ID")"; [[ "$status" == 200 ]] || { echo "Second-page Vehicle Hub expected 200 got $status" >&2; cat "$WEB_LOG" >&2; exit 1; }
 echo 'PUBLIC_SEO_DRAFT_EXCLUDED: PASS'
 echo 'PUBLIC_SEO_SELLER_HUB_DRAFT_EXCLUDED: PASS'
+echo 'PUBLIC_SEO_VEHICLE_HUB_SECOND_PAGE_IN_SITEMAP: PASS'
+echo 'PUBLIC_SEO_VEHICLE_HUB_WITHOUT_OFFER: PASS'
 
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { cat "$RESPONSE"; exit 1; }
 status="$(request POST "/api/app/listing-command/publish/$SECOND_LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { cat "$RESPONSE"; exit 1; }
@@ -149,9 +204,11 @@ curl --fail --silent "$WEB_BASE/sitemap.xml" -o "$SITEMAP"
 grep -Fq "<loc>$WEB_BASE/anuncios/$LISTING_ID</loc>" "$SITEMAP" || { cat "$SITEMAP" >&2; exit 1; }
 grep -Fq "<loc>$WEB_BASE/anuncios/$SECOND_LISTING_ID</loc>" "$SITEMAP" || { cat "$SITEMAP" >&2; exit 1; }
 [[ "$(grep -Fc "<loc>$WEB_BASE/vendedores/$SELLER_ID</loc>" "$SITEMAP")" == "1" ]] || { echo 'Seller Hub sitemap entry must be deduplicated.' >&2; cat "$SITEMAP" >&2; exit 1; }
+[[ "$(grep -Fc "<loc>$WEB_BASE/veiculos/$SECOND_PAGE_VEHICLE_ID</loc>" "$SITEMAP")" == "1" ]] || { echo 'Vehicle Hub sitemap entry changed after Listing publish.' >&2; exit 1; }
 echo 'PUBLIC_SEO_PUBLISHED_IN_SITEMAP: PASS'
 echo 'PUBLIC_SEO_SELLER_HUB_IN_SITEMAP: PASS'
 echo 'PUBLIC_SEO_SELLER_HUB_DEDUPED: PASS'
+echo 'PUBLIC_SEO_VEHICLE_HUB_STABLE_WITH_OFFER: PASS'
 
 status="$(curl --silent --show-error --output "$DETAIL" --write-out '%{http_code}' "$WEB_BASE/anuncios/$LISTING_ID")"; [[ "$status" == 200 ]] || { cat "$WEB_LOG" >&2; exit 1; }
 grep -Fq "rel=\"canonical\" href=\"$WEB_BASE/anuncios/$LISTING_ID\"" "$DETAIL" || { echo 'Canonical missing.' >&2; grep -o 'canonical[^>]*' "$DETAIL" >&2 || true; exit 1; }
@@ -162,12 +219,15 @@ curl --fail --silent "$WEB_BASE/sitemap.xml" -o "$SITEMAP"
 if grep -Fq "/anuncios/$LISTING_ID" "$SITEMAP"; then echo 'Paused Listing remained in sitemap.' >&2; exit 1; fi
 grep -Fq "<loc>$WEB_BASE/anuncios/$SECOND_LISTING_ID</loc>" "$SITEMAP" || { echo 'Still-public second Listing disappeared from sitemap.' >&2; exit 1; }
 [[ "$(grep -Fc "<loc>$WEB_BASE/vendedores/$SELLER_ID</loc>" "$SITEMAP")" == "1" ]] || { echo 'Seller Hub must remain while another public Listing exists.' >&2; exit 1; }
+[[ "$(grep -Fc "<loc>$WEB_BASE/veiculos/$SECOND_PAGE_VEHICLE_ID</loc>" "$SITEMAP")" == "1" ]] || { echo 'Vehicle Hub disappeared when unrelated Listing paused.' >&2; exit 1; }
 echo 'PUBLIC_SEO_SELLER_HUB_PERSISTS_WITH_OFFER: PASS'
 
 status="$(request POST "/api/app/listing-command/pause/$SECOND_LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { cat "$RESPONSE"; exit 1; }
 curl --fail --silent "$WEB_BASE/sitemap.xml" -o "$SITEMAP"
 if grep -Fq "/anuncios/$SECOND_LISTING_ID" "$SITEMAP"; then echo 'Paused second Listing remained in sitemap.' >&2; exit 1; fi
 if grep -Fq "/vendedores/$SELLER_ID" "$SITEMAP"; then echo 'Seller Hub remained after last public Listing was paused.' >&2; exit 1; fi
+[[ "$(grep -Fc "<loc>$WEB_BASE/veiculos/$SECOND_PAGE_VEHICLE_ID</loc>" "$SITEMAP")" == "1" ]] || { echo 'Canonical Vehicle Hub must remain without public offers.' >&2; exit 1; }
 echo 'PUBLIC_SEO_PAUSED_EXCLUDED: PASS'
 echo 'PUBLIC_SEO_SELLER_HUB_LAST_OFFER_REMOVED: PASS'
+echo 'PUBLIC_SEO_VEHICLE_HUB_PERSISTS_WITHOUT_OFFER: PASS'
 echo 'PUBLIC SEO HTTP: PASSED'
