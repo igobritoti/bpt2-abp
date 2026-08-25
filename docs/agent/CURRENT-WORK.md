@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 concluiu a navegação global administrativa nativa (`Operações → /admin`) e o Plan 0044 reconciliou `PRODUCT.md` com o estado realmente entregue até esse ponto, removendo drift capaz de induzir reimplementação de capacidades já concluídas.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0044 reconciliou `PRODUCT.md` com o estado entregue; o Plan 0045 trata uma inconsistência específica dessa superfície já entregue: Seller Hub e Vehicle Hub possuem metadata social e exibem fotos de Listings públicos, mas ainda não reutilizam essas fotos como preview Open Graph/Twitter.
 
-Próximo acceptance target: selecionar o próximo gap de produto somente por nova evidência explícita. Não promover permissões granulares, frontend admin separado, CRM, ranking, enrichment, automação de ingestion ou infraestrutura apenas porque permanecem no produto-alvo.
+Próximo acceptance target: `Listing publicado com foto → Seller Hub / Vehicle Hub → og:image + twitter:image` apontando para a mesma foto pública já exibida, com fallback sem imagem quando não houver oferta pública fotografada.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0045-public-hub-social-images.md`](../exec-plans/active/0045-public-hub-social-images.md)
 
 ## Source of runtime truth
 
@@ -43,7 +43,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. Nenhum execution plan de produto ativo.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. O Plan 0045 é pós-MVP e altera apenas metadata social dos hubs públicos.
 
 ## Update rule
 
