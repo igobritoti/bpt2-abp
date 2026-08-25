@@ -10,6 +10,7 @@ import {
   formatPrice,
   getPublicListing,
   publicPhotoUrl,
+  type PublicListing,
   vehicleLabel,
   whatsAppUrl,
 } from "@/lib/public-listings";
@@ -20,6 +21,52 @@ export const dynamic = "force-dynamic";
 const loadListing = cache((id: string) => getPublicListing(id));
 
 type PageProps = { params: Promise<{ id: string }> };
+
+function listingStructuredData(listing: PublicListing): Record<string, unknown> {
+  const canonical = publicUrl(`/anuncios/${listing.id}`);
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": ["Product", "Vehicle"],
+    name: listing.title,
+    description: listing.description,
+    url: canonical,
+    brand: {
+      "@type": "Brand",
+      name: listing.vehicle.brand,
+    },
+    model: listing.vehicle.model,
+    vehicleConfiguration: listing.vehicle.version,
+    offers: {
+      "@type": "Offer",
+      url: canonical,
+      price: listing.price,
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+    },
+  };
+
+  if (listing.color) {
+    data.color = listing.color;
+  }
+
+  if (listing.mileageKm !== null) {
+    data.mileageFromOdometer = {
+      "@type": "QuantitativeValue",
+      value: listing.mileageKm,
+      unitCode: "KMT",
+    };
+  }
+
+  if (listing.photos.length > 0) {
+    data.image = listing.photos.map((photo) => publicPhotoUrl(listing.id, photo.id));
+  }
+
+  return data;
+}
+
+function serializeStructuredData(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
@@ -63,43 +110,50 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const listing = await loadListing(id);
   if (!listing) notFound();
   const contactUrl = whatsAppUrl(listing.seller.whatsAppNumber);
+  const structuredData = listingStructuredData(listing);
 
   return (
-    <main className="shell detail-shell">
-      <nav className="back-nav" aria-label="Voltar para anúncios"><Link href="/">← Todos os anúncios</Link></nav>
-      <article>
-        <header className="detail-header">
-          <div><p className="eyebrow"><Link href={`/veiculos/${listing.vehicleId}`}>{vehicleLabel(listing)}</Link></p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>
-          <p className="detail-price">{formatPrice(listing.price)}</p>
-        </header>
-        <section aria-label="Fotos do anúncio" className="photo-grid">
-          {listing.photos.length === 0 ? <div className="detail-photo-placeholder">Este anúncio ainda não tem fotos.</div> : listing.photos.map((photo, index) => (
-            <figure className={index === 0 ? "photo-main" : "photo-secondary"} key={photo.id}><img alt={`${listing.title} — foto ${index + 1}`} src={publicPhotoUrl(listing.id, photo.id)} /></figure>
-          ))}
-        </section>
-        <div className="detail-columns">
-          <div className="detail-content">
-            <section className="detail-section" aria-labelledby="facts-title">
-              <p className="eyebrow">Veículo</p><h2 id="facts-title">Dados do anúncio</h2>
-              <dl className="facts-grid">
-                <div><dt>Ano do modelo</dt><dd>{listing.vehicle.modelYear}</dd></div>
-                {listing.manufactureYear ? <div><dt>Ano de fabricação</dt><dd>{listing.manufactureYear}</dd></div> : null}
-                {listing.mileageKm !== null ? <div><dt>Quilometragem</dt><dd>{new Intl.NumberFormat("pt-BR").format(listing.mileageKm)} km</dd></div> : null}
-                {listing.color ? <div><dt>Cor</dt><dd>{listing.color}</dd></div> : null}
-                <div><dt>Versão</dt><dd>{listing.vehicle.version}</dd></div>
-              </dl>
-            </section>
-            <section className="detail-section" aria-labelledby="description-title"><p className="eyebrow">Descrição</p><h2 id="description-title">Sobre este veículo</h2><p className="description-text">{listing.description}</p></section>
+    <>
+      <script
+        dangerouslySetInnerHTML={{ __html: serializeStructuredData(structuredData) }}
+        type="application/ld+json"
+      />
+      <main className="shell detail-shell">
+        <nav className="back-nav" aria-label="Voltar para anúncios"><Link href="/">← Todos os anúncios</Link></nav>
+        <article>
+          <header className="detail-header">
+            <div><p className="eyebrow"><Link href={`/veiculos/${listing.vehicleId}`}>{vehicleLabel(listing)}</Link></p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>
+            <p className="detail-price">{formatPrice(listing.price)}</p>
+          </header>
+          <section aria-label="Fotos do anúncio" className="photo-grid">
+            {listing.photos.length === 0 ? <div className="detail-photo-placeholder">Este anúncio ainda não tem fotos.</div> : listing.photos.map((photo, index) => (
+              <figure className={index === 0 ? "photo-main" : "photo-secondary"} key={photo.id}><img alt={`${listing.title} — foto ${index + 1}`} src={publicPhotoUrl(listing.id, photo.id)} /></figure>
+            ))}
+          </section>
+          <div className="detail-columns">
+            <div className="detail-content">
+              <section className="detail-section" aria-labelledby="facts-title">
+                <p className="eyebrow">Veículo</p><h2 id="facts-title">Dados do anúncio</h2>
+                <dl className="facts-grid">
+                  <div><dt>Ano do modelo</dt><dd>{listing.vehicle.modelYear}</dd></div>
+                  {listing.manufactureYear ? <div><dt>Ano de fabricação</dt><dd>{listing.manufactureYear}</dd></div> : null}
+                  {listing.mileageKm !== null ? <div><dt>Quilometragem</dt><dd>{new Intl.NumberFormat("pt-BR").format(listing.mileageKm)} km</dd></div> : null}
+                  {listing.color ? <div><dt>Cor</dt><dd>{listing.color}</dd></div> : null}
+                  <div><dt>Versão</dt><dd>{listing.vehicle.version}</dd></div>
+                </dl>
+              </section>
+              <section className="detail-section" aria-labelledby="description-title"><p className="eyebrow">Descrição</p><h2 id="description-title">Sobre este veículo</h2><p className="description-text">{listing.description}</p></section>
+            </div>
+            <aside className="seller-card" aria-labelledby="seller-title">
+              <p className="eyebrow">Vendedor</p><h2 id="seller-title"><Link href={`/vendedores/${listing.seller.sellerId}`}>{listing.seller.displayName ?? "Vendedor"}</Link></h2><p>Fale diretamente com o responsável por este anúncio.</p>
+              <FavoriteButton listingId={listing.id} />
+              <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
+              {contactUrl ? <WhatsAppContactButton listingId={listing.id} /> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
+              <ReportButton listingId={listing.id} />
+            </aside>
           </div>
-          <aside className="seller-card" aria-labelledby="seller-title">
-            <p className="eyebrow">Vendedor</p><h2 id="seller-title"><Link href={`/vendedores/${listing.seller.sellerId}`}>{listing.seller.displayName ?? "Vendedor"}</Link></h2><p>Fale diretamente com o responsável por este anúncio.</p>
-            <FavoriteButton listingId={listing.id} />
-            <Link className="secondary-action" href="/favoritos">Meus favoritos</Link>
-            {contactUrl ? <WhatsAppContactButton listingId={listing.id} /> : <p className="contact-unavailable">Contato indisponível neste momento.</p>}
-            <ReportButton listingId={listing.id} />
-          </aside>
-        </div>
-      </article>
-    </main>
+        </article>
+      </main>
+    </>
   );
 }
