@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0040 foi concluído: um Buyer comum auto-cadastrado agora prova Lead autenticado real com `UserId` persistido igual à identidade corrente, enquanto o Lead anônimo e o forwarding autenticado permanecem cobertos.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0041 está melhorando a operação de Ingestion sem nova autoridade: o admin deve conseguir localizar Vehicle canônico por identidade textual antes de reconciliar um candidate, reutilizando a busca do Catalog introduzida no Plan 0034.
 
-Próximo acceptance target: encerrar a linha de hardening de identidades privilegiadas salvo nova evidência concreta; escolher o próximo gap funcional de produto por evidência do repositório atual.
+Próximo acceptance target: `candidate pendente → /ingestao → busca Brand/Model/Generation/Version → Vehicle canônico visível → reconcile existente`, preservando autorização e validação backend atuais.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0041-ingestion-vehicle-lookup.md`](../exec-plans/active/0041-ingestion-vehicle-lookup.md)
 
 ## Source of runtime truth
 
@@ -38,7 +38,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0040 foi pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0041 é pós-MVP e reutiliza capacidades já presentes.
 
 ## Update rule
 
