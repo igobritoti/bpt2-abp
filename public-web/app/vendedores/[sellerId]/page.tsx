@@ -53,7 +53,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const page = await loadSellerIdentity(sellerId);
-  const seller = page.items[0]?.seller;
+  const firstListing = page.items[0];
+  const seller = firstListing?.seller;
   if (!seller) {
     return {
       title: "Vendedor não encontrado",
@@ -64,6 +65,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const displayName = seller.displayName ?? "Vendedor";
   const canonical = publicUrl(`/vendedores/${seller.sellerId}`);
   const description = `${page.totalCount} anúncio(s) público(s) de ${displayName} no Bom Pra Ti.`;
+  const firstPhoto = firstListing.photos[0];
+  const socialImage = firstPhoto ? publicPhotoUrl(firstListing.id, firstPhoto.id) : undefined;
 
   return {
     title: displayName,
@@ -75,11 +78,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: displayName,
       description,
       url: canonical,
+      images: socialImage ? [{ url: socialImage, alt: displayName }] : undefined,
     },
     twitter: {
-      card: "summary",
+      card: socialImage ? "summary_large_image" : "summary",
       title: displayName,
       description,
+      images: socialImage ? [socialImage] : undefined,
     },
   };
 }
