@@ -147,7 +147,11 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public void Archive()
     {
-        EnsureMutable();
+        if (Status == ListingStatus.Moderated)
+        {
+            throw new BusinessException("Marketplace:ListingModerated");
+        }
+
         Status = ListingStatus.Archived;
     }
 
