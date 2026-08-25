@@ -131,6 +131,23 @@ echo 'API local: OK'
 
 Após o seed padrão, as credenciais de desenvolvimento usadas pelos smokes são `admin` / `1q2w3E*`. São dados locais do template/fixture, não credenciais de produção.
 
+## Criar o primeiro Vehicle canônico sem fixture
+
+Depois de subir a API contra um banco recém-bootstrapado, entre como `admin`, abra `http://127.0.0.1:5093/admin` e siga para **Catálogo canônico** (`/catalogo`). Informe marca, modelo, versão e ano-modelo; geração e seus anos são opcionais.
+
+A operação administrativa cria ou reutiliza a árvore canônica `Brand → Model → Generation opcional → Version → Vehicle`. Repetir a mesma identidade retorna o mesmo `VehicleId`, que passa a aparecer imediatamente no catálogo público e pode ser usado por um Seller ao criar um Draft.
+
+Esse é o caminho operacional suportado para popular manualmente o catálogo mínimo de um ambiente novo. `tests/BomPraTi.HttpLifecycleFixture` continua sendo uma fixture de teste e não é pré-requisito para esse bootstrap de produto.
+
+Para reproduzir localmente a prova focal usada pelo CI em um database descartável já preparado por `fresh-migration-gate.sh` + seed do host:
+
+```bash
+export BPT_DB_CONNECTION='Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres'
+bash scripts/admin-canonical-catalog-http-smoke.sh
+```
+
+O smoke valida autorização admin, idempotência, leitura pública e criação de Draft Seller usando o `VehicleId` criado pela superfície administrativa, sem executar `BomPraTi.HttpLifecycleFixture`.
+
 ## Subir o public web
 
 Em outro terminal:
