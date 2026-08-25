@@ -231,7 +231,21 @@ status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_co
 [[ "$status" == 200 ]] || exit 1
 grep -Fq "$LISTING_TITLE" "$HUB_HTML" || { echo 'Published Listing missing from Vehicle Hub' >&2; exit 1; }
 grep -Fq "/anuncios/$LISTING_ID" "$HUB_HTML" || { echo 'Published Listing detail link missing from Vehicle Hub' >&2; exit 1; }
-[[ "$(grep -Fc 'application/ld+json' "$HUB_HTML")" == "1" ]] || { echo 'Vehicle Hub structured data changed after publish' >&2; exit 1; }
+python3 - "$HUB_HTML" <<'PY'
+from html.parser import HTMLParser
+import sys
+class P(HTMLParser):
+    def __init__(self): super().__init__(); self.count=0; self.in_ld=False
+    def handle_starttag(self, tag, attrs):
+        if tag == 'script' and dict(attrs).get('type') == 'application/ld+json':
+            self.in_ld = True
+    def handle_endtag(self, tag):
+        if tag == 'script' and self.in_ld:
+            self.count += 1; self.in_ld = False
+p=P(); p.feed(open(sys.argv[1], encoding='utf-8').read())
+if p.count != 1:
+    raise SystemExit(f'Vehicle Hub structured data changed after publish: expected 1 JSON-LD block, got {p.count}')
+PY
 echo 'VEHICLE_HUB_PUBLISHED_VISIBLE: PASS'
 echo 'VEHICLE_HUB_STRUCTURED_DATA_WITH_OFFER: PASS'
 
@@ -246,7 +260,21 @@ status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_co
 [[ "$status" == 200 ]] || { echo "Vehicle Hub disappeared after Pause: $status" >&2; exit 1; }
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Paused Listing remained visible in Vehicle Hub' >&2; exit 1; fi
 grep -Fq 'Nenhum anúncio publicado agora.' "$HUB_HTML" || { echo 'Vehicle Hub empty state missing after Pause' >&2; exit 1; }
-[[ "$(grep -Fc 'application/ld+json' "$HUB_HTML")" == "1" ]] || { echo 'Vehicle Hub structured data disappeared after Pause' >&2; exit 1; }
+python3 - "$HUB_HTML" <<'PY'
+from html.parser import HTMLParser
+import sys
+class P(HTMLParser):
+    def __init__(self): super().__init__(); self.count=0; self.in_ld=False
+    def handle_starttag(self, tag, attrs):
+        if tag == 'script' and dict(attrs).get('type') == 'application/ld+json':
+            self.in_ld = True
+    def handle_endtag(self, tag):
+        if tag == 'script' and self.in_ld:
+            self.count += 1; self.in_ld = False
+p=P(); p.feed(open(sys.argv[1], encoding='utf-8').read())
+if p.count != 1:
+    raise SystemExit(f'Vehicle Hub structured data disappeared after Pause: expected 1 JSON-LD block, got {p.count}')
+PY
 echo 'VEHICLE_HUB_PAUSE_REMOVES_LISTING: PASS'
 echo 'VEHICLE_HUB_PERSISTS_WITHOUT_OFFER: PASS'
 echo 'VEHICLE_HUB_STRUCTURED_DATA_PERSISTS_WITHOUT_OFFER: PASS'
