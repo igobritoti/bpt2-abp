@@ -6,9 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0035 foi concluído: a jornada pública de discovery já possui prova suficiente para busca, filtros, paginação, sort, exclusão de Draft e zero-results; nenhum novo slice nessa superfície foi justificado.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0036 foi concluído: self-registration agora possui prova HTTP real em banco fresco, desde a página pública de cadastro até criação anônima de identidade e autenticação com a própria credencial.
 
-Próximo acceptance target: escolher o próximo gap pós-MVP fora de public discovery somente quando houver evidência adicional de valor ou comportamento incompleto.
+Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir Public Discovery, Seller Hub ou self-registration sem nova evidência de comportamento incompleto.
 
 ## Active plan
 
@@ -28,6 +28,7 @@ Nenhum.
 - Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
 - Busca pública por identidade canônica: [`../exec-plans/completed/0034-public-vehicle-text-search.md`](../exec-plans/completed/0034-public-vehicle-text-search.md).
 - Auditoria de qualidade da busca pública: [`../exec-plans/completed/0035-public-search-quality-audit.md`](../exec-plans/completed/0035-public-search-quality-audit.md).
+- Prova HTTP de self-registration: [`../exec-plans/completed/0036-self-registration-http-proof.md`](../exec-plans/completed/0036-self-registration-http-proof.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
