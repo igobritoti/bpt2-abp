@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0039 foi concluído: o Buyer Listing Report E2E agora usa dois Buyers comuns auto-cadastrados, mantendo `admin` somente como fixture Seller/Listing.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0040 está fortalecendo a prova de Lead autenticado: um Buyer comum auto-cadastrado deve gerar Lead real com `UserId` persistido igual à identidade corrente.
 
-Próximo acceptance target: auditar dependências privilegiadas restantes nos fluxos de usuário comum; se não houver outro gap material, encerrar essa linha de hardening e voltar a escolher gap funcional de produto por evidência.
+Próximo acceptance target: `self-registration → Buyer token → Published Listing → Lead → persisted UserId`, preservando Lead anônimo e forwarding autenticado já existentes sem regra/schema novo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0040-authenticated-lead-userid-proof.md`](../exec-plans/active/0040-authenticated-lead-userid-proof.md)
 
 ## Source of runtime truth
 
@@ -37,7 +37,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0039 foi pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0040 é pós-MVP/hardening.
 
 ## Update rule
 
