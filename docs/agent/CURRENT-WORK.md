@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 foi concluído: o usuário `admin` agora alcança o hub `/admin` pelo menu principal nativo do host ABP/LeptonXLite via `Operações`, enquanto usuário autenticado sem role `admin` não recebe esse item; a autorização server-side existente permanece a autoridade.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0044 fecha uma inconsistência pós-MVP de SEO/social: Seller Hub e Vehicle Hub já exibem fotos de Listings publicados, mas hoje não reutilizam essas fotos em Open Graph/Twitter metadata como o Listing detail já faz.
 
-Próximo acceptance target: após o merge do Plan 0043, refetch de `main` e seleção do próximo gap pós-MVP por evidência explícita. Não promover permissões granulares, frontend admin separado, CRM, ranking, infraestrutura ou regra comercial sem necessidade comprovada.
+Próximo acceptance target: `Listing publicado com foto → Seller Hub / Vehicle Hub → og:image + twitter:image` apontando para a mesma foto pública já exibida, sem asset, branding ou regra editorial nova.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0044-public-hub-social-images.md`](../exec-plans/active/0044-public-hub-social-images.md)
 
 ## Source of runtime truth
 
@@ -41,7 +41,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0043 foi pós-MVP e alterou somente descoberta/navegação do host.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0044 é pós-MVP e altera somente metadata social de hubs públicos.
 
 ## Update rule
 
