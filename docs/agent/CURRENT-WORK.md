@@ -6,17 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0028 em execução para fechar o blocker `MVP-01` identificado pela auditoria de prontidão:
+O Execution Plan 0028 fechou o blocker `MVP-01`: um operador `admin` agora consegue criar/reutilizar `Brand → Model → Generation opcional → Version → Vehicle` por uma superfície suportada, e o gate focal provou em PostgreSQL fresco que o Vehicle criado entra no catálogo público e pode ser usado imediatamente em um Draft Seller sem `tests/BomPraTi.HttpLifecycleFixture`.
 
-`admin → identidade automotiva canônica → catálogo público → Seller Draft`
+Resta um blocker funcional identificado pela auditoria de prontidão:
 
-O slice deve permitir que um ambiente novo crie `Brand → Model → Generation opcional → Version → Vehicle` por uma superfície administrativa suportada, sem executar `tests/BomPraTi.HttpLifecycleFixture` e sem adicionar connector/importador ou nova infraestrutura.
+**MVP-02 — ação mínima de moderação:** Buyer reporta Listing público e admin consulta a fila, mas o operador ainda não possui autoridade de produto para retirar/restaurar a visibilidade do Listing denunciado sem que o Seller possa desfazer a decisão administrativa.
 
-Próximo acceptance target: provar em PostgreSQL fresco que somente admin cria/reutiliza a identidade canônica, o Vehicle aparece no catálogo público e pode ser usado imediatamente para criar um Draft Seller.
+Próximo acceptance target: criar uma autoridade de moderação separada do lifecycle Seller e provar por HTTP que admin retira um Listing denunciado da descoberta pública, Seller não consegue republicá-lo enquanto moderado e admin consegue restaurá-lo.
 
 ## Active plan
 
-[`../exec-plans/active/0028-admin-canonical-catalog.md`](../exec-plans/active/0028-admin-canonical-catalog.md)
+Nenhum execution plan ativo.
 
 ## Source of runtime truth
 
@@ -24,12 +24,12 @@ Próximo acceptance target: provar em PostgreSQL fresco que somente admin cria/r
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
+- Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-- **MVP-01 — catálogo canônico (EM TRABALHO):** ambiente novo não possui caminho operacional suportado para criar o Vehicle canônico exigido por Listing.
 - **MVP-02 — moderação:** operador lê denúncias, mas ainda não consegue retirar/restaurar Listing por autoridade administrativa do produto.
 
 ## Update rule
