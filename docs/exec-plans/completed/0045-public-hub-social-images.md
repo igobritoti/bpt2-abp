@@ -1,6 +1,6 @@
 # Execution Plan 0045 — Public Hub Social Images
 
-Status: **ATIVO**
+Status: **CONCLUÍDO**
 
 ## Objetivo
 
@@ -65,3 +65,4 @@ Evidência:
 - 2026-08-25: Seller Hub passou a reutilizar a primeira foto do primeiro Listing público em OG/Twitter metadata.
 - 2026-08-25: Vehicle Hub passou a consultar somente um Listing público para metadata e reutilizar sua primeira foto.
 - 2026-08-25: `scripts/public-hub-social-images-http-smoke.sh` criado e ligado ao Public Buyer HTTP Gate existente.
+- 2026-08-25: Public Buyer HTTP Gate passou integralmente no banco descartável local; Buyer flow, Seller Hub, Vehicle Hub e hub social images verdes, com Vehicle Hub JSON-LD validado pela asserção estrutural e reutilização da foto pública sem fallback inventado.
