@@ -6,13 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0033 está implementando structured data mínimo e fiel para o Vehicle Hub canônico, sem inventar dados de oferta, condição, VIN, imagem ou data automotiva.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0033 também foi concluído funcionalmente:
 
-Próximo acceptance target: provar por HTTP que `/veiculos/{id}` conhecido entrega exatamente um JSON-LD `Vehicle` coerente com a identidade visível, enquanto Vehicle desconhecido permanece 404/noindex e sem structured data.
+- o Vehicle Hub conhecido agora entrega exatamente um JSON-LD `Vehicle` derivado da identidade canônica visível;
+- Vehicle desconhecido permanece 404/noindex sem structured data;
+- o JSON-LD persiste independentemente de existir oferta pública ativa e não inventa Offer, condição, VIN, imagem, ratings ou data de modelo.
+
+Próximo acceptance target: refetchar o `main` depois do merge e implementar diretamente o próximo gap pós-MVP sustentado por evidência; o candidato atual é ampliar a busca livre para a identidade canônica do veículo sem introduzir search engine externo.
 
 ## Active plan
 
-[`../exec-plans/active/0033-vehicle-hub-structured-data.md`](../exec-plans/active/0033-vehicle-hub-structured-data.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -25,12 +29,13 @@ Próximo acceptance target: provar por HTTP que `/veiculos/{id}` conhecido entre
 - Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 - Structured data do Listing: [`../exec-plans/completed/0031-public-listing-structured-data.md`](../exec-plans/completed/0031-public-listing-structured-data.md).
 - Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
+- Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0033 é pós-MVP.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
