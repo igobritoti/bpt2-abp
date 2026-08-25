@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0038 está fortalecendo a prova do ciclo Buyer: o Buyer Favorites E2E deve ser atravessado por usuários comuns auto-cadastrados, sem usar a identidade privilegiada `admin` como Buyer positivo.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0038 foi concluído: o Buyer Favorites E2E agora usa Buyers comuns auto-cadastrados no caminho positivo e na prova de isolamento, mantendo `admin` somente como fixture Seller/Listing.
 
-Próximo acceptance target: `self-registration → BuyerWeb Authorization Code + PKCE → Favorite → Meus favoritos`, preservando isolamento entre Buyers, Draft bloqueado, pause/republish e remove sem regra/schema novo.
+Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir self-registration, Seller Shell ou Buyer Favorites sem nova evidência de comportamento incompleto.
 
 ## Active plan
 
-[`../exec-plans/active/0038-self-registered-buyer-favorites.md`](../exec-plans/active/0038-self-registered-buyer-favorites.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -30,12 +30,13 @@ Próximo acceptance target: `self-registration → BuyerWeb Authorization Code +
 - Auditoria de qualidade da busca pública: [`../exec-plans/completed/0035-public-search-quality-audit.md`](../exec-plans/completed/0035-public-search-quality-audit.md).
 - Prova HTTP de self-registration: [`../exec-plans/completed/0036-self-registration-http-proof.md`](../exec-plans/completed/0036-self-registration-http-proof.md).
 - Seller Shell com usuário auto-cadastrado: [`../exec-plans/completed/0037-self-registered-seller-shell.md`](../exec-plans/completed/0037-self-registered-seller-shell.md).
+- Buyer Favorites com usuários auto-cadastrados: [`../exec-plans/completed/0038-self-registered-buyer-favorites.md`](../exec-plans/completed/0038-self-registered-buyer-favorites.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0038 é pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
