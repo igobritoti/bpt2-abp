@@ -6,12 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0032 também foi concluído funcionalmente:
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0033 também foi concluído funcionalmente:
 
-- a listagem pública do Catalog agora suporta paginação determinística;
-- o sitemap público percorre todo o Catalog e inclui Vehicle Hubs canônicos mesmo sem oferta ativa e além do antigo limite de 100.
+- o Vehicle Hub conhecido agora entrega exatamente um JSON-LD `Vehicle` derivado da identidade canônica visível;
+- Vehicle desconhecido permanece 404/noindex sem structured data;
+- o JSON-LD persiste independentemente de existir oferta pública ativa e não inventa Offer, condição, VIN, imagem, ratings ou data de modelo.
 
-Próximo acceptance target: refetchar o `main` depois do merge e selecionar diretamente o próximo gap pós-MVP por evidência de produto, continuando implementação vertical sem auditoria intermediária.
+Próximo acceptance target: refetchar o `main` depois do merge e implementar diretamente o próximo gap pós-MVP sustentado por evidência; o candidato atual é ampliar a busca livre para a identidade canônica do veículo sem introduzir search engine externo.
 
 ## Active plan
 
@@ -28,6 +29,7 @@ Nenhum.
 - Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 - Structured data do Listing: [`../exec-plans/completed/0031-public-listing-structured-data.md`](../exec-plans/completed/0031-public-listing-structured-data.md).
 - Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
+- Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 

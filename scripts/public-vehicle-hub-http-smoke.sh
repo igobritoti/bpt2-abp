@@ -8,6 +8,7 @@ API_BASE="http://127.0.0.1:${API_PORT}"
 WEB_BASE="http://127.0.0.1:${WEB_PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-vehicle-hub"
 RESPONSE="$TMP/response.json"
+VEHICLE_JSON="$TMP/vehicle.json"
 API_LOG="$TMP/api.log"
 WEB_LOG="$TMP/web.log"
 HUB_HTML="$TMP/hub.html"
@@ -94,9 +95,14 @@ if grep -Fq "property=\"og:url\" content=\"$WEB_BASE/veiculos/$UNKNOWN_VEHICLE\"
   echo 'Unknown Vehicle Hub leaked social URL metadata' >&2
   exit 1
 fi
+if grep -Fq 'application/ld+json' "$HUB_HTML"; then
+  echo 'Unknown Vehicle Hub leaked structured data' >&2
+  exit 1
+fi
 echo 'VEHICLE_HUB_UNKNOWN_404: PASS'
 echo 'VEHICLE_HUB_UNKNOWN_NOINDEX: PASS'
 echo 'VEHICLE_HUB_SHARE_METADATA_UNKNOWN_404: PASS'
+echo 'VEHICLE_HUB_STRUCTURED_DATA_UNKNOWN_EXCLUDED: PASS'
 
 status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID")"
 [[ "$status" == 200 ]] || { echo "Canonical Vehicle Hub expected 200 got $status" >&2; cat "$WEB_LOG" >&2; exit 1; }
@@ -106,8 +112,12 @@ grep -Fq 'HTTP Lifecycle Version' "$HUB_HTML" || { echo 'Canonical version missi
 grep -Fq '>2025<' "$HUB_HTML" || { echo 'Canonical model year missing from Hub' >&2; exit 1; }
 grep -Fq 'HTTP Lifecycle Model HTTP Lifecycle Version 2025 | Bom Pra Ti</title>' "$HUB_HTML" || { echo 'Vehicle Hub metadata title missing' >&2; exit 1; }
 grep -Fq "rel=\"canonical\" href=\"$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID\"" "$HUB_HTML" || { echo 'Vehicle Hub canonical missing' >&2; exit 1; }
-python3 - "$HUB_HTML" "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID" <<'PY'
+status="$(request_json GET "$API_BASE/api/app/vehicle-catalog/$BPT_FIXTURE_VEHICLE_ID")"
+[[ "$status" == 200 ]] || { echo "Canonical Vehicle API expected 200 got $status" >&2; cat "$RESPONSE" >&2; exit 1; }
+cp "$RESPONSE" "$VEHICLE_JSON"
+python3 - "$HUB_HTML" "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID" "$VEHICLE_JSON" <<'PY'
 from html.parser import HTMLParser
+import json
 import sys
 
 class MetaParser(HTMLParser):
@@ -117,6 +127,9 @@ class MetaParser(HTMLParser):
         self.links = []
         self.title_parts = []
         self.in_title = False
+        self.in_json_ld = False
+        self.current_json_ld = []
+        self.json_ld = []
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
         if tag == "meta":
@@ -125,12 +138,21 @@ class MetaParser(HTMLParser):
             self.links.append(values)
         elif tag == "title":
             self.in_title = True
+        elif tag == "script" and values.get("type") == "application/ld+json":
+            self.in_json_ld = True
+            self.current_json_ld = []
     def handle_endtag(self, tag):
         if tag == "title":
             self.in_title = False
+        elif tag == "script" and self.in_json_ld:
+            self.json_ld.append("".join(self.current_json_ld))
+            self.in_json_ld = False
+            self.current_json_ld = []
     def handle_data(self, data):
         if self.in_title:
             self.title_parts.append(data)
+        if self.in_json_ld:
+            self.current_json_ld.append(data)
 
 parser = MetaParser()
 with open(sys.argv[1], encoding="utf-8") as handle:
@@ -143,6 +165,7 @@ def meta(key, value):
     return None
 
 canonical = sys.argv[2]
+vehicle = json.load(open(sys.argv[3], encoding="utf-8"))
 rendered_title = "".join(parser.title_parts).strip()
 suffix = " | Bom Pra Ti"
 if not rendered_title.endswith(suffix):
@@ -170,11 +193,36 @@ if meta("name", "twitter:image") is not None:
 canonical_link = next((x.get("href") for x in parser.links if x.get("rel") == "canonical"), None)
 if canonical_link != canonical:
     raise SystemExit(f"Vehicle Hub canonical mismatch: {canonical_link!r}")
+
+if len(parser.json_ld) != 1:
+    raise SystemExit(f"Vehicle Hub expected exactly one JSON-LD block, got {len(parser.json_ld)}")
+data = json.loads(parser.json_ld[0])
+expected_name = " ".join(part.strip() for part in [vehicle["brand"], vehicle["model"], vehicle["version"]] if part and part.strip())
+expected = {
+    "@context": "https://schema.org",
+    "@type": "Vehicle",
+    "name": expected_name,
+    "url": canonical,
+    "brand": {"@type": "Brand", "name": vehicle["brand"]},
+    "model": vehicle["model"],
+    "vehicleConfiguration": vehicle["version"],
+}
+for key, value in expected.items():
+    if data.get(key) != value:
+        raise SystemExit(f"Vehicle Hub JSON-LD {key} mismatch: expected {value!r}, got {data.get(key)!r}")
+for key in (
+    "offers", "itemCondition", "vehicleIdentificationNumber", "aggregateRating", "review",
+    "sku", "mpn", "image", "modelDate", "vehicleModelDate", "productionDate", "releaseDate",
+):
+    if key in data:
+        raise SystemExit(f"Vehicle Hub JSON-LD invented unsupported field: {key}")
 PY
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Draft Listing leaked into Vehicle Hub' >&2; exit 1; fi
 echo 'VEHICLE_HUB_CANONICAL_IDENTITY: PASS'
 echo 'VEHICLE_HUB_METADATA: PASS'
 echo 'VEHICLE_HUB_SHARE_METADATA: PASS'
+echo 'VEHICLE_HUB_STRUCTURED_DATA: PASS'
+echo 'VEHICLE_HUB_STRUCTURED_DATA_NO_INVENTED_FIELDS: PASS'
 echo 'VEHICLE_HUB_DRAFT_PRIVATE: PASS'
 
 status="$(request_json POST "$API_BASE/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"
@@ -183,7 +231,9 @@ status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_co
 [[ "$status" == 200 ]] || exit 1
 grep -Fq "$LISTING_TITLE" "$HUB_HTML" || { echo 'Published Listing missing from Vehicle Hub' >&2; exit 1; }
 grep -Fq "/anuncios/$LISTING_ID" "$HUB_HTML" || { echo 'Published Listing detail link missing from Vehicle Hub' >&2; exit 1; }
+[[ "$(grep -Fc 'application/ld+json' "$HUB_HTML")" == "1" ]] || { echo 'Vehicle Hub structured data changed after publish' >&2; exit 1; }
 echo 'VEHICLE_HUB_PUBLISHED_VISIBLE: PASS'
+echo 'VEHICLE_HUB_STRUCTURED_DATA_WITH_OFFER: PASS'
 
 status="$(curl --silent --show-error --output "$DETAIL_HTML" --write-out '%{http_code}' "$WEB_BASE/anuncios/$LISTING_ID")"
 [[ "$status" == 200 ]] || { echo "Listing detail expected 200 got $status" >&2; exit 1; }
@@ -196,6 +246,8 @@ status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_co
 [[ "$status" == 200 ]] || { echo "Vehicle Hub disappeared after Pause: $status" >&2; exit 1; }
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Paused Listing remained visible in Vehicle Hub' >&2; exit 1; fi
 grep -Fq 'Nenhum anúncio publicado agora.' "$HUB_HTML" || { echo 'Vehicle Hub empty state missing after Pause' >&2; exit 1; }
+[[ "$(grep -Fc 'application/ld+json' "$HUB_HTML")" == "1" ]] || { echo 'Vehicle Hub structured data disappeared after Pause' >&2; exit 1; }
 echo 'VEHICLE_HUB_PAUSE_REMOVES_LISTING: PASS'
 echo 'VEHICLE_HUB_PERSISTS_WITHOUT_OFFER: PASS'
+echo 'VEHICLE_HUB_STRUCTURED_DATA_PERSISTS_WITHOUT_OFFER: PASS'
 echo 'PUBLIC VEHICLE HUB HTTP: PASSED'
