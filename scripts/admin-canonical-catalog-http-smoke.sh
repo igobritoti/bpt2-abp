@@ -165,7 +165,6 @@ echo 'CANONICAL_CATALOG_ADMIN_CREATE: PASS'
 
 status="$(request_json POST '/api/app/canonical-vehicle-admin' "$ADMIN_TOKEN" "$CREATE_BODY")"
 [[ "$status" == 200 || "$status" == 201 ]] || { echo "Idempotent canonical create expected 200/201 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-SECOND_ID="$(python3 - "$RESPONSE" -c '' 2>/dev/null || true)"
 SECOND_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys
 print(json.load(open(sys.argv[1], encoding='utf-8'))['id'])
