@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0035 foi concluído: a jornada pública de discovery já possui prova suficiente para busca, filtros, paginação, sort, exclusão de Draft e zero-results; nenhum novo slice nessa superfície foi justificado.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0036 está fechando um gap de evidência pós-MVP: provar em runtime real e banco fresco que o Account module aceita self-registration e que o usuário recém-criado consegue autenticar.
 
-Próximo acceptance target: escolher o próximo gap pós-MVP fora de public discovery somente quando houver evidência adicional de valor ou comportamento incompleto.
+Próximo acceptance target: `/Account/Register` disponível → `POST /api/account/register` cria usuário → o mesmo usuário obtém access token com a própria senha, sem mudança de política ou schema.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0036-self-registration-http-proof.md`](../exec-plans/active/0036-self-registration-http-proof.md)
 
 ## Source of runtime truth
 
@@ -33,7 +33,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0036 é pós-MVP/hardening.
 
 ## Update rule
 
