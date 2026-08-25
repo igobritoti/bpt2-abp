@@ -37,6 +37,8 @@ export type PublicListing = {
   photos: PublicListingPhoto[];
 };
 
+export type PublicListingSort = "price-asc" | "price-desc";
+
 export type PublicListingSearch = {
   vehicleId?: string;
   sellerId?: string;
@@ -51,6 +53,7 @@ export type PublicListingSearch = {
   minMileageKm?: number;
   maxMileageKm?: number;
   query?: string;
+  sort?: PublicListingSort;
   skip?: number;
   take?: number;
 };
@@ -113,6 +116,7 @@ export async function getPublicListings(
   setNumber(url.searchParams, "MinMileageKm", input.minMileageKm);
   setNumber(url.searchParams, "MaxMileageKm", input.maxMileageKm);
   setText(url.searchParams, "Query", input.query);
+  setText(url.searchParams, "Sort", input.sort);
   setNumber(url.searchParams, "Skip", input.skip ?? 0);
   setNumber(url.searchParams, "Take", input.take ?? 24);
 
