@@ -6,17 +6,16 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Plan 0032 em andamento: tornar a listagem pública do Catalog paginável e usar essa capacidade para incluir todos os Vehicle Hubs canônicos no sitemap público.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0032 também foi concluído funcionalmente:
 
-Acceptance target:
+- a listagem pública do Catalog agora suporta paginação determinística;
+- o sitemap público percorre todo o Catalog e inclui Vehicle Hubs canônicos mesmo sem oferta ativa e além do antigo limite de 100.
 
-`Catalog paginado → sitemap percorre todos os Vehicles → /veiculos/{id} descobrível além do limite anterior de 100`
-
-O slice não inclui slug final, enrichment, JSON-LD do Vehicle Hub, sitemap index ou infraestrutura nova.
+Próximo acceptance target: refetchar o `main` depois do merge e selecionar diretamente o próximo gap pós-MVP por evidência de produto, continuando implementação vertical sem auditoria intermediária.
 
 ## Active plan
 
-[`../exec-plans/active/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/active/0032-vehicle-hub-sitemap-pagination.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -28,12 +27,13 @@ O slice não inclui slug final, enrichment, JSON-LD do Vehicle Hub, sitemap inde
 - Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
 - Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 - Structured data do Listing: [`../exec-plans/completed/0031-public-listing-structured-data.md`](../exec-plans/completed/0031-public-listing-structured-data.md).
+- Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Plan 0032 é melhoria pós-MVP.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
