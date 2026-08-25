@@ -51,7 +51,7 @@ Outcome vertical esperado:
 8. [ ] Draft/Pause/Moderated/Archived continuam sem detalhe público e portanto sem structured data;
 9. [ ] Public Web e Public Buyer/SEO gates aplicáveis ficam verdes sem backend/schema novo.
 
-## Decisões
+## Decision log
 
 - **DECIDIDO por evidência externa + modelo:** emitir `Product` e `Vehicle` juntos; `Product` preserva compatibilidade com a feature documentada pelo Google e `Vehicle` preserva semântica automotiva schema.org.
 - **DECIDIDO:** usar `Offer`, não `AggregateOffer`, pois cada URL representa um único Listing/oferta.
