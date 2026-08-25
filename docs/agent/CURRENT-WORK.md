@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 está ampliando a busca livre pública para a identidade canônica do Vehicle, preservando a busca por título e todos os filtros exatos existentes.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 foi concluído: a busca livre pública agora cobre `Listing.Title` e identidade canônica de Vehicle (Brand/Model/Generation/Version), preservando os filtros específicos existentes como AND.
 
-Próximo acceptance target: provar por HTTP que `Query` encontra Listings publicados por Brand/Model/Generation/Version canônicos mesmo quando o título não contém o termo, sem vazar Draft e sem alterar a semântica dos filtros específicos.
+Próximo acceptance target: refetchar o `main` depois do merge do PR #53 e escolher o próximo gap pós-MVP por evidência do repositório atual.
 
 ## Active plan
 
-[`../exec-plans/active/0034-public-vehicle-text-search.md`](../exec-plans/active/0034-public-vehicle-text-search.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -26,12 +26,13 @@ Próximo acceptance target: provar por HTTP que `Query` encontra Listings public
 - Structured data do Listing: [`../exec-plans/completed/0031-public-listing-structured-data.md`](../exec-plans/completed/0031-public-listing-structured-data.md).
 - Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
 - Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
+- Busca pública por identidade canônica: [`../exec-plans/completed/0034-public-vehicle-text-search.md`](../exec-plans/completed/0034-public-vehicle-text-search.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0034 é pós-MVP.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
