@@ -23,10 +23,35 @@ public class SellerLeadCommandService : ISellerLeadCommandService, ITransientDep
 
     public async Task MarkContactedAsync(Guid leadId, CancellationToken cancellationToken = default)
     {
+        var lead = await GetOwnedLeadAsync(leadId, cancellationToken);
+
+        lead.MarkContacted(DateTime.UtcNow);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task CloseAsync(Guid leadId, CloseSellerLeadInput input, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var outcome = input.Outcome?.Trim().ToUpperInvariant() switch
+        {
+            "WON" => LeadOutcome.Won,
+            "LOST" => LeadOutcome.Lost,
+            _ => throw new ArgumentException("Outcome must be Won or Lost.", nameof(input))
+        };
+
+        var lead = await GetOwnedLeadAsync(leadId, cancellationToken);
+
+        lead.Close(outcome, DateTime.UtcNow);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<Lead> GetOwnedLeadAsync(Guid leadId, CancellationToken cancellationToken)
+    {
         var sellerId = _currentUser.Id
             ?? throw new UnauthorizedAccessException("An authenticated seller is required.");
 
-        var lead = await _dbContext.Leads
+        return await _dbContext.Leads
             .Join(
                 _dbContext.Listings.Where(listing => listing.SellerId == sellerId),
                 candidate => candidate.ListingId,
@@ -34,8 +59,5 @@ public class SellerLeadCommandService : ISellerLeadCommandService, ITransientDep
                 (candidate, listing) => candidate)
             .SingleOrDefaultAsync(candidate => candidate.Id == leadId, cancellationToken)
             ?? throw new EntityNotFoundException(typeof(Lead), leadId);
-
-        lead.MarkContacted(DateTime.UtcNow);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
