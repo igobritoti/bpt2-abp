@@ -18,8 +18,8 @@ Evidência atual:
 
 - Plan 0027 mantém `social image dedicada` como gap SEO/social pós-MVP;
 - Listing detail já usa a primeira foto pública do anúncio em `openGraph.images` e `twitter.images`;
-- Seller Hub carrega o primeiro Listing publicado em `generateMetadata`, mas omite `images` e usa `twitter.card = summary`;
-- Vehicle Hub exibe fotos dos Listings publicados na página, mas `generateMetadata` não carrega uma imagem e também omite `images`;
+- Seller Hub carregava o primeiro Listing publicado em `generateMetadata`, mas omitia `images` e usava `twitter.card = summary`;
+- Vehicle Hub exibia fotos dos Listings publicados na página, mas `generateMetadata` não carregava uma imagem e também omitia `images`;
 - reutilizar a primeira foto pública já exibida evita asset, branding, crop ou regra editorial nova.
 
 ## Escopo
@@ -55,9 +55,14 @@ Evidência atual:
 - **DECIDIDO por evidência:** reutilizar foto pública já exibida em vez de criar imagem social dedicada sem direção visual definida.
 - **DECIDIDO:** primeira foto disponível do primeiro Listing público é suficiente porque o mesmo padrão já é usado no Listing detail e no card visual do hub.
 - **DECIDIDO:** sem foto, preservar metadata sem `images`; não inventar fallback.
+- **DECIDIDO por teste:** Seller Hub usa dois sellers para provar com-foto e sem-foto sem depender de ordenação entre Listings.
+- **DECIDIDO por teste:** Vehicle Hub usa seu ciclo Draft → Published → Paused para provar sem imagem → com imagem → sem imagem novamente.
 
 ## Progress log
 
 - 2026-08-25: `main` remoto confirmado em `329303692e061864a3f9540812e46e55a06f125a`.
 - 2026-08-25: Listing detail confirmado com `og:image`/`twitter:image` pela primeira foto pública.
 - 2026-08-25: Seller Hub e Vehicle Hub confirmados sem imagem social apesar de exibirem fotos de Listings publicados.
+- 2026-08-25: Seller Hub passou a reutilizar a primeira foto do primeiro Listing público em Open Graph/Twitter, preservando fallback sem imagem.
+- 2026-08-25: Vehicle Hub passou a consultar somente um Listing público para metadata e reutilizar sua primeira foto, preservando fallback quando não há oferta pública com foto.
+- 2026-08-25: smokes dedicados de Seller Hub e Vehicle Hub foram ampliados para provar presença/ausência das imagens sociais sem criar workflow novo.
