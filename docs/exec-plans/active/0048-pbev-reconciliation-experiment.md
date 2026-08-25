@@ -55,6 +55,44 @@ O PBEV é uma fonte oficial forte para consumo, eficiência, propulsão e emiss�
 - automação de revisão humana;
 - ranking/recommendation.
 
+## Contrato observado da fonte oficial
+
+No artefato PBEV 2026 inspecionado em 25/08/2026, as linhas observadas contêm, entre outros:
+
+- categoria;
+- marca;
+- modelo;
+- versão;
+- motor;
+- tipo de propulsão;
+- transmissão;
+- direção assistida;
+- combustível;
+- emissões/poluentes;
+- consumo urbano/rodoviário por combustível;
+- equivalência elétrica/autonomia quando aplicável;
+- consumo energético;
+- classificações PBE e selo de eficiência.
+
+Não foi observado campo `ModelYear` na chave/linha. O cabeçalho `Tabela Ano 2026` e a data de atualização descrevem o ciclo/publicação, não um ano-modelo individual.
+
+### Provenance mínima exigida pelo experimento
+
+Qualquer observação candidata a ingestão futura deve carregar pelo menos:
+
+- authority/source = Inmetro/PBEV;
+- ciclo/tabela declarada;
+- data/revisão declarada no artefato;
+- URL ou identificador do artefato efetivamente lido;
+- data de retrieval;
+- valores brutos de `Marca`, `Modelo`, `Versão`;
+- métricas brutas usadas no enrichment;
+- status/resultado da reconciliação e alvo, quando houver.
+
+Apenas `PBEV 2026` não é provenance suficiente: a página oficial indicava atualização em 19/08/2026, o PDF inspecionado declarava `ATUALIZAÇÃO 14-Aug-26` e 965 modelos/versões, enquanto notícia oficial de 14/08/2026 registrava 959. Essa divergência deve ser preservada como evidência de revisão/versionamento, não harmonizada por suposição.
+
+O Inmetro informa que há CSV no dados.gov.br. A página do dataset foi localizada, porém o navegador deste checkpoint recebeu apenas a aplicação dependente de JavaScript e não recuperou diretamente o recurso CSV. Isso fica como problema de aquisição do recurso, não como licença para usar scraping heurístico ou declarar o CSV inspecionado.
+
 ## Critérios de aceite
 
 1. fonte oficial atual e campos usados estão registrados com data/status;
@@ -80,7 +118,7 @@ O PBEV é uma fonte oficial forte para consumo, eficiência, propulsão e emiss�
 
 ## Checkpoints
 
-- [ ] CP1 — fonte oficial estruturada e schema observado congelados;
+- [x] CP1 — fonte oficial e schema observado congelados; aquisição direta do CSV permanece pendente e explicitamente separada;
 - [ ] CP2 — catálogo BPT2 e algoritmo baseline congelados;
 - [ ] CP3 — amostra reproduzível reconciliada e classes de falha medidas;
 - [ ] CP4 — regras determinísticas adicionais testadas, se necessárias;
@@ -93,6 +131,7 @@ O PBEV é uma fonte oficial forte para consumo, eficiência, propulsão e emiss�
 - `VehicleVersion` é a hipótese inicial de target, não decisão final;
 - ano/ciclo PBEV não será tratado como `ModelYear` sem campo/evidência explícita;
 - fonte externa será preservada com provenance e temporalidade;
+- revision/artifact identity faz parte da provenance porque fontes oficiais do mesmo ciclo podem divergir em contagem/revisão;
 - unmatched/ambiguous são resultados válidos do experimento, não erros a esconder;
 - Comparador continua fora de escopo.
 
@@ -101,3 +140,6 @@ O PBEV é uma fonte oficial forte para consumo, eficiência, propulsão e emiss�
 - 2026-08-25 — PR #67 integrado; `main` verificado em `1471de8f69d0216f09d6c42c57a2ccbba900b2d7`.
 - 2026-08-25 — fonte oficial Inmetro verificada: página PBE Veicular informa ciclo 2026 atualizado em 19/08/2026; notícia de 14/08/2026 reporta 43 marcas e 959 modelos/versões; FAQ do Inmetro informa disponibilidade de CSV no dados.gov.br.
 - 2026-08-25 — contrato BPT2 verificado: `Vehicle` possui `ModelYear?`; `VehicleVersion` não possui ano e representa versão por modelo/geração.
+- 2026-08-25 — artefato oficial PBEV inspecionado visualmente: cabeçalho declara `Tabela Ano 2026`, `ATUALIZAÇÃO 14-Aug-26`, 43 marcas e 965 modelos/versões; schema de identidade começa por categoria/marca/modelo/versão e não expõe `ModelYear`.
+- 2026-08-25 — divergência 959 vs 965 registrada como evidência de que provenance precisa identificar revisão/artefato, não apenas ciclo.
+- 2026-08-25 — página oficial do dataset no dados.gov.br localizada; recurso CSV direto ainda não recuperado no navegador devido à camada JavaScript do portal.
