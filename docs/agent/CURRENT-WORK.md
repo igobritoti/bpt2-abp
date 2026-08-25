@@ -6,9 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0041 foi concluído: o admin de Ingestion agora localiza Vehicle canônico por Brand/Model/Generation/Version na própria `/ingestao`, inspeciona a identidade legível e reutiliza o `VehicleId` real no fluxo de reconciliação existente.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0042 foi concluído: `/admin` agora resume Vehicles canônicos, reports recebidos e candidates pendentes usando somente contracts read-only existentes, preservando as superfícies operacionais específicas como autoridade.
 
-Próximo acceptance target: após o merge do Plan 0041, refetch de `main` e nova auditoria curta de gap pós-MVP por evidência. Matching automático, confidence threshold, connector concreto e autocomplete continuam adiados sem nova evidência.
+Próximo acceptance target: após o merge do Plan 0042, refetch de `main` e seleção do próximo gap pós-MVP por evidência explícita. Não promover estado de resolução de report, analytics, Promoções, matching automático ou connector concreto sem regra/evidência suficiente.
 
 ## Active plan
 
@@ -34,12 +34,13 @@ Nenhum.
 - Buyer Listing Reports com usuários auto-cadastrados: [`../exec-plans/completed/0039-self-registered-buyer-reports.md`](../exec-plans/completed/0039-self-registered-buyer-reports.md).
 - Lead autenticado com UserId real: [`../exec-plans/completed/0040-authenticated-lead-userid-proof.md`](../exec-plans/completed/0040-authenticated-lead-userid-proof.md).
 - Lookup de Vehicle canônico na Ingestion: [`../exec-plans/completed/0041-ingestion-vehicle-lookup.md`](../exec-plans/completed/0041-ingestion-vehicle-lookup.md).
+- Resumo operacional administrativo: [`../exec-plans/completed/0042-admin-operations-summary.md`](../exec-plans/completed/0042-admin-operations-summary.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0041 foi pós-MVP e não adicionou nova autoridade de decisão.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0042 foi pós-MVP e read-only.
 
 ## Update rule
 
