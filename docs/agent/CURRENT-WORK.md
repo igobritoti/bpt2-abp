@@ -6,17 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0033 também foi concluído funcionalmente:
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 está ampliando a busca livre pública para a identidade canônica do Vehicle, preservando a busca por título e todos os filtros exatos existentes.
 
-- o Vehicle Hub conhecido agora entrega exatamente um JSON-LD `Vehicle` derivado da identidade canônica visível;
-- Vehicle desconhecido permanece 404/noindex sem structured data;
-- o JSON-LD persiste independentemente de existir oferta pública ativa e não inventa Offer, condição, VIN, imagem, ratings ou data de modelo.
-
-Próximo acceptance target: refetchar o `main` depois do merge e implementar diretamente o próximo gap pós-MVP sustentado por evidência; o candidato atual é ampliar a busca livre para a identidade canônica do veículo sem introduzir search engine externo.
+Próximo acceptance target: provar por HTTP que `Query` encontra Listings publicados por Brand/Model/Generation/Version canônicos mesmo quando o título não contém o termo, sem vazar Draft e sem alterar a semântica dos filtros específicos.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0034-public-vehicle-text-search.md`](../exec-plans/active/0034-public-vehicle-text-search.md)
 
 ## Source of runtime truth
 
@@ -35,7 +31,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0034 é pós-MVP.
 
 ## Update rule
 
