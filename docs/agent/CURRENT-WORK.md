@@ -6,18 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-A auditoria de prontidão do MVP (Plan 0027) está funcionalmente fechada:
+Os blockers funcionais do MVP identificados no Plan 0027 estão fechados. O primeiro slice pós-MVP priorizado por evidência é melhorar a capacidade central de descoberta sem introduzir ranking subjetivo ou infraestrutura nova.
 
-- `MVP-01` — carga operacional do catálogo canônico: resolvido pelo Plan 0028;
-- `MVP-02` — autoridade mínima de moderação: resolvido pelo Plan 0029.
+Plan 0030: adicionar ordenação pública explícita por preço sobre a busca/filtros já existentes, preservando paginação determinística e estado em query string.
 
-Não resta blocker funcional classificado como `BLOQUEIA MVP` pela auditoria 0027. Os gaps restantes daquela auditoria continuam classificados como pós-MVP até nova evidência justificar reclassificação.
-
-Próximo acceptance target: refetchar o `main` e priorizar o primeiro gap pós-MVP por evidência, sem promover backlog a requisito ou blocker por preferência.
+Próximo acceptance target: provar por HTTP/SSR que o comprador escolhe menor/maior preço, a API ordena antes da paginação com desempate estável e os links de paginação preservam `sort` junto com os filtros.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0030-public-price-sort.md`](../exec-plans/active/0030-public-price-sort.md)
 
 ## Source of runtime truth
 
@@ -32,7 +29,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0030 é pós-MVP.
 
 ## Update rule
 
