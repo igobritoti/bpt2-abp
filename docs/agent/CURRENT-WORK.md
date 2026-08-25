@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0034 foi concluído: a busca livre pública cobre `Listing.Title` e identidade canônica de Vehicle, preservando filtros específicos como AND.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0035 foi concluído: a jornada pública de discovery já possui prova suficiente para busca, filtros, paginação, sort, exclusão de Draft e zero-results; nenhum novo slice nessa superfície foi justificado.
 
-Próximo acceptance target: concluir a auditoria da jornada pública de discovery e escolher por evidência exatamente um próximo gap pequeno, sem reabrir comportamentos já provados.
+Próximo acceptance target: escolher o próximo gap pós-MVP fora de public discovery somente quando houver evidência adicional de valor ou comportamento incompleto.
 
 ## Active plan
 
-[`../exec-plans/active/0035-public-search-quality-audit.md`](../exec-plans/active/0035-public-search-quality-audit.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -27,12 +27,13 @@ Próximo acceptance target: concluir a auditoria da jornada pública de discover
 - Sitemap completo de Vehicle Hubs: [`../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/completed/0032-vehicle-hub-sitemap-pagination.md).
 - Structured data do Vehicle Hub: [`../exec-plans/completed/0033-vehicle-hub-structured-data.md`](../exec-plans/completed/0033-vehicle-hub-structured-data.md).
 - Busca pública por identidade canônica: [`../exec-plans/completed/0034-public-vehicle-text-search.md`](../exec-plans/completed/0034-public-vehicle-text-search.md).
+- Auditoria de qualidade da busca pública: [`../exec-plans/completed/0035-public-search-quality-audit.md`](../exec-plans/completed/0035-public-search-quality-audit.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0035 é pós-MVP e audita cobertura/qualidade da descoberta pública.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
