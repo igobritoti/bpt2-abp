@@ -1,22 +1,22 @@
 # Current work
 
-Last verified: **2026-08-24**
+Last verified: **2026-08-25**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
 ## Active outcome
 
-O Execution Plan 0028 fechou o blocker `MVP-01`: um operador `admin` agora consegue criar/reutilizar `Brand → Model → Generation opcional → Version → Vehicle` por uma superfície suportada, e o gate focal provou em PostgreSQL fresco que o Vehicle criado entra no catálogo público e pode ser usado imediatamente em um Draft Seller sem `tests/BomPraTi.HttpLifecycleFixture`.
+Execution Plan 0029 em execução para fechar o blocker `MVP-02` identificado pela auditoria de prontidão:
 
-Resta um blocker funcional identificado pela auditoria de prontidão:
+`Buyer report → admin withdraw → Moderated → invisível publicamente → Seller bloqueado → admin restore → Published`
 
-**MVP-02 — ação mínima de moderação:** Buyer reporta Listing público e admin consulta a fila, mas o operador ainda não possui autoridade de produto para retirar/restaurar a visibilidade do Listing denunciado sem que o Seller possa desfazer a decisão administrativa.
+O slice separa a autoridade de moderação do lifecycle Seller: `Paused` continua sendo pausa voluntária do anunciante; `Moderated` representa retirada administrativa e não pode ser revertido pelo Seller.
 
-Próximo acceptance target: criar uma autoridade de moderação separada do lifecycle Seller e provar por HTTP que admin retira um Listing denunciado da descoberta pública, Seller não consegue republicá-lo enquanto moderado e admin consegue restaurá-lo.
+Próximo acceptance target: provar por HTTP que somente admin retira/restaura um Listing denunciado, o Listing moderado some da descoberta pública, o Seller não consegue republicar/editar enquanto moderado e a restauração o torna público novamente.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0029-moderation-listing-authority.md`](../exec-plans/active/0029-moderation-listing-authority.md)
 
 ## Source of runtime truth
 
@@ -30,7 +30,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-- **MVP-02 — moderação:** operador lê denúncias, mas ainda não consegue retirar/restaurar Listing por autoridade administrativa do produto.
+- **MVP-02 — moderação (EM TRABALHO):** operador lê denúncias, mas ainda não consegue retirar/restaurar Listing por autoridade administrativa do produto.
 
 ## Update rule
 
