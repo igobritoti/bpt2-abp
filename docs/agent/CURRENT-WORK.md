@@ -6,16 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0031 também foi concluído funcionalmente:
+Plan 0032 em andamento: tornar a listagem pública do Catalog paginável e usar essa capacidade para incluir todos os Vehicle Hubs canônicos no sitemap público.
 
-- detalhe público de Listing agora emite JSON-LD `Product` + `Vehicle` com `Offer` BRL coerente com o conteúdo visível e serialização segura para texto controlado pelo Seller;
-- nenhum ganho de ranking/rich result é presumido por esse slice.
+Acceptance target:
 
-Próximo acceptance target: refetchar o `main` depois do merge e selecionar o próximo gap pós-MVP por evidência de produto, priorizando implementação vertical independente e sem abrir auditoria genérica.
+`Catalog paginado → sitemap percorre todos os Vehicles → /veiculos/{id} descobrível além do limite anterior de 100`
+
+O slice não inclui slug final, enrichment, JSON-LD do Vehicle Hub, sitemap index ou infraestrutura nova.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0032-vehicle-hub-sitemap-pagination.md`](../exec-plans/active/0032-vehicle-hub-sitemap-pagination.md)
 
 ## Source of runtime truth
 
@@ -32,7 +33,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Plan 0032 é melhoria pós-MVP.
 
 ## Update rule
 
