@@ -6,30 +6,27 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan está ativo.
+Concluir progressivamente as capabilities restantes do Bom Pra Ti a partir do estado entregue, da matriz BPT1 → BPT2 e de benchmarks externos, sem reabrir decisões de arquitetura secundárias que não bloqueiam produto.
 
-O Plan 0048 concluiu a decisão de boundary Podium 7 ↔ BPT2: os projetos permanecem separados e a integração inicial será assíncrona por contrato versionado. A decisão está registrada em [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
+O Podium 7 está reconhecido como knowledge producer/alimentador do catálogo. O BPT2 continua owner do catálogo publicado. A topologia de repositório e eventual convergência Python→.NET estão **adiadas** até os triggers mensuráveis da ADR-0011.
 
-O próximo boundary funcional, ainda **não aberto como plano**, é o menor slice BPT2 de publication mapping do Podium: external canonical ID, redirects históricos, cardinalidade zero/um/muitos `VehicleId`, contract version e replay idempotente contra persistência real.
-
-Comparador continua bloqueado até existir catálogo/enrichment publicado suficiente.
+A meta estratégica adicional é atingir pelo menos **90% das capabilities úteis/elegíveis do Carros na Web**, mirando 100% quando custo, dados, licenças, risco e valor justificarem.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0049-post-mvp-capability-completion.md`](../exec-plans/active/0049-post-mvp-capability-completion.md)
 
 ## Acceptance target
 
-Não há acceptance target ativo até a abertura do próximo execution plan.
+O Plan 0049 deve primeiro atualizar a matriz restante após Lead closing + boundary Podium e selecionar **um único próximo slice** por dependência/valor.
 
-Quando promovido, o próximo slice deve provar com o fixture Podium `2.0` já congelado que a persistência BPT2:
+Prioridade técnica atual:
 
-- não duplica replay;
-- preserva correção sob o mesmo Podium ID;
-- representa model-year 1:N explicitamente;
-- processa `redirectsFrom` sem recriar duplicatas;
-- não compara labels para resolver identidade;
-- continua sem shared database ou dependência síncrona do Podium.
+1. provar o menor contrato de publication mapping/enrichment Podium → BPT2;
+2. usar esse enrichment para destravar o Comparador 2–4 quando suficiente;
+3. se houver blocker externo no mapping, avançar para gap independente seguro da matriz.
+
+O inventário Carros na Web é uma trilha paralela e não interrompe um slice ativo sem evidência de blocker material.
 
 ## Source of runtime truth
 
@@ -37,8 +34,10 @@ Quando promovido, o próximo slice deve provar com o fixture Podium `2.0` já co
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Plano ativo: [`../exec-plans/active/0049-post-mvp-capability-completion.md`](../exec-plans/active/0049-post-mvp-capability-completion.md).
+- Meta Carros na Web: [`../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md`](../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md).
 - Boundary Podium 7 concluída: [`../exec-plans/completed/0048-pbev-reconciliation-experiment.md`](../exec-plans/completed/0048-pbev-reconciliation-experiment.md).
-- Auditoria da integração: [`../audits/2026-08-25-podium7-integration-boundary.md`](../audits/2026-08-25-podium7-integration-boundary.md).
+- Auditoria monorepo/convergência: [`../audits/2026-08-25-podium7-monorepo-convergence-measurement.md`](../audits/2026-08-25-podium7-monorepo-convergence-measurement.md).
 - Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
 
@@ -46,9 +45,9 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional externo.
+Nenhum blocker funcional externo conhecido.
 
-A aquisição direta do CSV PBEV deixou de ser blocker do BPT2 porque acquisition/reconciliation pertence ao Podium 7 pela boundary decidida. Qualquer problema de aquisição dessa fonte deve ser resolvido no contexto Podium, sem duplicar a pipeline no BPT2.
+A aquisição/reconciliation automotiva pertence ao Podium 7 e não deve ser duplicada no BPT2. A pesquisa pública do Carros na Web ainda não forneceu inventário atual reproduzível suficiente; isso bloqueia apenas o cálculo de cobertura do benchmark, não o desenvolvimento normal do BPT2.
 
 ## Update rule
 
