@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0039 está fortalecendo a prova do ciclo Buyer Listing Report: os Buyers do E2E devem ser usuários comuns auto-cadastrados, mantendo `admin` somente como fixture Seller/Listing.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0039 foi concluído: o Buyer Listing Report E2E agora usa dois Buyers comuns auto-cadastrados, mantendo `admin` somente como fixture Seller/Listing.
 
-Próximo acceptance target: `self-registration → Buyer token → Listing Report → is-reported / isolation / history`, preservando anonymous blocked, Draft blocked, idempotência e histórico sem regra/schema novo.
+Próximo acceptance target: auditar dependências privilegiadas restantes nos fluxos de usuário comum; se não houver outro gap material, encerrar essa linha de hardening e voltar a escolher gap funcional de produto por evidência.
 
 ## Active plan
 
-[`../exec-plans/active/0039-self-registered-buyer-reports.md`](../exec-plans/active/0039-self-registered-buyer-reports.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -31,12 +31,13 @@ Próximo acceptance target: `self-registration → Buyer token → Listing Repor
 - Prova HTTP de self-registration: [`../exec-plans/completed/0036-self-registration-http-proof.md`](../exec-plans/completed/0036-self-registration-http-proof.md).
 - Seller Shell com usuário auto-cadastrado: [`../exec-plans/completed/0037-self-registered-seller-shell.md`](../exec-plans/completed/0037-self-registered-seller-shell.md).
 - Buyer Favorites com usuários auto-cadastrados: [`../exec-plans/completed/0038-self-registered-buyer-favorites.md`](../exec-plans/completed/0038-self-registered-buyer-favorites.md).
+- Buyer Listing Reports com usuários auto-cadastrados: [`../exec-plans/completed/0039-self-registered-buyer-reports.md`](../exec-plans/completed/0039-self-registered-buyer-reports.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0039 é pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0039 foi pós-MVP/hardening.
 
 ## Update rule
 
