@@ -1,230 +1,69 @@
 # Plan 0046 — BPT1 capability roadmap audit
 
-Status: **ATIVO**
+Status: **CONCLUÍDO**
 
-## Objetivo / outcome
+Data de conclusão: 2026-08-25
 
-Construir um roadmap pós-MVP de capacidades do BPT2 baseado em evidência, usando `igobritoti/bomprati` como donor de produto e comportamento — nunca como chassis técnico — e confrontando cada candidato com o BPT2 atual, documentação externa confiável, comportamento observável de portais automotivos e testes reproduzíveis.
+## Outcome
 
-O resultado deste plano não é implementar automaticamente funcionalidades. É produzir uma matriz de decisão suficientemente forte para que cada futuro slice possa ser aberto com hipótese, risco, evidência e acceptance criterion explícitos.
-
-## Contexto congelado
-
-- BPT2 MVP funcional fechado; nenhum blocker funcional ativo.
-- Nenhum execution plan funcional estava ativo antes deste plano.
-- BPT1 (`igobritoti/bomprati`) é donor de capacidades e evidência histórica, não baseline técnico.
-- O BPT1 foi abandonado como chassis; existência de código legado não prova adequação arquitetural nem valor atual.
-- `docs/ENGINEERING.md` define classes A/B/C/D e o protocolo de avaliação de donor capabilities.
-- `docs/QUALITY.md` define validação proporcional ao risco, incluindo characterization/contract tests, benchmarks e regras de migração.
-- Portais externos são evidência de mercado/comportamento, não autoridade automática de requisito.
-
-## Escopo
-
-1. Inventariar capacidades efetivamente implementadas/testadas no BPT1.
-2. Separar implementação real de documentação/intenção não comprovada.
-3. Mapear equivalente no BPT2: completo, parcial, ausente ou substituído por abordagem melhor.
-4. Pesquisar documentação oficial, standards e literatura aplicável quando houver decisão técnica ou metodológica relevante.
-5. Observar superfícies atuais de portais automotivos relevantes, inicialmente Webmotors, OLX e Carros na Web quando verificável.
-6. Projetar testes/experimentos antes de promover capacidades.
-7. Permitir descoberta de novas candidatas durante a auditoria, desde que passem pelo mesmo protocolo.
-8. Produzir classificação final: `TRAZER`, `VALIDAR ANTES`, `JÁ EXISTE`, `ADIAR`, `DESCARTAR`.
-
-## Não escopo
-
-- copiar stack, ORM, auth, infraestrutura, estrutura de pastas ou arquitetura do BPT1;
-- implementar capacidade só porque concorrente a possui;
-- migrar schema/dados sem contrato e reconciliação explícitos;
-- afirmar superioridade de ranking/recomendação/UX sem métrica observável;
-- abrir vários slices funcionais antes da conclusão da auditoria comparativa.
-
-## Hipóteses iniciais a auditar
-
-| Capability | Evidência inicial BPT1 | Estado BPT2 conhecido | Benchmark externo inicial | Estado inicial |
-|---|---|---|---|---|
-| Comparador técnico 2x/3x | implementado, fechado e testado | ausente | Webmotors mantém comparador técnico amplo | AUDITAR PRIMEIRO |
-| CRM/pipeline de Leads | status, origem/campanha e métricas | Lead + `ContactedAtUtc` mínimo | marketplaces tratam acompanhamento do vendedor como fluxo central | AUDITAR |
-| Analytics/atribuição | funil, acquisition, CTR, lead rate | ausente como capability consolidada | métricas necessárias para validar discovery/monetização | AUDITAR |
-| Promotions/boost | orgânico/destaque/patrocinado/diamante + eventos | capacidade aberta, não implementada | OLX e Webmotors usam destaque/turbinar | AUDITAR |
-| Alertas/buscas salvas | retenção e price-drop no BPT1 | ausente | OLX oferece favoritos, buscas salvas e alertas | AUDITAR |
-| Vehicle Knowledge/enrichment | conhecimento, segurança, equipamentos, market position | enrichment deliberadamente aberto | comparadores/filtros técnicos usam dados ricos | AUDITAR |
-| Similar vehicles | implementação específica | ausente | recomendação é comum, mas qualidade precisa ser medida | VALIDAR ANTES |
-| Upgrade suggestions | implementação específica | ausente | hipótese de discovery/monetização | VALIDAR ANTES |
-| Busca avançada/IA | não tratar legado como requisito | busca textual/filtros já entregues | Webmotors possui busca generativa; OLX usa relevância/filtros/localização | VALIDAR ANTES |
-| Localização/geocoding/radius | não promovido | filtros City/StateCode atuais | OLX e Webmotors têm forte busca por localização | VALIDAR ANTES |
-| Financiamento | camada complementar | fora do núcleo atual | OLX/Webmotors oferecem simulação/financiamento | ADIAR ATÉ TESE COMERCIAL |
-| Pagamentos | módulo legado real | fora do baseline | não é requisito do marketplace básico | ADIAR |
-| Seguros | intenção complementar | ausente | requer tese comercial/parceria | ADIAR |
-
-A tabela é uma fila de investigação, não uma ordem de implementação.
-
-## Plano de testes por capability
-
-Cada candidato deve passar, quando aplicável, pelos gates abaixo antes de receber `TRAZER`:
-
-### Gate 1 — realidade no donor
-
-- localizar código, contrato, schema e UI correspondentes;
-- localizar testes, smoke, task/PR de fechamento ou evidência runtime;
-- distinguir `implementado/testado`, `implementado sem prova`, `documentado apenas`;
-- registrar falhas ou limitações conhecidas do BPT1.
-
-### Gate 2 — delta real no BPT2
-
-- verificar se o BPT2 já resolve o mesmo problema por outro caminho;
-- identificar somente o comportamento ausente;
-- preservar invariantes congelados de auth, ownership, catálogo, visibilidade e boundaries;
-- não promover detalhe técnico do BPT1 como requisito.
-
-### Gate 3 — evidência externa
-
-Usar, conforme o caso:
-
-- documentação oficial atual de frameworks/standards;
-- pesquisa/benchmark técnico reproduzível;
-- documentação e comportamento atual de portais de mercado;
-- fontes secundárias apenas como apoio e com classe de confiança explícita.
-
-`Concorrente possui X` prova apenas existência/uso de X, não prova que BPT precisa de X.
-
-### Gate 4 — teste de valor/qualidade
-
-Definir antes da implementação o que falsificaria a hipótese.
-
-Exemplos:
-
-- comparador: cobertura canônica, completude dos campos, ambiguidade de versão, consistência 2x/3x e capacidade de compartilhar estado;
-- ranking/recomendação: dataset fixo, métrica offline definida, baseline simples e casos adversariais;
-- CRM: estados necessários derivados do fluxo real, ownership, monotonicidade, idempotência e utilidade operacional;
-- promotions: separação orgânico/pago, transparência, expiração, elegibilidade, medição de impressão/click/lead e ausência de vazamento de anúncio não público;
-- alertas: deduplicação, opt-in, matching determinístico, price-change correto e idempotência de entrega;
-- geo: precisão da autoridade geográfica, fallback, distância e comportamento sem coordenada;
-- enrichment: provenance, confidence, versionamento e comportamento diante de conflito entre fontes.
-
-### Gate 5 — menor slice BPT2
-
-Somente após os gates anteriores:
-
-- definir menor vertical slice que testa a hipótese;
-- escrever acceptance criterion executável;
-- selecionar checks estritamente necessários em `QUALITY.md`;
-- abrir plano funcional separado.
-
-## Benchmark externo inicial — observações de 2026-08-25
-
-### Webmotors
-
-- comparador público permite múltiplos veículos e fichas técnicas lado a lado;
-- documentação de ajuda informa mais de 80 itens comparáveis;
-- busca pública possui filtros automotivos profundos, localização, anunciante, quilometragem e outros atributos;
-- há busca generativa em linguagem natural;
-- vendedor possui mecanismos de destaque/turbinar.
-
-### OLX
-
-- favoritos são combinados com buscas salvas e alertas;
-- busca usa relevância e filtros de localização, inclusive CEP/estado/cidade/bairro;
-- destaque pago promove anúncios para posições superiores e mede benefícios de visibilidade;
-- possui financiamento/simulação como camada complementar.
-
-### Carros na Web
-
-A superfície deverá ser auditada diretamente quando houver fonte atual verificável suficiente. Conhecimento histórico ou benchmark antigo do BPT1 não será elevado a evidência atual sem revalidação.
-
-## Inventário BPT1 — checkpoint CP1 em andamento
-
-A inspeção do `main` do donor confirmou que o inventário precisa incluir capacidades de produto e também separar módulos internos que não são features do marketplace.
-
-### Evidência de execução do donor
-
-No head `04a9c264a841e67b28daa28f1564109a3178de79`, o CI `quality-gates` passou. O pipeline executa descoberta automática de todos os arquivos `*.test.*` e `*.spec.*` em `src/` e `scripts/`, seguida por lint, Prisma validate/generate, build, typecheck, migration deploy e runtime smoke. Portanto, a presença de teste no head atual somada a esse CI é evidência B de que o teste foi executado nesse baseline; não prova, por si só, que cada feature foi coberta end-to-end.
-
-### Capacidades confirmadas até aqui
-
-| Área BPT1 | Sinais no donor | Força atual | Leitura para o roadmap |
-|---|---|---|---|
-| Marketplace / anúncio / Seller | rotas públicas e Seller, módulos de anúncios, fluxo central do produto | implementado; CI do head verde | já coberto amplamente no BPT2; auditar apenas delta |
-| Catálogo / Vehicle Hub | módulos e rotas próprias; V2 aprofundou catálogo e grafo | implementado/testado em múltiplos blocos | BPT2 já tem Structure; enrichment continua candidato |
-| Comparador | `comparison`, `/comparar`, fechamento Task 093, testes específicos 2x/3x | forte A/B interna | candidato forte; ainda precisa delta/teste BPT2 |
-| Leads / CRM | módulo `leads`, telas Seller/admin, estados e métricas | implementado; parte testável no CI | BPT2 possui baseline mínimo; delta material provável |
-| Analytics / telemetry | módulos próprios, funil/acquisition/attribution, admin analytics | implementado; CI do head verde | candidato instrumental para validar outras features |
-| Promotions / ranking pago | módulo em anúncios, tipos e eventos | implementado; CI do head verde | candidato comercial; precisa hipótese e fairness/transparência |
-| Retenção / notificações | price drop, weekly seller report, lead stagnation | implementado no código | separar mecanismo técnico de valor de produto; validar opt-in/dedup |
-| Compra Assistida | rota `/compra-assistida`, módulo dedicado, actions/schema/services e vários testes | implementado e testado no head | feature real do donor, mas PRODUCT_DEFINITION a mantém complementar; VALIDAR ANTES |
-| Credits | ledger, serviços, tipos e `credits.test.ts` | implementado e testado no head | mecanismo comercial interno; não promover sem caso de uso BPT2 |
-| Payments | módulo dedicado e superfícies admin | implementado | fora do núcleo BPT2; ADIAR |
-| Moderation | módulo e auditoria própria | implementado | BPT2 já possui baseline; revisar apenas extensões comprovadas |
-| SEO | módulo e tarefas/auditorias específicas | implementado | BPT2 já cobre baseline; revisar apenas gaps reais |
-| Similar vehicles / upgrade suggestions | módulos e componentes específicos | implementado | VALIDAR ANTES com dataset/métrica |
-| Vehicle Knowledge / safety / equipment / market position | scripts de audit/backfill/enrichment, UI e métricas | implementado com forte investimento no donor | candidato de enrichment; provenance/confidence obrigatórios no BPT2 |
-| Planner | contratos de work-unit e testes | implementado/testado | tooling interno; não é feature de produto a migrar |
-| Argus Core | runner/lock/report/execution e extensa suíte de testes | implementado/testado | infraestrutura/agente interno; não entra no roadmap funcional por existência |
-
-### Regra derivada deste checkpoint
-
-Módulos como `planner` e `argus-core` não devem aparecer como funcionalidades candidatas apenas porque existem e são bem testados. O inventário funcional deve filtrar tooling, harness e infraestrutura interna antes do cruzamento BPT1 ↔ BPT2. `credits` também deve ser tratado como mecanismo subordinado a uma tese comercial, não como feature autônoma obrigatória.
-
-## Candidatas que podem surgir durante a auditoria
-
-Novas capacidades podem entrar no roadmap se forem observadas no BPT1, em benchmarks externos ou como lacuna necessária para testar outra capacidade. Exemplos plausíveis, ainda não decididos:
-
-- busca salva / alertas de estoque;
-- alerta de queda de preço;
-- comparação de ofertas do mesmo Vehicle;
-- qualidade/completude do anúncio como sinal de ranking;
-- preço relativo ao mercado;
-- histórico de preço do anúncio;
-- seller reputation / sinais de confiança;
-- filtros por características técnicas;
-- landing pages por categoria/uso;
-- notificações de lead estagnado;
-- relatórios operacionais do Seller;
-- experimentação/A-B testing e feature flags;
-- observabilidade de funil por capability.
-
-Entrada nessa lista não significa promoção.
-
-## Critérios de aceite do Plan 0046
-
-O plano pode ser concluído quando:
-
-1. o inventário relevante do BPT1 estiver classificado por força da evidência;
-2. cada candidato material tiver delta BPT2 explícito;
-3. benchmark externo atual tiver sido registrado para as superfícies relevantes;
-4. existir protocolo de teste específico para cada candidato promovível;
-5. a matriz final tiver classificação e justificativa baseada em A/B/C/D;
-6. candidatos sem evidência suficiente estiverem explicitamente em `VALIDAR ANTES`, `ADIAR` ou `DESCARTAR`;
-7. houver no máximo uma próxima capability promovida como primeiro slice funcional, ou nenhuma se a evidência não justificar;
-8. documentação canônica e harness estiverem consistentes.
+O BPT1 foi auditado como donor de capacidades, nunca como chassis técnico. O trabalho produziu inventário funcional, matriz BPT1 ↔ BPT2, benchmark externo atual, testes falsificáveis, recomendações proativas de adição/edição/exclusão/substituição e uma única próxima capability promovida.
 
 ## Checkpoints
 
-- [ ] CP1 — inventário funcional BPT1 completo o suficiente para evitar cherry-picking.
-- [ ] CP2 — matriz BPT1 ↔ BPT2 consolidada.
-- [ ] CP3 — benchmark atual Webmotors / OLX / Carros na Web e outras fontes justificadas.
-- [ ] CP4 — testes/experimentos definidos para candidatos fortes.
-- [ ] CP5 — matriz final de decisão.
-- [ ] CP6 — próximo slice, se houver, escolhido por evidência.
+- [x] CP1 — inventário funcional BPT1 completo o suficiente para evitar cherry-picking.
+- [x] CP2 — matriz BPT1 ↔ BPT2 consolidada.
+- [x] CP3 — benchmark atual consolidado com Webmotors e OLX verificados, iCarros como terceiro portal verificável e Carros na Web explicitamente sem conclusão por indisponibilidade reproduzível.
+- [x] CP4 — testes/experimentos definidos para candidatos fortes.
+- [x] CP5 — matriz final de decisão.
+- [x] CP6 — próximo slice escolhido por evidência.
 
-## Decisões abertas necessárias
+## Evidência principal
 
-- qual capability, se alguma, deve ser a primeira promovida;
-- quais métricas de produto existem/precisam ser instrumentadas antes de validar valor;
-- até onde comparar experiência de mercado sem copiar modelo comercial alheio;
-- quando enriquecimento de catálogo passa de suporte ao marketplace para produto próprio.
+Os detalhes auditáveis estão em `docs/audits/`:
 
-## Progress log
+- `2026-08-25-bpt1-bpt2-capability-delta-matrix.md`;
+- `2026-08-25-comparator-prerequisite-test.md`;
+- `2026-08-25-comparator-cardinality-contract.md`;
+- `2026-08-25-vehicle-enrichment-source-authority.md`;
+- `2026-08-25-pbev-reconciliation-granularity-test.md`;
+- `2026-08-25-minimum-vehicle-enrichment-contract.md`;
+- `2026-08-25-saved-search-contract-test.md`;
+- `2026-08-25-crm-minimum-lifecycle-test.md`;
+- `2026-08-25-minimum-product-instrumentation-test.md`;
+- `2026-08-25-promotions-ranking-separation-test.md`;
+- `2026-08-25-external-market-benchmark-checkpoint.md`;
+- `2026-08-25-proactive-market-feature-recommendations.md`;
+- `2026-08-25-research-driven-product-recommendation-policy.md`;
+- `2026-08-25-capability-final-decision-matrix.md`.
 
-- 2026-08-25 — BPT1 confirmado como `igobritoti/bomprati` e BPT2 como `igobritoti/bpt2-abp`.
-- 2026-08-25 — encontrados no BPT1: comparador 2x/3x, CRM/pipeline, analytics/atribuição, promotions, retenção por email, Vehicle Knowledge, similares e upgrade suggestions.
-- 2026-08-25 — benchmark externo inicial confirmou comparador/filtros/busca generativa/destaques na Webmotors e favoritos/buscas salvas/alertas/localização/destaques na OLX.
-- 2026-08-25 — protocolo de donor migration e validação baseado em evidência preparado no PR #66.
-- 2026-08-25 — CI atual do BPT1 confirmado verde no head `04a9c264...`; deterministic tests descobrem automaticamente toda suíte em `src/` e `scripts/`.
-- 2026-08-25 — inventário estrutural adicionou Compra Assistida, Credits, Planner e Argus Core; Planner/Argus classificados como tooling interno, não funcionalidades candidatas.
+## Decisões finais deste plano
 
-## Decision log
+### Próximo slice promovido
 
-- 2026-08-25 — BPT1 é donor; chassis técnico legado não será transplantado por default.
-- 2026-08-25 — roadmap é de investigação e promoção por evidência, não backlog contratual de features.
-- 2026-08-25 — benchmark de concorrente é evidência de possibilidade/uso de mercado, nunca requisito por si só.
-- 2026-08-25 — cada capacidade funcional promovida após este plano deverá receber execution plan separado.
-- 2026-08-25 — teste existente no donor + CI verde prova execução do teste no donor; não autoriza transplantar a implementação nem substitui teste do comportamento no BPT2.
+**CRM — fechamento mínimo de Lead.**
+
+Acceptance criterion resumido:
+
+- preservar `MarkContacted` idempotente;
+- Seller só altera Leads dos próprios Listings;
+- permitir fechar Lead com outcome `Won` ou `Lost`;
+- repetir o mesmo fechamento sem duplicar efeito;
+- outcome conflitante não sobrescreve silenciosamente histórico;
+- histórico permanece consultável após Pause/Archive;
+- nenhuma attribution, notes, dashboard, `NEGOCIACAO` ou pipeline de cinco estados neste slice.
+
+### Decisões materialmente alteradas pela auditoria
+
+- Comparador permanece candidato, agora com cardinalidade escolhida pelo usuário de **2 até 4 Vehicles**, mas implementação está bloqueada até enrichment canônico suficiente.
+- PBEV/Inmetro é fonte forte para primeiro enrichment de consumo/eficiência, mas reconciliação automática direta para `Vehicle` foi reprovada porque a linha observada não fornece `ModelYear`.
+- Primeiro enrichment deve começar somente por campos com fonte estruturada defensável; potência/torque/dimensões/equipamentos aguardam fonte primária adequada.
+- Pipeline CRM BPT1 de cinco estados foi reprovado como primeiro desenho; testar lifecycle mínimo com fechamento/outcome.
+- Analytics/dashboard amplo do donor foi substituído por instrumentação mínima orientada a perguntas de produto.
+- `HighlightScore` BPT1 foi descartado; Promotions deve manter pago separado de orgânico, confiança e qualidade.
+- Saved Search / alerts foi promovido a candidato forte de teste, como capability nova, não simples transplante do donor.
+- Vehicle Trust Signals e market-price context entraram como novas linhas de pesquisa; ambas continuam dependentes de contratos/dados próprios.
+- Planner e Argus Core foram excluídos como features de produto; Credits e Payments continuam adiados.
+
+## Regra preservada
+
+`TRAZER` nunca significa portar código/arquitetura do BPT1. Cada capability promovida recebe execution plan próprio, menor slice falsificável e checks proporcionais ao risco.
