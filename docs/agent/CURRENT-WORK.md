@@ -6,19 +6,25 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP continuam fechados. O Plan 0047 concluiu o **fechamento mínimo de Lead** promovido pelo roadmap, com outcome `Won/Lost`, ownership server-side e idempotência, sem copiar o pipeline de cinco estados do BPT1.
+Executar o experimento de **Vehicle Enrichment — reconciliation PBEV** definido pela matriz do Plan 0046, sem implementar Comparador e sem importar dados em produção antes de provar uma reconciliação segura.
 
-O PR #67 está em fechamento: resta somente CI final fresco no head documental, review/base refresh e merge somente verde.
+O PR #67 de fechamento mínimo de Lead foi integrado. O experimento atual parte do `main` em `1471de8f69d0216f09d6c42c57a2ccbba900b2d7` e está no draft PR #68.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+[`../exec-plans/active/0048-pbev-reconciliation-experiment.md`](../exec-plans/active/0048-pbev-reconciliation-experiment.md)
 
-## Next acceptance target
+## Acceptance target
 
-Após integrar o PR #67 e refetch de `main`, o próximo boundary de investigação definido pela matriz do Plan 0046 é **Vehicle Enrichment — experimento de reconciliation PBEV**.
+Provar ou refutar, com amostra reproduzível, se registros PBEV podem ser reconciliados deterministicamente à identidade canônica BPT2:
 
-Isso ainda não autoriza implementação de Comparador nem ingestão automática. O próximo plano deve primeiro provar uma reconciliação segura entre a granularidade oficial `Marca/Modelo/Versão` e a identidade canônica do BPT2, sem inventar `ModelYear` ausente na fonte.
+- sem inventar `ModelYear`;
+- distinguindo `exact`, `normalized`, `ambiguous` e `unmatched`;
+- preservando source/revision/provenance do artefato oficial;
+- rejeitando ambiguidades em vez de resolvê-las por fuzzy opaco;
+- decidindo por evidência se o target correto é `VehicleVersion`, `Vehicle`, observação independente ou combinação.
+
+Comparador permanece bloqueado até o enrichment mínimo ser provado.
 
 ## Source of runtime truth
 
@@ -26,6 +32,7 @@ Isso ainda não autoriza implementação de Comparador nem ingestão automática
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Plano ativo: [`../exec-plans/active/0048-pbev-reconciliation-experiment.md`](../exec-plans/active/0048-pbev-reconciliation-experiment.md).
 - Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
 - Matriz final da auditoria: [`../audits/2026-08-25-capability-final-decision-matrix.md`](../audits/2026-08-25-capability-final-decision-matrix.md).
@@ -34,7 +41,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional conhecido. O PR #67 depende apenas dos gates finais do head corrente antes de review/merge.
+Nenhum blocker funcional externo. A aquisição direta do CSV anunciado pelo Inmetro/dados.gov.br ainda não foi resolvida pelo navegador atual; o schema oficial do artefato PBEV foi congelado pelo PDF oficial e a indisponibilidade do recurso CSV permanece explícita, sem fallback heurístico.
 
 ## Update rule
 
