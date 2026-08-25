@@ -1,3 +1,4 @@
+using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Entities;
 
@@ -146,7 +147,28 @@ public sealed class Listing : AggregateRoot<Guid>
 
     public void Archive()
     {
+        EnsureMutable();
         Status = ListingStatus.Archived;
+    }
+
+    public void Moderate()
+    {
+        if (Status != ListingStatus.Published)
+        {
+            throw new BusinessException("Marketplace:ListingModerationRequiresPublished");
+        }
+
+        Status = ListingStatus.Moderated;
+    }
+
+    public void RestoreFromModeration()
+    {
+        if (Status != ListingStatus.Moderated)
+        {
+            throw new BusinessException("Marketplace:ListingRestoreRequiresModerated");
+        }
+
+        Status = ListingStatus.Published;
     }
 
     private void EnsureMutable()
@@ -154,6 +176,11 @@ public sealed class Listing : AggregateRoot<Guid>
         if (Status == ListingStatus.Archived)
         {
             throw new InvalidOperationException("An archived listing is immutable.");
+        }
+
+        if (Status == ListingStatus.Moderated)
+        {
+            throw new BusinessException("Marketplace:ListingModerated");
         }
     }
 }
