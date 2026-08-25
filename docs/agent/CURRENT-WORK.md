@@ -1,22 +1,23 @@
 # Current work
 
-Last verified: **2026-08-24**
+Last verified: **2026-08-25**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
 ## Active outcome
 
-O Execution Plan 0028 fechou o blocker `MVP-01`: um operador `admin` agora consegue criar/reutilizar `Brand → Model → Generation opcional → Version → Vehicle` por uma superfície suportada, e o gate focal provou em PostgreSQL fresco que o Vehicle criado entra no catálogo público e pode ser usado imediatamente em um Draft Seller sem `tests/BomPraTi.HttpLifecycleFixture`.
+A auditoria de prontidão do MVP (Plan 0027) está funcionalmente fechada:
 
-Resta um blocker funcional identificado pela auditoria de prontidão:
+- `MVP-01` — carga operacional do catálogo canônico: resolvido pelo Plan 0028;
+- `MVP-02` — autoridade mínima de moderação: resolvido pelo Plan 0029.
 
-**MVP-02 — ação mínima de moderação:** Buyer reporta Listing público e admin consulta a fila, mas o operador ainda não possui autoridade de produto para retirar/restaurar a visibilidade do Listing denunciado sem que o Seller possa desfazer a decisão administrativa.
+Não resta blocker funcional classificado como `BLOQUEIA MVP` pela auditoria 0027. Os gaps restantes daquela auditoria continuam classificados como pós-MVP até nova evidência justificar reclassificação.
 
-Próximo acceptance target: criar uma autoridade de moderação separada do lifecycle Seller e provar por HTTP que admin retira um Listing denunciado da descoberta pública, Seller não consegue republicá-lo enquanto moderado e admin consegue restaurá-lo.
+Próximo acceptance target: refetchar o `main` e priorizar o primeiro gap pós-MVP por evidência, sem promover backlog a requisito ou blocker por preferência.
 
 ## Active plan
 
-Nenhum execution plan ativo.
+Nenhum.
 
 ## Source of runtime truth
 
@@ -25,12 +26,13 @@ Nenhum execution plan ativo.
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
 - Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
+- Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-- **MVP-02 — moderação:** operador lê denúncias, mas ainda não consegue retirar/restaurar Listing por autoridade administrativa do produto.
+Nenhum blocker funcional aberto da auditoria MVP 0027.
 
 ## Update rule
 

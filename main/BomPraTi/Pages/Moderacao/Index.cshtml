@@ -6,7 +6,7 @@
 
 <div class="container py-4">
     <h1>Moderação de anúncios</h1>
-    <p>Reports recebidos, em ordem do mais recente. Esta superfície é somente leitura.</p>
+    <p>Reports recebidos, em ordem do mais recente. Listings publicados podem ser retirados pela moderação e restaurados somente por um administrador.</p>
 
     @if (Model.Reports.Count == 0)
     {
@@ -23,6 +23,7 @@
                         <th scope="col">Título</th>
                         <th scope="col">Status</th>
                         <th scope="col">Recebido em UTC</th>
+                        <th scope="col">Ação</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,6 +35,26 @@
                         <td>@report.ListingTitle</td>
                         <td>@report.ListingStatus</td>
                         <td><time datetime="@report.CreatedAtUtc.ToString("O")">@report.CreatedAtUtc.ToString("u")</time></td>
+                        <td>
+                            @if (report.ListingStatus == "Published")
+                            {
+                                <form method="post" asp-page-handler="Withdraw" class="d-inline">
+                                    <input type="hidden" name="listingId" value="@report.ListingId" />
+                                    <button type="submit" class="btn btn-sm btn-danger">Retirar</button>
+                                </form>
+                            }
+                            else if (report.ListingStatus == "Moderated")
+                            {
+                                <form method="post" asp-page-handler="Restore" class="d-inline">
+                                    <input type="hidden" name="listingId" value="@report.ListingId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Restaurar</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Sem ação</span>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>
