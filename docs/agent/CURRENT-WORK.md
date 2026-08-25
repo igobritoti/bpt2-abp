@@ -21,7 +21,7 @@ Nenhum execution plan ativo.
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
-- Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/`).
+- Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
 - Matriz final da auditoria: [`../audits/2026-08-25-capability-final-decision-matrix.md`](../audits/2026-08-25-capability-final-decision-matrix.md).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
