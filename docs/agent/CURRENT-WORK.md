@@ -6,16 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0032 também foi concluído funcionalmente:
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0033 está implementando structured data mínimo e fiel para o Vehicle Hub canônico, sem inventar dados de oferta, condição, VIN, imagem ou data automotiva.
 
-- a listagem pública do Catalog agora suporta paginação determinística;
-- o sitemap público percorre todo o Catalog e inclui Vehicle Hubs canônicos mesmo sem oferta ativa e além do antigo limite de 100.
-
-Próximo acceptance target: refetchar o `main` depois do merge e selecionar diretamente o próximo gap pós-MVP por evidência de produto, continuando implementação vertical sem auditoria intermediária.
+Próximo acceptance target: provar por HTTP que `/veiculos/{id}` conhecido entrega exatamente um JSON-LD `Vehicle` coerente com a identidade visível, enquanto Vehicle desconhecido permanece 404/noindex e sem structured data.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0033-vehicle-hub-structured-data.md`](../exec-plans/active/0033-vehicle-hub-structured-data.md)
 
 ## Source of runtime truth
 
@@ -33,7 +30,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0033 é pós-MVP.
 
 ## Update rule
 
