@@ -115,6 +115,9 @@ async function apiRequest(
   }
 
   if (response.status === 409) {
+    if (path.startsWith("/api/app/listing-command")) {
+      throw new Error("Este anúncio mudou desde que você o abriu. Recarregue antes de salvar novamente.");
+    }
     throw new Error("A operação conflita com o estado atual. Recarregue os dados antes de tentar novamente.");
   }
 
