@@ -1,5 +1,9 @@
 using BomPraTi.Catalog;
 using BomPraTi.Catalog.Domain;
+using BomPraTi.Marketplace;
+using BomPraTi.Marketplace.Data;
+using BomPraTi.Marketplace.Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Autofac;
@@ -20,15 +24,50 @@ await application.InitializeAsync();
 
 try
 {
+    using var scope = application.ServiceProvider.CreateScope();
+    var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+    using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
+
+    if (args.Length > 0 && string.Equals(args[0], "lead", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))
+        {
+            throw new ArgumentException("Usage: lead <listingId>");
+        }
+
+        var leadId = Guid.NewGuid();
+        await scope.ServiceProvider.GetRequiredService<IRepository<Lead, Guid>>()
+            .InsertAsync(new Lead(leadId, listingId, null, "WhatsApp", DateTime.UtcNow), autoSave: true);
+        await uow.CompleteAsync();
+        Console.WriteLine(leadId);
+        return;
+    }
+
+    if (args.Length > 0 && string.Equals(args[0], "reassign-listing", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 3 || !Guid.TryParse(args[1], out var listingId) || !Guid.TryParse(args[2], out var sellerId))
+        {
+            throw new ArgumentException("Usage: reassign-listing <listingId> <sellerId>");
+        }
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+        var affected = await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE \"MarketplaceListings\" SET \"SellerId\" = {sellerId} WHERE \"Id\" = {listingId}");
+        if (affected != 1)
+        {
+            throw new InvalidOperationException($"Expected exactly one Listing to be reassigned, affected={affected}.");
+        }
+
+        await uow.CompleteAsync();
+        Console.WriteLine(listingId);
+        return;
+    }
+
     var brandId = Guid.NewGuid();
     var modelId = Guid.NewGuid();
     var generationId = Guid.NewGuid();
     var versionId = Guid.NewGuid();
     var vehicleId = Guid.NewGuid();
-
-    using var scope = application.ServiceProvider.CreateScope();
-    var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
-    using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
 
     await scope.ServiceProvider.GetRequiredService<IRepository<Brand, Guid>>()
         .InsertAsync(new Brand(brandId, $"HTTP-{brandId:N}"), autoSave: true);
@@ -49,7 +88,7 @@ finally
     await application.ShutdownAsync();
 }
 
-[DependsOn(typeof(AbpAutofacModule), typeof(BomPraTiCatalogModule))]
+[DependsOn(typeof(AbpAutofacModule), typeof(BomPraTiCatalogModule), typeof(BomPraTiMarketplaceModule))]
 public sealed class HttpLifecycleFixtureModule : AbpModule
 {
     public static string ConnectionString { get; set; } = null!;
