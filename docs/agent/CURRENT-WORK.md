@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0036 foi concluído: self-registration agora possui prova HTTP real em banco fresco, desde a página pública de cadastro até criação anônima de identidade e autenticação com a própria credencial.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0037 está fortalecendo a prova do ciclo Seller: o Seller Shell deve ser atravessado por um usuário comum auto-cadastrado, sem usar a identidade privilegiada `admin` no caminho positivo.
 
-Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir Public Discovery, Seller Hub ou self-registration sem nova evidência de comportamento incompleto.
+Próximo acceptance target: `self-registration → SellerWeb Authorization Code + PKCE → SellerProfile → Draft → My Listings` em banco fresco, preservando logout e sem regra/schema novo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0037-self-registered-seller-shell.md`](../exec-plans/active/0037-self-registered-seller-shell.md)
 
 ## Source of runtime truth
 
@@ -34,7 +34,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0037 é pós-MVP/hardening.
 
 ## Update rule
 
