@@ -13,6 +13,7 @@ on:
       - 'scripts/public-buyer-http-smoke.sh'
       - 'scripts/public-seller-hub-http-smoke.sh'
       - 'scripts/public-seo-http-smoke.sh'
+      - 'scripts/public-listing-structured-data-http-smoke.sh'
       - 'scripts/public-vehicle-hub-http-smoke.sh'
       - 'scripts/whatsapp-auth-forwarding-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
@@ -53,6 +54,7 @@ jobs:
           bash -n scripts/public-buyer-http-smoke.sh
           bash -n scripts/public-seller-hub-http-smoke.sh
           bash -n scripts/public-seo-http-smoke.sh
+          bash -n scripts/public-listing-structured-data-http-smoke.sh
           bash -n scripts/public-vehicle-hub-http-smoke.sh
           bash -n scripts/whatsapp-auth-forwarding-smoke.sh
       - name: Apply fresh database
@@ -80,5 +82,7 @@ jobs:
         run: bash scripts/public-vehicle-hub-http-smoke.sh
       - name: Exercise public SEO over HTTP
         run: bash scripts/public-seo-http-smoke.sh
+      - name: Exercise public Listing structured data over HTTP
+        run: bash scripts/public-listing-structured-data-http-smoke.sh
       - name: Prove authenticated Lead forwarding through public web
         run: bash scripts/whatsapp-auth-forwarding-smoke.sh
