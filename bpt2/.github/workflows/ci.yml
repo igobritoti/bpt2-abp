@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/check-boundaries.py
+      - run: bash scripts/test-boundary-guard.sh
+
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: BomPraTi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: python3 scripts/check-boundaries.py
+      - name: Build module assemblies
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r project; do
+            dotnet build "$project" --configuration Release --nologo
+          done < <(find modules -name '*.csproj' -type f | sort)
+      - name: Build generated host when present
+        shell: bash
+        run: |
+          slnx="$(find main -maxdepth 2 -name 'BomPraTi.slnx' -print -quit)"
+          if [ -n "$slnx" ]; then
+            dotnet build "$slnx" --configuration Release --nologo
+          else
+            echo 'Host has not been generated yet; run scripts/bootstrap-host.sh on a normal dev machine.'
+          fi
