@@ -12,6 +12,7 @@ on:
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/public-buyer-http-smoke.sh'
       - 'scripts/public-seller-hub-http-smoke.sh'
+      - 'scripts/public-hub-social-images-http-smoke.sh'
       - 'scripts/public-seo-http-smoke.sh'
       - 'scripts/public-listing-structured-data-http-smoke.sh'
       - 'scripts/public-vehicle-hub-http-smoke.sh'
@@ -54,6 +55,7 @@ jobs:
         run: |
           bash -n scripts/public-buyer-http-smoke.sh
           bash -n scripts/public-seller-hub-http-smoke.sh
+          bash -n scripts/public-hub-social-images-http-smoke.sh
           bash -n scripts/public-seo-http-smoke.sh
           bash -n scripts/public-listing-structured-data-http-smoke.sh
           bash -n scripts/public-vehicle-hub-http-smoke.sh
@@ -82,6 +84,8 @@ jobs:
         run: bash scripts/public-seller-hub-http-smoke.sh
       - name: Exercise public Vehicle Hub over HTTP
         run: bash scripts/public-vehicle-hub-http-smoke.sh
+      - name: Exercise public hub social images over HTTP
+        run: bash scripts/public-hub-social-images-http-smoke.sh
       - name: Exercise public SEO over HTTP
         run: bash scripts/public-seo-http-smoke.sh
       - name: Exercise public Listing structured data over HTTP

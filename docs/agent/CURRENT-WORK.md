@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 concluiu a navegação global administrativa nativa (`Operações → /admin`) e o Plan 0044 reconciliou `PRODUCT.md` com o estado realmente entregue até esse ponto, removendo drift capaz de induzir reimplementação de capacidades já concluídas.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0044 reconciliou `PRODUCT.md` com o estado entregue; o Plan 0045 foi concluído e fechou a inconsistência específica dessa superfície já entregue: Seller Hub e Vehicle Hub reutilizam a foto pública existente como preview Open Graph/Twitter quando há Listing publicado fotografado.
 
-Próximo acceptance target: selecionar o próximo gap de produto somente por nova evidência explícita. Não promover permissões granulares, frontend admin separado, CRM, ranking, enrichment, automação de ingestion ou infraestrutura apenas porque permanecem no produto-alvo.
+Próximo acceptance target: nenhum plano ativo.
 
 ## Active plan
 
-Nenhum.
+Nenhum plano ativo.
 
 ## Source of runtime truth
 
@@ -38,12 +38,13 @@ Nenhum.
 - Resumo operacional administrativo: [`../exec-plans/completed/0042-admin-operations-summary.md`](../exec-plans/completed/0042-admin-operations-summary.md).
 - Navegação global administrativa: [`../exec-plans/completed/0043-admin-global-navigation.md`](../exec-plans/completed/0043-admin-global-navigation.md).
 - Reconciliação do estado canônico de produto: [`../exec-plans/completed/0044-product-state-reconciliation.md`](../exec-plans/completed/0044-product-state-reconciliation.md).
+- Public Hub Social Images: [`../exec-plans/completed/0045-public-hub-social-images.md`](../exec-plans/completed/0045-public-hub-social-images.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. Nenhum execution plan de produto ativo.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. O Plan 0045 foi concluído e alterou apenas metadata social dos hubs públicos.
 
 ## Update rule
 
