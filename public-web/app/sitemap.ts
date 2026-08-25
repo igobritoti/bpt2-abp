@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getVehicleCatalogPage } from "@/lib/catalog";
 import { getPublicListings } from "@/lib/public-listings";
 import { publicUrl } from "@/lib/site-url";
 
@@ -40,6 +41,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({
       url: publicUrl(`/vendedores/${sellerId}`),
       changeFrequency: "daily",
+      priority: 0.7,
+    });
+  }
+
+  const vehicleIds = new Set<string>();
+  let vehicleSkip = 0;
+  while (true) {
+    const vehicles = await getVehicleCatalogPage(vehicleSkip, PAGE_SIZE);
+
+    for (const vehicle of vehicles) {
+      vehicleIds.add(vehicle.id);
+    }
+
+    if (vehicles.length < PAGE_SIZE) {
+      break;
+    }
+
+    vehicleSkip += vehicles.length;
+  }
+
+  for (const vehicleId of vehicleIds) {
+    entries.push({
+      url: publicUrl(`/veiculos/${vehicleId}`),
+      changeFrequency: "weekly",
       priority: 0.7,
     });
   }

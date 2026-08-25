@@ -20,6 +20,7 @@ public class VehicleCatalogAppService : IVehicleCatalogAppService, ITransientDep
     public Task<IReadOnlyList<VehicleRefDto>> GetListAsync(
         VehicleCatalogSearchInput input,
         int take = 50,
-        CancellationToken cancellationToken = default) =>
-        _reader.SearchAsync(input, take, cancellationToken);
+        CancellationToken cancellationToken = default,
+        int skip = 0) =>
+        _reader.SearchAsync(input, take, cancellationToken, skip);
 }
