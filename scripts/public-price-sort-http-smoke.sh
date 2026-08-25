@@ -135,8 +135,23 @@ for _ in $(seq 1 60); do
 done
 curl --fail --silent "$WEB_BASE/?query=Price%20Sort&sort=price-desc&take=1" -o "$PAGE" || { cat "$WEB_LOG" >&2; exit 1; }
 
-grep -Fq 'name="sort"' "$PAGE" || { echo 'Discovery form missing sort control.' >&2; exit 1; }
-grep -Fq 'value="price-desc" selected' "$PAGE" || { echo 'Discovery sort selection not preserved in SSR.' >&2; exit 1; }
+python3 - "$PAGE" <<'PY'
+from html.parser import HTMLParser
+import sys
+class P(HTMLParser):
+    in_sort=False; found=False; selected=False
+    def handle_starttag(self,tag,attrs):
+        values=dict(attrs)
+        if tag=='select' and values.get('name')=='sort':
+            self.in_sort=True; self.found=True
+        elif self.in_sort and tag=='option' and values.get('value')=='price-desc' and 'selected' in values:
+            self.selected=True
+    def handle_endtag(self,tag):
+        if tag=='select' and self.in_sort: self.in_sort=False
+p=P(); p.feed(open(sys.argv[1],encoding='utf-8').read())
+if not p.found: raise SystemExit('Discovery form missing sort control.')
+if not p.selected: raise SystemExit('Discovery sort selection not preserved in SSR.')
+PY
 grep -Fq "$HIGH_TITLE" "$PAGE" || { echo 'Descending SSR first page missing highest price.' >&2; exit 1; }
 if grep -Fq "$MID_TITLE" "$PAGE" || grep -Fq "$LOW_TITLE" "$PAGE"; then
   echo 'Descending SSR first page leaked another price-sort fixture.' >&2; exit 1
