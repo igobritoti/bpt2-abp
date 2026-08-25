@@ -25,6 +25,8 @@ export type SellerListing = {
   concurrencyStamp: string;
 };
 
+export type SellerLeadOutcome = "Won" | "Lost";
+
 export type SellerLead = {
   id: string;
   listingId: string;
@@ -33,6 +35,8 @@ export type SellerLead = {
   channel: string;
   createdAtUtc: string;
   contactedAtUtc: string | null;
+  closedAtUtc: string | null;
+  outcome: SellerLeadOutcome | null;
 };
 
 export type SellerListingPhoto = {
@@ -111,7 +115,7 @@ async function apiRequest(
   }
 
   if (response.status === 409) {
-    throw new Error("Este anúncio mudou desde que você o abriu. Recarregue antes de salvar novamente.");
+    throw new Error("A operação conflita com o estado atual. Recarregue os dados antes de tentar novamente.");
   }
 
   if (!response.ok) {
@@ -171,6 +175,21 @@ export async function markSellerLeadContacted(accessToken: string, leadId: strin
     `/api/app/seller-lead-command/mark-contacted/${encodeURIComponent(leadId)}`,
     accessToken,
     { method: "POST" },
+  );
+}
+
+export async function closeSellerLead(
+  accessToken: string,
+  leadId: string,
+  outcome: SellerLeadOutcome,
+): Promise<void> {
+  await apiRequest(
+    `/api/app/seller-lead-command/close/${encodeURIComponent(leadId)}`,
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify({ outcome }),
+    },
   );
 }
 
