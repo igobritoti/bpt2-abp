@@ -6,25 +6,19 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Implementar o menor gap operacional de CRM promovido pelo Plan 0046: **fechamento mínimo de Lead**, preservando `MarkContacted` e acrescentando apenas encerramento com outcome `Won/Lost`, sem copiar o pipeline de cinco estados do BPT1.
+Os blockers funcionais do MVP continuam fechados. O Plan 0047 concluiu o **fechamento mínimo de Lead** promovido pelo roadmap, com outcome `Won/Lost`, ownership server-side e idempotência, sem copiar o pipeline de cinco estados do BPT1.
 
-O slice parte do `main` integrado pelo PR #66 e está sendo executado no draft PR #67.
+O PR #67 está em fechamento: resta somente CI final fresco no head documental, review/base refresh e merge somente verde.
 
 ## Active plan
 
-[`../exec-plans/active/0047-minimal-lead-closing.md`](../exec-plans/active/0047-minimal-lead-closing.md)
+Nenhum execution plan ativo.
 
-## Acceptance target
+## Next acceptance target
 
-Um Seller autenticado consegue, somente sobre Leads dos próprios Listings:
+Após integrar o PR #67 e refetch de `main`, o próximo boundary de investigação definido pela matriz do Plan 0046 é **Vehicle Enrichment — experimento de reconciliation PBEV**.
 
-- preservar `MarkContacted` monotônico/idempotente;
-- fechar Lead como `Won` ou `Lost`;
-- repetir o mesmo fechamento sem novo efeito;
-- receber erro determinístico para outcome conflitante;
-- ler `ClosedAtUtc?` e outcome no histórico Seller;
-- continuar lendo o Lead após Pause/Archive do Listing;
-- sem `NEGOCIACAO`, reabertura, notes, attribution, dashboard ou automação neste slice.
+Isso ainda não autoriza implementação de Comparador nem ingestão automática. O próximo plano deve primeiro provar uma reconciliação segura entre a granularidade oficial `Marca/Modelo/Versão` e a identidade canônica do BPT2, sem inventar `ModelYear` ausente na fonte.
 
 ## Source of runtime truth
 
@@ -32,7 +26,7 @@ Um Seller autenticado consegue, somente sobre Leads dos próprios Listings:
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Plano ativo: [`../exec-plans/active/0047-minimal-lead-closing.md`](../exec-plans/active/0047-minimal-lead-closing.md).
+- Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
 - Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
 - Matriz final da auditoria: [`../audits/2026-08-25-capability-final-decision-matrix.md`](../audits/2026-08-25-capability-final-decision-matrix.md).
 
@@ -40,7 +34,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker externo conhecido. Falhas de CI devem ser tratadas um gate por vez.
+Nenhum blocker funcional conhecido. O PR #67 depende apenas dos gates finais do head corrente antes de review/merge.
 
 ## Update rule
 
