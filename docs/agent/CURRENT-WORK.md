@@ -6,17 +6,18 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Execution Plan 0029 em execução para fechar o blocker `MVP-02` identificado pela auditoria de prontidão:
+A auditoria de prontidão do MVP (Plan 0027) está funcionalmente fechada:
 
-`Buyer report → admin withdraw → Moderated → invisível publicamente → Seller bloqueado → admin restore → Published`
+- `MVP-01` — carga operacional do catálogo canônico: resolvido pelo Plan 0028;
+- `MVP-02` — autoridade mínima de moderação: resolvido pelo Plan 0029.
 
-O slice separa a autoridade de moderação do lifecycle Seller: `Paused` continua sendo pausa voluntária do anunciante; `Moderated` representa retirada administrativa e não pode ser revertido pelo Seller.
+Não resta blocker funcional classificado como `BLOQUEIA MVP` pela auditoria 0027. Os gaps restantes daquela auditoria continuam classificados como pós-MVP até nova evidência justificar reclassificação.
 
-Próximo acceptance target: provar por HTTP que somente admin retira/restaura um Listing denunciado, o Listing moderado some da descoberta pública, o Seller não consegue republicar/editar enquanto moderado e a restauração o torna público novamente.
+Próximo acceptance target: refetchar o `main` e priorizar o primeiro gap pós-MVP por evidência, sem promover backlog a requisito ou blocker por preferência.
 
 ## Active plan
 
-[`../exec-plans/active/0029-moderation-listing-authority.md`](../exec-plans/active/0029-moderation-listing-authority.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -25,12 +26,13 @@ Próximo acceptance target: provar por HTTP que somente admin retira/restaura um
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
 - Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
+- Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-- **MVP-02 — moderação (EM TRABALHO):** operador lê denúncias, mas ainda não consegue retirar/restaurar Listing por autoridade administrativa do produto.
+Nenhum blocker funcional aberto da auditoria MVP 0027.
 
 ## Update rule
 
