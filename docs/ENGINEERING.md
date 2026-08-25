@@ -15,6 +15,41 @@ Arquitetura só é congelada quando a necessidade do BPT e evidência suficiente
 
 Prioridade quando fontes conflitarem: teste/código reproduzível → documentação oficial atual → standard → evidência externa confiável → inferência → preferência.
 
+## Migração e transplante de capacidades entre projetos
+
+O BPT1 (`igobritoti/bomprati`) é tratado como **donor de capacidades e evidência**, não como chassis técnico do BPT2. A existência de uma feature, biblioteca, tabela, serviço ou padrão no donor não cria requisito para o BPT2.
+
+Antes de implementar no BPT2 uma capacidade identificada no BPT1 ou em outro projeto de referência, o agente deve separar e registrar:
+
+1. **Problema de produto:** qual necessidade observável a capacidade resolve.
+2. **Comportamento comprovado no donor:** código, teste, documentação de fechamento ou execução que demonstre o que realmente existe; intenção documental isolada não basta para classificar como implementado.
+3. **Estado do BPT2:** capacidade equivalente já entregue, parcial, ausente ou deliberadamente adiada.
+4. **Evidência externa aplicável:** documentação oficial atual, standards, literatura técnica ou benchmark reproduzível que possa confirmar, restringir ou contradizer a solução do donor.
+5. **Alternativas:** inclusive não implementar, reutilizar capacidade já existente no BPT2 ou adotar solução diferente da usada no donor.
+6. **Riscos e trade-offs:** segurança, consistência, ownership, observabilidade, operação, custo, reversibilidade, dados e impacto em boundaries.
+7. **Menor hipótese testável:** o menor slice capaz de validar valor e correção sem transplantar arquitetura por sunk cost.
+8. **Decisão e confiança:** `TRAZER`, `VALIDAR ANTES`, `JÁ EXISTE`, `ADIAR` ou `DESCARTAR`, com classe A/B/C/D das afirmações relevantes.
+
+Uma implementação só deve ser promovida de `VALIDAR ANTES` para `TRAZER` quando houver evidência suficiente para definir um acceptance criterion verificável. Quando a decisão afetar arquitetura, atributos de qualidade ou for difícil de reverter, registrar ADR com contexto, alternativas, consequência e nível de confiança.
+
+Não copiar automaticamente do donor:
+
+- framework, ORM, autenticação, storage, deploy ou topologia;
+- schema e nomes de tabelas como contrato de domínio;
+- algoritmos de ranking/scoring sem workload e critérios explícitos;
+- integrações externas sem necessidade e contrato atuais;
+- testes que apenas reproduzem detalhes de implementação antiga.
+
+Preservar, quando sustentados por evidência:
+
+- comportamento de produto e invariantes;
+- contratos conceituais úteis;
+- casos negativos e regressões descobertos no donor;
+- datasets/fixtures legalmente utilizáveis e tecnicamente pertinentes;
+- critérios de aceitação independentes da implementação antiga.
+
+A validação específica desse processo fica em `QUALITY.md`. Fontes normativas e notas de referência ficam em `references/`.
+
 ## Task contract: outcome-first
 
 Prompts de implementação devem se parecer com uma GitHub Issue, não com um script de passos. O mínimo útil é:
