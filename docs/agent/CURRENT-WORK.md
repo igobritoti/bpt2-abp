@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0037 está fortalecendo a prova do ciclo Seller: o Seller Shell deve ser atravessado por um usuário comum auto-cadastrado, sem usar a identidade privilegiada `admin` no caminho positivo.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0037 foi concluído: o Seller Shell agora é provado por um usuário comum auto-cadastrado, atravessando SellerWeb Authorization Code + PKCE, SellerProfile, Draft e My Listings sem usar `admin` no caminho positivo.
 
-Próximo acceptance target: `self-registration → SellerWeb Authorization Code + PKCE → SellerProfile → Draft → My Listings` em banco fresco, preservando logout e sem regra/schema novo.
+Próximo acceptance target: escolher o próximo gap pós-MVP somente por evidência do repositório atual; não reabrir Public Discovery, Seller Hub, self-registration ou Seller Shell sem nova evidência de comportamento incompleto.
 
 ## Active plan
 
-[`../exec-plans/active/0037-self-registered-seller-shell.md`](../exec-plans/active/0037-self-registered-seller-shell.md)
+Nenhum.
 
 ## Source of runtime truth
 
@@ -29,12 +29,13 @@ Próximo acceptance target: `self-registration → SellerWeb Authorization Code 
 - Busca pública por identidade canônica: [`../exec-plans/completed/0034-public-vehicle-text-search.md`](../exec-plans/completed/0034-public-vehicle-text-search.md).
 - Auditoria de qualidade da busca pública: [`../exec-plans/completed/0035-public-search-quality-audit.md`](../exec-plans/completed/0035-public-search-quality-audit.md).
 - Prova HTTP de self-registration: [`../exec-plans/completed/0036-self-registration-http-proof.md`](../exec-plans/completed/0036-self-registration-http-proof.md).
+- Seller Shell com usuário auto-cadastrado: [`../exec-plans/completed/0037-self-registered-seller-shell.md`](../exec-plans/completed/0037-self-registered-seller-shell.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0037 é pós-MVP/hardening.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices permanecem pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 
