@@ -188,9 +188,9 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
 
         var boundedSkip = Math.Max(0, input.Skip);
         var boundedTake = Math.Clamp(input.Take, 1, 100);
+        var orderedListings = OrderListings(listings, input.Sort);
 
-        var rows = await listings
-            .OrderBy(x => x.Id)
+        var rows = await orderedListings
             .Skip(boundedSkip)
             .Take(boundedTake)
             .Select(x => new ListingRow(
@@ -209,6 +209,17 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
 
         var items = await ProjectRowsAsync(rows, cancellationToken);
         return new PagedResultDto<PublicListingDto>(totalCount, items);
+    }
+
+    private static IOrderedQueryable<Listing> OrderListings(IQueryable<Listing> listings, string? sort)
+    {
+        return sort?.Trim().ToLowerInvariant() switch
+        {
+            null or "" => listings.OrderBy(x => x.Id),
+            "price-asc" => listings.OrderBy(x => x.Price).ThenBy(x => x.Id),
+            "price-desc" => listings.OrderByDescending(x => x.Price).ThenBy(x => x.Id),
+            _ => throw new ArgumentException("Unsupported public listing sort.", nameof(sort))
+        };
     }
 
     private static PagedResultDto<PublicListingDto> EmptyPage() =>

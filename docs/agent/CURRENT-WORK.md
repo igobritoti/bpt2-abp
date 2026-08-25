@@ -6,14 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-A auditoria de prontidão do MVP (Plan 0027) está funcionalmente fechada:
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O primeiro slice pós-MVP priorizado por evidência também foi concluído:
 
-- `MVP-01` — carga operacional do catálogo canônico: resolvido pelo Plan 0028;
-- `MVP-02` — autoridade mínima de moderação: resolvido pelo Plan 0029.
+- Plan 0030 — descoberta pública agora suporta ordenação explícita por preço crescente/decrescente, antes da paginação, preservando `sort` na query string e mantendo `Id` como desempate determinístico.
 
-Não resta blocker funcional classificado como `BLOQUEIA MVP` pela auditoria 0027. Os gaps restantes daquela auditoria continuam classificados como pós-MVP até nova evidência justificar reclassificação.
+Ranking/relevância, recência e proximidade **não** foram classificados como resolvidos por esse slice.
 
-Próximo acceptance target: refetchar o `main` e priorizar o primeiro gap pós-MVP por evidência, sem promover backlog a requisito ou blocker por preferência.
+Próximo acceptance target: refetchar o `main` e priorizar o próximo gap pós-MVP por evidência de produto, preferindo o menor slice vertical que melhore um ciclo real sem antecipar infraestrutura ou política ainda não necessária.
 
 ## Active plan
 
@@ -27,12 +26,13 @@ Nenhum.
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
 - Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
 - Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
+- Ordenação pública por preço: [`../exec-plans/completed/0030-public-price-sort.md`](../exec-plans/completed/0030-public-price-sort.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Os próximos slices são pós-MVP até nova evidência justificar reclassificação.
 
 ## Update rule
 

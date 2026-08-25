@@ -10,6 +10,7 @@ on:
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/public-discovery-http-smoke.sh'
+      - 'scripts/public-price-sort-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/public-discovery-http-gate.yml'
 
@@ -43,8 +44,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.13.0'
-      - name: Syntax check Public Discovery smoke
-        run: bash -n scripts/public-discovery-http-smoke.sh
+      - name: Syntax check Public Discovery smokes
+        run: |
+          bash -n scripts/public-discovery-http-smoke.sh
+          bash -n scripts/public-price-sort-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -64,3 +67,5 @@ jobs:
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
       - name: Exercise public discovery over HTTP
         run: bash scripts/public-discovery-http-smoke.sh
+      - name: Exercise public price sort over HTTP
+        run: bash scripts/public-price-sort-http-smoke.sh

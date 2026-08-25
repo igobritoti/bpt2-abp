@@ -34,7 +34,8 @@
   font-weight: 700;
 }
 
-.discoveryForm input {
+.discoveryForm input,
+.discoveryForm select {
   width: 100%;
   min-width: 0;
   padding: 12px 13px;
@@ -45,7 +46,8 @@
   font: inherit;
 }
 
-.discoveryForm input:focus {
+.discoveryForm input:focus,
+.discoveryForm select:focus {
   outline: 2px solid #171717;
   outline-offset: 2px;
 }
