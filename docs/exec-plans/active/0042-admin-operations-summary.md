@@ -18,7 +18,7 @@ Evidência atual:
 
 - o Plan 0020 deixou explicitamente `dashboard/métricas` fora do primeiro hub administrativo;
 - `/admin` hoje é somente um conjunto de links e seu PageModel não consulta nenhum dado;
-- `IVehicleCatalogReader.GetAllIdsAsync` já expõe os Vehicles canônicos existentes;
+- `IVehicleCatalogReader.FindIdsAsync` com `VehicleCatalogSearchInput` sem filtros já retorna todos os `VehicleId` canônicos existentes;
 - `IModerationListingReportQuery.GetAsync` já expõe a fila/histórico read-only de reports sem PII Buyer;
 - `IIngestionCandidateAppService.GetPendingAsync` já expõe somente candidates ainda não reconciliados;
 - `/catalogo`, `/moderacao` e `/ingestao` continuam as superfícies operacionais autoritativas; o hub deve apenas resumir e navegar.
@@ -66,3 +66,4 @@ Evidência atual:
 - 2026-08-25: `main` remoto confirmado em `17125f30d0a0196def61f1516a9ddb8f360d147e`.
 - 2026-08-25: `/admin` confirmado como hub estático sem consulta de dados.
 - 2026-08-25: contracts existentes confirmados para Catalog, Moderation reports e Ingestion pending.
+- 2026-08-25: primeira rodada de CI revelou erro comum de compilação `CS1061` por uso de método inexistente `GetAllIdsAsync`; corrigido para `FindIdsAsync` sem filtros, comportamento confirmado na implementação atual de `VehicleCatalogReader`.
