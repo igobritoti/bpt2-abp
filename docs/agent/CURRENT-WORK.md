@@ -6,13 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0044 reconciliou `PRODUCT.md` com o estado entregue; o Plan 0045 foi concluído e fechou a inconsistência específica dessa superfície já entregue: Seller Hub e Vehicle Hub reutilizam a foto pública existente como preview Open Graph/Twitter quando há Listing publicado fotografado.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O trabalho corrente é pós-MVP e não implementa nova capacidade ainda: o Plan 0046 audita capacidades do BPT1 como donor, confronta o delta real no BPT2 com evidência externa atual e define testes/experimentos antes de qualquer promoção funcional.
 
-Próximo acceptance target: nenhum plano ativo.
+Próximo acceptance target: concluir a matriz BPT1 ↔ BPT2 ↔ benchmark externo com classificação `TRAZER`, `VALIDAR ANTES`, `JÁ EXISTE`, `ADIAR` ou `DESCARTAR`, e promover no máximo uma próxima capability somente se a evidência justificar.
 
 ## Active plan
 
-Nenhum plano ativo.
+[`../exec-plans/active/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/active/0046-bpt1-capability-roadmap-audit.md)
 
 ## Source of runtime truth
 
@@ -20,6 +20,7 @@ Nenhum plano ativo.
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Auditoria corrente BPT1 → BPT2: [`../exec-plans/active/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/active/0046-bpt1-capability-roadmap-audit.md).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
 - Catálogo canônico operacional: [`../exec-plans/completed/0028-admin-canonical-catalog.md`](../exec-plans/completed/0028-admin-canonical-catalog.md).
 - Autoridade mínima de moderação: [`../exec-plans/completed/0029-moderation-listing-authority.md`](../exec-plans/completed/0029-moderation-listing-authority.md).
@@ -44,7 +45,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. O Plan 0045 foi concluído e alterou apenas metadata social dos hubs públicos.
+Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0046 é deliberadamente investigativo: ausência de evidência suficiente para uma capability resulta em `VALIDAR ANTES`, `ADIAR` ou `DESCARTAR`, não em blocker do baseline.
 
 ## Update rule
 
