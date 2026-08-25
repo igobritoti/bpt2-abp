@@ -14,6 +14,7 @@ on:
       - 'scripts/ingestion-vehicle-lookup-http-smoke.sh'
       - 'scripts/admin-operations-hub-http-smoke.sh'
       - 'scripts/admin-operations-summary-http-smoke.sh'
+      - 'scripts/admin-global-navigation-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/product-api-gate.yml'
 
@@ -51,6 +52,7 @@ jobs:
           bash -n scripts/ingestion-vehicle-lookup-http-smoke.sh
           bash -n scripts/admin-operations-hub-http-smoke.sh
           bash -n scripts/admin-operations-summary-http-smoke.sh
+          bash -n scripts/admin-global-navigation-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed host identity and OpenIddict data
@@ -78,3 +80,5 @@ jobs:
         run: bash scripts/admin-operations-hub-http-smoke.sh
       - name: Exercise admin operations summary
         run: bash scripts/admin-operations-summary-http-smoke.sh
+      - name: Exercise admin global navigation
+        run: bash scripts/admin-global-navigation-http-smoke.sh
