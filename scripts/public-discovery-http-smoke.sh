@@ -128,6 +128,22 @@ if expected not in visible:
 PY
 }
 
+assert_vehicle_identity_query() {
+  local label="$1" term="$2"
+  curl --fail --silent --show-error --get "$WEB_BASE/" \
+    --data-urlencode "query=$term" \
+    -o "$FILTERED"
+  assert_visible_text "$FILTERED" '4 anúncio(s)'
+  for title in "$ALPHA_TITLE" "$BETA_TITLE" "$GAMMA_TITLE" "$DELTA_TITLE"; do
+    grep -Fq "$title" "$FILTERED" || { echo "$label vehicle query missing $title for term $term" >&2; exit 1; }
+  done
+  if grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+    echo "$label vehicle query leaked Draft for term $term" >&2
+    exit 1
+  fi
+  echo "PUBLIC_DISCOVERY_QUERY_VEHICLE_${label}: PASS"
+}
+
 dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nologo
 
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$API_LOG" 2>&1 &
@@ -152,17 +168,23 @@ status="$(request_json POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" "$PR
 
 status="$(request_json GET "/api/app/vehicle-catalog/$BPT_FIXTURE_VEHICLE_ID")"
 [[ "$status" == "200" ]] || { echo "Vehicle fixture lookup failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
-IFS=$'\t' read -r VEHICLE_BRAND VEHICLE_MODEL VEHICLE_YEAR < <(python3 - "$RESPONSE" <<'PY'
+IFS=$'\t' read -r VEHICLE_BRAND VEHICLE_MODEL VEHICLE_GENERATION VEHICLE_VERSION VEHICLE_YEAR < <(python3 - "$RESPONSE" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
-print(f"{data['brand']}\t{data['model']}\t{data.get('modelYear') or ''}")
+print(f"{data['brand']}\t{data['model']}\t{data.get('generation') or ''}\t{data['version']}\t{data.get('modelYear') or ''}")
 PY
 )
-[[ -n "$VEHICLE_BRAND" && -n "$VEHICLE_MODEL" && -n "$VEHICLE_YEAR" ]] || {
-  echo "Vehicle fixture must expose brand/model/modelYear for discovery proof" >&2
+[[ -n "$VEHICLE_BRAND" && -n "$VEHICLE_MODEL" && -n "$VEHICLE_GENERATION" && -n "$VEHICLE_VERSION" && -n "$VEHICLE_YEAR" ]] || {
+  echo "Vehicle fixture must expose brand/model/generation/version/modelYear for discovery proof" >&2
   exit 1
 }
+VEHICLE_MODEL_SUBSTRING="$(python3 - "$VEHICLE_MODEL" <<'PY'
+import sys
+value=sys.argv[1].strip().lower()
+print(value[1:-1] if len(value) > 4 else value)
+PY
+)"
 
 ALPHA_TITLE="Discovery Alpha"
 BETA_TITLE="Discovery Beta"
@@ -281,6 +303,25 @@ assert_visible_text "$FILTERED" '1 anúncio(s)'
 grep -Fq "$ALPHA_TITLE" "$FILTERED" || { echo "Query filter missing Alpha" >&2; exit 1; }
 if grep -Fq "$BETA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED"; then echo "Query filter leaked another listing" >&2; exit 1; fi
 echo "PUBLIC_DISCOVERY_QUERY: PASS"
+
+assert_vehicle_identity_query BRAND "$VEHICLE_BRAND"
+assert_vehicle_identity_query MODEL "$VEHICLE_MODEL_SUBSTRING"
+assert_vehicle_identity_query GENERATION "$VEHICLE_GENERATION"
+assert_vehicle_identity_query VERSION "$VEHICLE_VERSION"
+
+echo "PUBLIC_DISCOVERY_QUERY_VEHICLE_CASE_INSENSITIVE_SUBSTRING: PASS"
+
+curl --fail --silent --show-error --get "$WEB_BASE/" \
+  --data-urlencode "query=$VEHICLE_MODEL_SUBSTRING" \
+  --data-urlencode 'stateCode=pr' \
+  -o "$FILTERED"
+assert_visible_text "$FILTERED" '1 anúncio(s)'
+grep -Fq "$BETA_TITLE" "$FILTERED" || { echo "Vehicle query + state filter missing Beta" >&2; exit 1; }
+if grep -Fq "$ALPHA_TITLE" "$FILTERED" || grep -Fq "$GAMMA_TITLE" "$FILTERED" || grep -Fq "$DELTA_TITLE" "$FILTERED" || grep -Fq "$HIDDEN_TITLE" "$FILTERED"; then
+  echo "Vehicle query + exact state filter leaked another listing" >&2
+  exit 1
+fi
+echo "PUBLIC_DISCOVERY_QUERY_VEHICLE_COMBINED_FILTER: PASS"
 
 curl --fail --silent --show-error --get "$WEB_BASE/" \
   --data-urlencode 'minPrice=150000' \

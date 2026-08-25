@@ -177,7 +177,12 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
         if (!string.IsNullOrWhiteSpace(input.Query))
         {
             var normalized = input.Query.Trim().ToLowerInvariant();
-            listings = listings.Where(x => x.Title.ToLower().Contains(normalized));
+            var vehicleIds = await _vehicleCatalog.FindIdsByTextAsync(input.Query, cancellationToken);
+            listings = vehicleIds.Count == 0
+                ? listings.Where(x => x.Title.ToLower().Contains(normalized))
+                : listings.Where(x =>
+                    x.Title.ToLower().Contains(normalized)
+                    || vehicleIds.Contains(x.VehicleId));
         }
 
         var totalCount = await listings.LongCountAsync(cancellationToken);
