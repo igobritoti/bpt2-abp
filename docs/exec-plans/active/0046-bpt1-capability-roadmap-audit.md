@@ -130,6 +130,39 @@ Somente após os gates anteriores:
 
 A superfície deverá ser auditada diretamente quando houver fonte atual verificável suficiente. Conhecimento histórico ou benchmark antigo do BPT1 não será elevado a evidência atual sem revalidação.
 
+## Inventário BPT1 — checkpoint CP1 em andamento
+
+A inspeção do `main` do donor confirmou que o inventário precisa incluir capacidades de produto e também separar módulos internos que não são features do marketplace.
+
+### Evidência de execução do donor
+
+No head `04a9c264a841e67b28daa28f1564109a3178de79`, o CI `quality-gates` passou. O pipeline executa descoberta automática de todos os arquivos `*.test.*` e `*.spec.*` em `src/` e `scripts/`, seguida por lint, Prisma validate/generate, build, typecheck, migration deploy e runtime smoke. Portanto, a presença de teste no head atual somada a esse CI é evidência B de que o teste foi executado nesse baseline; não prova, por si só, que cada feature foi coberta end-to-end.
+
+### Capacidades confirmadas até aqui
+
+| Área BPT1 | Sinais no donor | Força atual | Leitura para o roadmap |
+|---|---|---|---|
+| Marketplace / anúncio / Seller | rotas públicas e Seller, módulos de anúncios, fluxo central do produto | implementado; CI do head verde | já coberto amplamente no BPT2; auditar apenas delta |
+| Catálogo / Vehicle Hub | módulos e rotas próprias; V2 aprofundou catálogo e grafo | implementado/testado em múltiplos blocos | BPT2 já tem Structure; enrichment continua candidato |
+| Comparador | `comparison`, `/comparar`, fechamento Task 093, testes específicos 2x/3x | forte A/B interna | candidato forte; ainda precisa delta/teste BPT2 |
+| Leads / CRM | módulo `leads`, telas Seller/admin, estados e métricas | implementado; parte testável no CI | BPT2 possui baseline mínimo; delta material provável |
+| Analytics / telemetry | módulos próprios, funil/acquisition/attribution, admin analytics | implementado; CI do head verde | candidato instrumental para validar outras features |
+| Promotions / ranking pago | módulo em anúncios, tipos e eventos | implementado; CI do head verde | candidato comercial; precisa hipótese e fairness/transparência |
+| Retenção / notificações | price drop, weekly seller report, lead stagnation | implementado no código | separar mecanismo técnico de valor de produto; validar opt-in/dedup |
+| Compra Assistida | rota `/compra-assistida`, módulo dedicado, actions/schema/services e vários testes | implementado e testado no head | feature real do donor, mas PRODUCT_DEFINITION a mantém complementar; VALIDAR ANTES |
+| Credits | ledger, serviços, tipos e `credits.test.ts` | implementado e testado no head | mecanismo comercial interno; não promover sem caso de uso BPT2 |
+| Payments | módulo dedicado e superfícies admin | implementado | fora do núcleo BPT2; ADIAR |
+| Moderation | módulo e auditoria própria | implementado | BPT2 já possui baseline; revisar apenas extensões comprovadas |
+| SEO | módulo e tarefas/auditorias específicas | implementado | BPT2 já cobre baseline; revisar apenas gaps reais |
+| Similar vehicles / upgrade suggestions | módulos e componentes específicos | implementado | VALIDAR ANTES com dataset/métrica |
+| Vehicle Knowledge / safety / equipment / market position | scripts de audit/backfill/enrichment, UI e métricas | implementado com forte investimento no donor | candidato de enrichment; provenance/confidence obrigatórios no BPT2 |
+| Planner | contratos de work-unit e testes | implementado/testado | tooling interno; não é feature de produto a migrar |
+| Argus Core | runner/lock/report/execution e extensa suíte de testes | implementado/testado | infraestrutura/agente interno; não entra no roadmap funcional por existência |
+
+### Regra derivada deste checkpoint
+
+Módulos como `planner` e `argus-core` não devem aparecer como funcionalidades candidatas apenas porque existem e são bem testados. O inventário funcional deve filtrar tooling, harness e infraestrutura interna antes do cruzamento BPT1 ↔ BPT2. `credits` também deve ser tratado como mecanismo subordinado a uma tese comercial, não como feature autônoma obrigatória.
+
 ## Candidatas que podem surgir durante a auditoria
 
 Novas capacidades podem entrar no roadmap se forem observadas no BPT1, em benchmarks externos ou como lacuna necessária para testar outra capacidade. Exemplos plausíveis, ainda não decididos:
@@ -185,6 +218,8 @@ O plano pode ser concluído quando:
 - 2026-08-25 — encontrados no BPT1: comparador 2x/3x, CRM/pipeline, analytics/atribuição, promotions, retenção por email, Vehicle Knowledge, similares e upgrade suggestions.
 - 2026-08-25 — benchmark externo inicial confirmou comparador/filtros/busca generativa/destaques na Webmotors e favoritos/buscas salvas/alertas/localização/destaques na OLX.
 - 2026-08-25 — protocolo de donor migration e validação baseado em evidência preparado no PR #66.
+- 2026-08-25 — CI atual do BPT1 confirmado verde no head `04a9c264...`; deterministic tests descobrem automaticamente toda suíte em `src/` e `scripts/`.
+- 2026-08-25 — inventário estrutural adicionou Compra Assistida, Credits, Planner e Argus Core; Planner/Argus classificados como tooling interno, não funcionalidades candidatas.
 
 ## Decision log
 
@@ -192,3 +227,4 @@ O plano pode ser concluído quando:
 - 2026-08-25 — roadmap é de investigação e promoção por evidência, não backlog contratual de features.
 - 2026-08-25 — benchmark de concorrente é evidência de possibilidade/uso de mercado, nunca requisito por si só.
 - 2026-08-25 — cada capacidade funcional promovida após este plano deverá receber execution plan separado.
+- 2026-08-25 — teste existente no donor + CI verde prova execução do teste no donor; não autoriza transplantar a implementação nem substitui teste do comportamento no BPT2.
