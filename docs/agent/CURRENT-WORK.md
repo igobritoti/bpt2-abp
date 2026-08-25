@@ -6,9 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 foi concluído: o usuário `admin` agora alcança o hub `/admin` pelo menu principal nativo do host ABP/LeptonXLite via `Operações`, enquanto usuário autenticado sem role `admin` não recebe esse item; a autorização server-side existente permanece a autoridade.
+Os blockers funcionais do MVP identificados no Plan 0027 continuam fechados. O Plan 0043 concluiu a navegação global administrativa nativa (`Operações → /admin`) e o Plan 0044 reconciliou `PRODUCT.md` com o estado realmente entregue até esse ponto, removendo drift capaz de induzir reimplementação de capacidades já concluídas.
 
-Próximo acceptance target: após o merge do Plan 0043, refetch de `main` e seleção do próximo gap pós-MVP por evidência explícita. Não promover permissões granulares, frontend admin separado, CRM, ranking, infraestrutura ou regra comercial sem necessidade comprovada.
+Próximo acceptance target: selecionar o próximo gap de produto somente por nova evidência explícita. Não promover permissões granulares, frontend admin separado, CRM, ranking, enrichment, automação de ingestion ou infraestrutura apenas porque permanecem no produto-alvo.
 
 ## Active plan
 
@@ -17,6 +17,7 @@ Nenhum.
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
+- Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Auditoria de prontidão do MVP: [`../exec-plans/completed/0027-mvp-readiness-audit.md`](../exec-plans/completed/0027-mvp-readiness-audit.md).
@@ -36,12 +37,13 @@ Nenhum.
 - Lookup de Vehicle canônico na Ingestion: [`../exec-plans/completed/0041-ingestion-vehicle-lookup.md`](../exec-plans/completed/0041-ingestion-vehicle-lookup.md).
 - Resumo operacional administrativo: [`../exec-plans/completed/0042-admin-operations-summary.md`](../exec-plans/completed/0042-admin-operations-summary.md).
 - Navegação global administrativa: [`../exec-plans/completed/0043-admin-global-navigation.md`](../exec-plans/completed/0043-admin-global-navigation.md).
+- Reconciliação do estado canônico de produto: [`../exec-plans/completed/0044-product-state-reconciliation.md`](../exec-plans/completed/0044-product-state-reconciliation.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional aberto da auditoria MVP 0027. O Plan 0043 foi pós-MVP e alterou somente descoberta/navegação do host.
+Nenhum blocker funcional aberto da auditoria MVP 0027. Nenhuma dívida técnica material registrada. Nenhum execution plan de produto ativo.
 
 ## Update rule
 
