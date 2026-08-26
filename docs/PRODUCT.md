@@ -15,6 +15,7 @@ Bom Pra Ti é um marketplace/classificados automotivo brasileiro. O núcleo do p
 - busca e filtros;
 - detalhe público do anúncio;
 - favoritos;
+- buscas salvas;
 - leads e contato/WhatsApp;
 - moderação;
 - promoções;
@@ -76,12 +77,15 @@ Regras consolidadas:
 
 O ciclo Buyer público/autenticado está comprovado por HTTP real:
 
-`discovery → detalhe público → foto → favorito/sinalização opcional → WhatsApp → Lead persistido`
+`discovery → detalhe público → foto → favorito/busca salva/sinalização opcional → WhatsApp → Lead persistido`
 
 Regras consolidadas:
 
-- Favorites e ListingReports pertencem ao usuário autenticado derivado no servidor;
+- Favorites, SavedSearches e ListingReports pertencem ao usuário autenticado derivado no servidor;
 - usuário auto-cadastrado consegue completar Favorites e ListingReports;
+- Saved Search persiste somente critérios semânticos já suportados pela busca pública e permite listar/excluir apenas itens do próprio Buyer;
+- critérios equivalentes são deduplicados; `Skip`, `Take`, página e `Sort` não compõem a identidade da busca salva;
+- busca salva reabre resultados pelos filtros públicos atuais e não introduz matching privado, alerta, job ou canal de entrega por si só;
 - contato WhatsApp pode ser anônimo; se já existir sessão Buyer válida, o Lead preserva o `UserId` autenticado sem tornar login obrigatório;
 - token Buyer permanece restrito ao boundary same-origin/public-web → API BPT e nunca é enviado ao WhatsApp;
 - novo Lead ou ListingReport só nasce para Listing atualmente público;
@@ -98,6 +102,7 @@ Capacidades comprovadas:
 - filtros combinados, paginação e preservação de estado pela query string;
 - ordenação pública por preço;
 - zero-results explícito;
+- salvar a intenção semântica da busca para Buyer autenticado e reabrir resultados;
 - detalhe público, galeria e CTA de WhatsApp;
 - Seller Hub público;
 - Vehicle Hub público;
@@ -179,8 +184,9 @@ A role `admin` continua suficiente para o baseline atual. Permissões administra
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - Seller e Buyer usam clientes OIDC públicos dedicados com Authorization Code + PKCE.
-- Favorite, ListingReport e ownership Seller derivam identidade do servidor; o browser não escolhe owner.
+- Favorite, SavedSearch, ListingReport e ownership Seller derivam identidade do servidor; o browser não escolhe owner.
 - A busca pública preserva query string como estado compartilhável e não expõe Draft/private.
+- Saved Search não persiste paginação/ordenação como identidade semântica e não implica alerta automaticamente.
 - City/StateCode são filtros textuais canônicos atuais; isso não implica geocoding, radius ou autoridade geográfica nova.
 - WhatsApp canônico pertence a Sellers e o Lead é persistido antes do redirect externo.
 - Lead já ocorrido é histórico e não desaparece quando o Listing deixa de ser público.
@@ -194,16 +200,18 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 ## Slice ativo
 
-Nenhum execution plan de produto está ativo após o fechamento do Plan 0043. O Plan 0044 apenas reconcilia esta documentação canônica com o produto já entregue e não cria capacidade nova.
+O Plan 0049 permanece ativo para concluir progressivamente as capabilities pós-MVP.
 
-O próximo slice de produto deve ser escolhido como o menor gap real por evidência, sem presumir continuação de discovery, administração, SEO, Vehicle Hub, Ingestion, moderação ou qualquer candidato específico.
+O Saved Search baseline está entregue. A próxima boundary é testar o contrato mínimo de **alerta de nova oferta compatível** reutilizando a intenção persistida da busca salva. Isso não autoriza presumir background job, scheduler, provider ou canal antes de provar o requisito.
+
+Comparator continua bloqueado por enrichment técnico publicado suficiente do Podium; esse blocker não impede a trilha independente de retenção Buyer.
 
 ## Decisões ainda abertas
 
 Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente:
 
 - analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas, exportação e resolução de perfil/PII Buyer para Leads;
-- perfil Buyer, alertas e extensões de Favorites;
+- perfil Buyer, alertas de nova oferta compatível, price-drop e preferências/opt-in/unsubscribe;
 - taxonomia/motivo de denúncia, workflow multiestado, scoring e notificações de moderação;
 - permissões administrativas granulares e eventual frontend admin separado;
 - geração dedicada de social image, landing pages, estratégia editorial/keywords, Search Console/analytics e ranking SEO/search;

@@ -29,6 +29,7 @@ Este plano usa três entradas:
 
 - Seller/Listing lifecycle baseline;
 - Favorites;
+- Saved Search baseline para Buyer autenticado;
 - Buyer contact/WhatsApp → Lead;
 - Lead mínimo `Novo/Atendido/Fechado` com outcome `Won/Lost`;
 - moderação mínima humana;
@@ -77,10 +78,12 @@ Primeiro slice deve usar apenas atributos que tenham autoridade/provenance sufic
 
 Investigar/implementar por menor prova:
 
-1. Saved Search semantic criteria (sem persistir Skip/Take);
-2. alertas de nova oferta compatível;
-3. price-drop de Favorite/listing quando existir versionamento seguro de preço;
-4. preferências/opt-in/dedup/unsubscribe.
+1. [x] Saved Search semantic criteria (sem persistir Skip/Take/Sort);
+2. [ ] alertas de nova oferta compatível;
+3. [ ] price-drop de Favorite/listing quando existir versionamento seguro de preço;
+4. [ ] preferências/opt-in/dedup/unsubscribe.
+
+O Saved Search fechado persiste somente filtros semânticos já suportados pela busca pública, deriva ownership do Buyer autenticado, deduplica critérios equivalentes e reabre resultados pelos filtros públicos atuais. Paginação/ordenação não fazem parte da identidade salva. Alertas, jobs e canal de entrega não foram introduzidos nesse slice.
 
 ### Bloco D — Promotions
 
@@ -166,15 +169,16 @@ Preferir: alto valor + alta dependência desbloqueada + baixo/medio risco + test
 
 ## Próxima decisão operacional
 
-Checkpoint executado em `docs/audits/2026-08-25-post-0048-capability-implementation-matrix.md`.
+Checkpoint inicial executado em `docs/audits/2026-08-25-post-0048-capability-implementation-matrix.md`.
 
-Resultado:
+Resultado atualizado:
 
 - o identity contract Podium `2.0` é suficiente para mapping de identidade, mas não congela ficha técnica ampla;
 - enrichment interno verificado do Podium ainda não constitui um read contract técnico suficiente para um Comparador útil;
-- iniciar Comparador agora foi **REPROVADO** para evitar matriz pobre ou Listing fallback;
-- próximo slice recomendado: **publication mapping + enrichment read contract mínimo Podium → BPT2**;
-- se houver blocker material externo no Podium, avançar para **Saved Search** como gap independente e retornar depois.
+- iniciar Comparador agora permanece **REPROVADO** para evitar matriz pobre ou Listing fallback;
+- o fallback independente **Saved Search** foi implementado e comprovado por Fresh Migration, Public Web e smoke HTTP autenticado;
+- próxima boundary do BPT2: **testar o contrato mínimo de alerta de nova oferta compatível**, reutilizando Saved Search como intenção persistida, antes de escolher job scheduler/provider/canal;
+- o teste deve separar matching determinístico, estado de processamento/dedup, opt-in/unsubscribe e delivery; infraestrutura assíncrona não é requisito presumido.
 
 ## Critérios de aceite do Plan 0049
 
@@ -193,6 +197,7 @@ Resultado:
 - 2026-08-25 — intenção de produto registrada: >=90% das capabilities úteis/elegíveis do Carros na Web, ambição 100%.
 - 2026-08-25 — cobertura do benchmark não autoriza cópia técnica/conteúdo nem implementação sem custo/valor/provenance.
 - 2026-08-25 — identity contract Podium atual não é confundido com ficha técnica; Comparador continua atrás de enrichment publicado suficiente.
+- 2026-08-25 — Saved Search definido como critérios semânticos da busca pública pertencentes ao Buyer; `Skip`/`Take`/página/`Sort` não compõem identidade, e alertas/jobs/delivery ficam fora desse slice.
 
 ## Progress log
 
@@ -201,3 +206,4 @@ Resultado:
 - 2026-08-25 — Plan 0048 provou boundary Podium e fixture de projection/replay/redirect/cardinality.
 - 2026-08-25 — Plan 0049 aberto para concluir o restante do roadmap por blocos funcionais.
 - 2026-08-25 — primeira matriz pós-0048 concluída; próximo slice selecionado como publication mapping + enrichment contract mínimo.
+- 2026-08-25 — blocker externo do enrichment acionou o fallback independente; Saved Search baseline implementado com persistência, ownership server-side, dedup semântico, round-trip na public web e smoke HTTP; head funcional fechou 18/18 workflows verdes antes do closeout documental.
