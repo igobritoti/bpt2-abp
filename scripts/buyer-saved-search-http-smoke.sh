@@ -22,8 +22,8 @@ expected={
  '/api/app/saved-search':'post',
  '/api/app/saved-search/mine':'get',
  '/api/app/saved-search/{id}':'delete',
- '/api/app/saved-search/set-alert-enabled/{id}':'post',
- '/api/app/saved-search/matches/{id}':'get',
+ '/api/app/saved-search/{id}/set-alert-enabled':'post',
+ '/api/app/saved-search/{id}/matches':'get',
  '/api/app/saved-search-alert-detection/evaluate/{listingId}':'post',
 }
 for path,verb in expected.items():
@@ -135,23 +135,23 @@ PY
 
 # Disabled search and Draft listing both fail closed.
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Draft detection expected 0 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-status="$(request POST "/api/app/saved-search/set-alert-enabled/$ALERT_ID?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Enable alert failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Enable alert failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 python3 - "$RESPONSE" <<'PY'
 import json,sys; assert json.load(open(sys.argv[1]))['alertEnabled'] is True
 PY
-status="$(request POST "/api/app/saved-search/set-alert-enabled/$INCOMPATIBLE_ID?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+status="$(request POST "/api/app/saved-search/$INCOMPATIBLE_ID/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Enabled Draft detection expected 0 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'BUYER_SAVED_SEARCH_ALERT_DRAFT_BLOCKED: PASS'
 
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Publish failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 1 ]] || { echo "Published detection expected one new match got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Replay detection expected zero new matches got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-status="$(request GET "/api/app/saved-search/matches/$ALERT_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+status="$(request GET "/api/app/saved-search/$ALERT_ID/matches" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$ALERT_ID" "$LISTING_ID" <<'PY'
 import json,sys
 x=json.load(open(sys.argv[1])); assert len(x)==1,x; assert x[0]['savedSearchId']==sys.argv[2] and x[0]['listingId']==sys.argv[3],x
 PY
-status="$(request GET "/api/app/saved-search/matches/$INCOMPATIBLE_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Incompatible search unexpectedly matched" >&2; cat "$RESPONSE"; exit 1; }
+status="$(request GET "/api/app/saved-search/$INCOMPATIBLE_ID/matches" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Incompatible search unexpectedly matched" >&2; cat "$RESPONSE"; exit 1; }
 echo 'BUYER_SAVED_SEARCH_ALERT_PUBLIC_MATCH_AND_FILTERS: PASS'
 
 status="$(request POST "/api/app/listing-command/pause/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
@@ -159,9 +159,9 @@ status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TO
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Republish must not duplicate match" >&2; cat "$RESPONSE"; exit 1; }
 echo 'BUYER_SAVED_SEARCH_ALERT_REPUBLISH_IDEMPOTENT: PASS'
 
-status="$(request GET "/api/app/saved-search/matches/$ALERT_ID" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign matches read expected 404 got $status" >&2; exit 1; }
-status="$(request POST "/api/app/saved-search/set-alert-enabled/$ALERT_ID?enabled=false" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign alert control expected 404 got $status" >&2; exit 1; }
-status="$(request POST "/api/app/saved-search/set-alert-enabled/$ALERT_ID?enabled=false" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+status="$(request GET "/api/app/saved-search/$ALERT_ID/matches" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign matches read expected 404 got $status" >&2; exit 1; }
+status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=false" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign alert control expected 404 got $status" >&2; exit 1; }
+status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=false" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" <<'PY'
 import json,sys; assert json.load(open(sys.argv[1]))['alertEnabled'] is False
 PY
