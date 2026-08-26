@@ -53,6 +53,7 @@ PY
   status="$(request POST '/api/account/register' '' "$body")"
   [[ "$status" == 200 || "$status" == 201 ]] || { echo "Register failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 }
+fixture(){ dotnet run --project "$ROOT/tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj" --configuration Release --no-build -- "$@" | tail -n 1; }
 
 ADMIN_TOKEN="$(token_for admin '1q2w3E*')"
 BODY_ONE='{"brand":" Honda ","model":" Civic ","city":" São Paulo ","stateCode":"sp","minModelYear":2020,"maxModelYear":2025,"minPrice":80000,"maxPrice":160000,"minMileageKm":0,"maxMileageKm":80000,"query":" Turbo "}'
@@ -63,7 +64,7 @@ status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$BODY_ONE")"; [[ 
 FIRST_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys
 x=json.load(open(sys.argv[1])); assert x['brand']=='Honda' and x['model']=='Civic' and x['city']=='São Paulo' and x['stateCode']=='SP' and x['query']=='Turbo',x
-assert x['alertEnabled'] is False,x
+assert x['alertEnabled'] is False and x['alertEnabledAtUtc'] is None,x
 assert 'sort' not in x and 'skip' not in x and 'take' not in x,x
 print(x['id'])
 PY
@@ -92,13 +93,29 @@ register_user "$OTHER_USER" "$OTHER_PASSWORD"
 OTHER_TOKEN="$(token_for "$OTHER_USER" "$OTHER_PASSWORD")"
 status="$(request GET '/api/app/saved-search/mine' "$OTHER_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Saved search leaked to another Buyer" >&2; cat "$RESPONSE"; exit 1; }
 status="$(request DELETE "/api/app/saved-search/$FIRST_ID" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign delete expected 404 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-status="$(request GET '/api/app/saved-search/mine' "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
-python3 - "$RESPONSE" <<'PY'
-import json,sys; assert len(json.load(open(sys.argv[1])))==1
-PY
 echo 'BUYER_SAVED_SEARCH_OWNERSHIP: PASS'
 
-# Alert contract: opt-in is explicit and detection is separate from delivery/provider.
+request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Saved Search Alert Fixture","whatsAppNumber":"5511999992222"}' >/dev/null
+create_listing(){
+  local title="$1"
+  local body status
+  body="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" "$title" <<'PY'
+import json,sys
+print(json.dumps({'vehicleId':sys.argv[1],'title':sys.argv[2],'price':123000,'description':'Fixture de alerta de nova oferta','manufactureYear':2024,'mileageKm':9000,'color':'Prata','city':'São Paulo','stateCode':'SP'}))
+PY
+)"
+  status="$(request POST '/api/app/listing-command' "$ADMIN_TOKEN" "$body")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Listing create failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+  python3 - "$RESPONSE" <<'PY'
+import json,sys; print(json.load(open(sys.argv[1]))['id'])
+PY
+}
+
+# Mechanical UoW rollback probe: both the Published write and durable request are flushed, then the UoW is abandoned.
+ROLLBACK_LISTING_ID="$(create_listing 'Saved Search Trigger Rollback Fixture')"
+[[ "$(fixture alert-trigger-rollback "$ROLLBACK_LISTING_ID")" == 'ROLLBACK_STAGED' ]] || { echo 'Rollback fixture did not stage trigger' >&2; exit 1; }
+[[ "$(fixture alert-trigger-state "$ROLLBACK_LISTING_ID")" == 'Draft|0|pending' ]] || { echo 'Listing/request did not rollback atomically' >&2; exit 1; }
+echo 'BUYER_SAVED_SEARCH_ALERT_TRIGGER_ROLLBACK: PASS'
+
 MATCH_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
 print(json.dumps({'vehicleId':sys.argv[1],'city':'São Paulo','stateCode':'SP','maxPrice':150000,'maxMileageKm':20000}))
@@ -107,7 +124,7 @@ PY
 status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$MATCH_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Alert search create failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 ALERT_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys
-x=json.load(open(sys.argv[1])); assert x['alertEnabled'] is False,x; print(x['id'])
+x=json.load(open(sys.argv[1])); assert x['alertEnabled'] is False and x['alertEnabledAtUtc'] is None,x; print(x['id'])
 PY
 )"
 INCOMPATIBLE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
@@ -120,42 +137,63 @@ INCOMPATIBLE_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys; print(json.load(open(sys.argv[1]))['id'])
 PY
 )"
-
-request POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Saved Search Alert Fixture","whatsAppNumber":"5511999992222"}' >/dev/null
-CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
+OPTOUT_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
-print(json.dumps({'vehicleId':sys.argv[1],'title':'Saved Search Alert Fixture Turbo','price':123000,'description':'Fixture de alerta de nova oferta','manufactureYear':2024,'mileageKm':9000,'color':'Prata','city':'São Paulo','stateCode':'SP'}))
+print(json.dumps({'vehicleId':sys.argv[1],'city':'São Paulo','stateCode':'SP','maxPrice':148000,'maxMileageKm':20000}))
 PY
 )"
-status="$(request POST '/api/app/listing-command' "$ADMIN_TOKEN" "$CREATE_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Alert Listing create failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
-LISTING_ID="$(python3 - "$RESPONSE" <<'PY'
+status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$OPTOUT_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || exit 1
+OPTOUT_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys; print(json.load(open(sys.argv[1]))['id'])
 PY
 )"
 
-# Disabled search and Draft listing both fail closed.
+LISTING_ID="$(create_listing 'Saved Search Alert Fixture Turbo')"
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Draft detection expected 0 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Enable alert failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
-python3 - "$RESPONSE" <<'PY'
-import json,sys; assert json.load(open(sys.argv[1]))['alertEnabled'] is True
+for id in "$ALERT_ID" "$INCOMPATIBLE_ID" "$OPTOUT_ID"; do
+  status="$(request POST "/api/app/saved-search/$id/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+  python3 - "$RESPONSE" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1])); assert x['alertEnabled'] is True and x['alertEnabledAtUtc'] is not None,x
 PY
-status="$(request POST "/api/app/saved-search/$INCOMPATIBLE_ID/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+done
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Enabled Draft detection expected 0 got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo 'BUYER_SAVED_SEARCH_ALERT_DRAFT_BLOCKED: PASS'
 
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || { echo "Publish failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
-status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 1 ]] || { echo "Published detection expected one new match got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+[[ "$(fixture alert-trigger-state "$LISTING_ID")" == 'Published|1|pending' ]] || { echo 'Publish did not commit exactly one pending detection request' >&2; exit 1; }
+
+# A matching search enabled only after publication must not receive a retroactive "new offer" alert.
+LATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
+import json,sys
+print(json.dumps({'vehicleId':sys.argv[1],'city':'São Paulo','stateCode':'SP','maxPrice':149000,'maxMileageKm':20000}))
+PY
+)"
+status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$LATE_BODY")"; [[ "$status" == 200 || "$status" == 201 ]] || exit 1
+LATE_ID="$(python3 - "$RESPONSE" <<'PY'
+import json,sys; print(json.load(open(sys.argv[1]))['id'])
+PY
+)"
+status="$(request POST "/api/app/saved-search/$LATE_ID/set-alert-enabled?enabled=true" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+status="$(request POST "/api/app/saved-search/$OPTOUT_ID/set-alert-enabled?enabled=false" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+
+status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 1 ]] || { echo "Published detection expected one eligible new match got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+[[ "$(fixture alert-trigger-state "$LISTING_ID")" == 'Published|1|processed' ]] || { echo 'Processor did not mark durable request processed' >&2; exit 1; }
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Replay detection expected zero new matches got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+
 status="$(request GET "/api/app/saved-search/$ALERT_ID/matches" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$ALERT_ID" "$LISTING_ID" <<'PY'
 import json,sys
 x=json.load(open(sys.argv[1])); assert len(x)==1,x; assert x[0]['savedSearchId']==sys.argv[2] and x[0]['listingId']==sys.argv[3],x
 PY
-status="$(request GET "/api/app/saved-search/$INCOMPATIBLE_ID/matches" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Incompatible search unexpectedly matched" >&2; cat "$RESPONSE"; exit 1; }
-echo 'BUYER_SAVED_SEARCH_ALERT_PUBLIC_MATCH_AND_FILTERS: PASS'
+for id in "$INCOMPATIBLE_ID" "$OPTOUT_ID" "$LATE_ID"; do
+  status="$(request GET "/api/app/saved-search/$id/matches" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Ineligible search unexpectedly matched: $id" >&2; cat "$RESPONSE"; exit 1; }
+done
+echo 'BUYER_SAVED_SEARCH_ALERT_PUBLIC_MATCH_AND_TEMPORAL_FILTERS: PASS'
 
 status="$(request POST "/api/app/listing-command/pause/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 status="$(request POST "/api/app/listing-command/publish/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
+[[ "$(fixture alert-trigger-state "$LISTING_ID")" == 'Published|1|processed' ]] || { echo 'Republish created another detection request' >&2; exit 1; }
 status="$(request POST "/api/app/saved-search-alert-detection/evaluate/$LISTING_ID" "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == 0 ]] || { echo "Republish must not duplicate match" >&2; cat "$RESPONSE"; exit 1; }
 echo 'BUYER_SAVED_SEARCH_ALERT_REPUBLISH_IDEMPOTENT: PASS'
 
@@ -163,11 +201,12 @@ status="$(request GET "/api/app/saved-search/$ALERT_ID/matches" "$OTHER_TOKEN")"
 status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=false" "$OTHER_TOKEN")"; [[ "$status" == 404 ]] || { echo "Foreign alert control expected 404 got $status" >&2; exit 1; }
 status="$(request POST "/api/app/saved-search/$ALERT_ID/set-alert-enabled?enabled=false" "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" <<'PY'
-import json,sys; assert json.load(open(sys.argv[1]))['alertEnabled'] is False
+import json,sys
+x=json.load(open(sys.argv[1])); assert x['alertEnabled'] is False and x['alertEnabledAtUtc'] is None,x
 PY
 echo 'BUYER_SAVED_SEARCH_ALERT_OWNERSHIP_AND_OPTOUT: PASS'
 
-for id in "$FIRST_ID" "$ALERT_ID" "$INCOMPATIBLE_ID"; do
+for id in "$FIRST_ID" "$ALERT_ID" "$INCOMPATIBLE_ID" "$OPTOUT_ID" "$LATE_ID"; do
   status="$(request DELETE "/api/app/saved-search/$id" "$ADMIN_TOKEN")"; [[ "$status" == 200 || "$status" == 204 ]] || { cat "$RESPONSE"; exit 1; }
 done
 status="$(request GET '/api/app/saved-search/mine' "$ADMIN_TOKEN")"; [[ "$status" == 200 && "$(cat "$RESPONSE")" == '[]' ]] || { cat "$RESPONSE"; exit 1; }

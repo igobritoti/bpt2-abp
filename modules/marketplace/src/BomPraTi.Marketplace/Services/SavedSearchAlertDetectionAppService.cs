@@ -23,6 +23,13 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
 
     public async Task<int> EvaluateAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
+        var request = await _dbContext.SavedSearchAlertDetectionRequests
+            .SingleOrDefaultAsync(x => x.ListingId == listingId, cancellationToken);
+        if (request is null || request.ProcessedAtUtc.HasValue)
+        {
+            return 0;
+        }
+
         if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
         {
             return 0;
@@ -30,13 +37,11 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
 
         var savedSearches = await _dbContext.SavedSearches
             .AsNoTracking()
-            .Where(x => x.AlertEnabled)
+            .Where(x => x.AlertEnabled
+                && x.AlertEnabledAtUtc.HasValue
+                && x.AlertEnabledAtUtc.Value <= request.EnqueuedAtUtc)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
-        if (savedSearches.Count == 0)
-        {
-            return 0;
-        }
 
         var existing = await _dbContext.SavedSearchAlertMatches
             .AsNoTracking()
@@ -66,11 +71,8 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
             added++;
         }
 
-        if (added > 0)
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-
+        request.MarkProcessed(detectedAtUtc);
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return added;
     }
 

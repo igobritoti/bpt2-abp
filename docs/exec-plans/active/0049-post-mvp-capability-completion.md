@@ -10,7 +10,7 @@ Este plano usa três entradas:
 
 1. estado realmente entregue no BPT2;
 2. matriz BPT1 → BPT2 concluída no Plan 0046;
-3. nova meta estratégica de cobertura funcional do Carros na Web (>=90% das capabilities elegíveis; ambição 100%).
+3. meta estratégica de cobertura funcional do Carros na Web (>=90% das capabilities elegíveis; ambição 100%).
 
 ## Princípios de implementação
 
@@ -21,9 +21,9 @@ Este plano usa três entradas:
 5. **BPT1 é donor, não chassis.** Reutilizar comportamento/contrato/teste somente quando provar valor.
 6. **Benchmark não é requisito automático.** Carros na Web/Webmotors/OLX/iCarros orientam inventário; promoção exige fit, dados, custo e teste.
 7. **Instrumentação acompanha hipótese.** Não construir analytics amplo sem pergunta/decisão concreta.
-8. **Dados desconhecidos permanecem desconhecidos.** Nunca inferir ficha/equipamento/ausência a partir de Listing ou texto quando a autoridade canônica não sustenta.
+8. **Dados desconhecidos permanecem desconhecidos.** Nunca inferir ficha/equipamento/ausência quando a autoridade canônica não sustenta.
 9. **Evitar irreversibilidade prematura.** Monorepo, migração Python→.NET, microservice, broker, engine externa e shared database ficam adiados até requisito medido.
-10. **Custo recorrente conta.** Provider, moderação, dados, suporte, observabilidade e manutenção entram no custo da capability, não apenas horas de desenvolvimento.
+10. **Custo recorrente conta.** Provider, moderação, dados, suporte, observabilidade e manutenção entram no custo da capability.
 
 ## Estado já fechado
 
@@ -31,6 +31,7 @@ Este plano usa três entradas:
 - Favorites;
 - Saved Search baseline para Buyer autenticado;
 - contrato mínimo de detecção de nova oferta compatível — opt-in explícito, semântica pública compartilhada e ledger idempotente;
+- gatilho transacional de detecção — request local durável única por Listing no UoW de publicação, rollback e replay comprovados;
 - Buyer contact/WhatsApp → Lead;
 - Lead mínimo `Novo/Atendido/Fechado` com outcome `Won/Lost`;
 - moderação mínima humana;
@@ -61,7 +62,7 @@ Não escopo inicial: bulk de todo catálogo, HTTP síncrono, shared DB, fuzzy re
 
 ### Bloco B — Comparador 2–4 veículos
 
-Pré-condição: Grupo mínimo de enrichment comparável aprovado.
+Pré-condição: grupo mínimo de enrichment comparável aprovado.
 
 Contrato já decidido:
 
@@ -80,13 +81,15 @@ Primeiro slice deve usar apenas atributos que tenham autoridade/provenance sufic
 Investigar/implementar por menor prova:
 
 1. [x] Saved Search semantic criteria (sem persistir Skip/Take/Sort);
-2. [~] alertas de nova oferta compatível — **detecção/opt-in/dedup comprovados; trigger confiável e delivery pendentes**;
+2. [~] alertas de nova oferta compatível — **detecção, opt-in, dedup e trigger transacional comprovados; runner automático e delivery pendentes**;
 3. [ ] price-drop de Favorite/listing quando existir versionamento seguro de preço;
 4. [ ] preferências/opt-in/dedup/unsubscribe além do estado mínimo já provado para alertas.
 
 O Saved Search fechado persiste somente filtros semânticos já suportados pela busca pública, deriva ownership do Buyer autenticado, deduplica critérios equivalentes e reabre resultados pelos filtros públicos atuais. Paginação/ordenação não fazem parte da identidade salva.
 
-O contrato de detecção fechado usa somente Listing pública, reutiliza a mesma semântica da busca pública, exige opt-in explícito e persiste um único `(SavedSearchId, ListingId)`. O experimento rejeitou varredura síncrona ingênua dentro de `PublishAsync`; detector e delivery permanecem separados.
+O contrato de detecção fechado usa somente Listing pública, reutiliza a mesma semântica da busca pública, exige opt-in explícito e persiste um único `(SavedSearchId, ListingId)`. Varredura síncrona dentro de `PublishAsync` foi rejeitada.
+
+O trigger fechado persiste uma única `SavedSearchAlertDetectionRequest` por Listing via repositório ABP no mesmo UoW da publicação. Rollback explícito desfaz Listing + request juntas. `AlertEnabledAtUtc` evita alerta retroativo e não recebe backfill inventado. Outbox distribuído não foi promovido porque a durabilidade local necessária foi comprovada.
 
 ### Bloco D — Promotions
 
@@ -168,22 +171,23 @@ Pontuar cada candidato qualitativamente por:
 - reversibilidade;
 - observabilidade do resultado.
 
-Preferir: alto valor + alta dependência desbloqueada + baixo/medio risco + teste claro.
+Preferir: alto valor + alta dependência desbloqueada + baixo/médio risco + teste claro.
 
 ## Próxima decisão operacional
 
-Checkpoint do alerta de nova oferta concluído em `docs/audits/2026-08-25-new-listing-alert-contract-test.md`.
+Checkpoint do gatilho confiável concluído em `docs/audits/2026-08-26-saved-search-alert-trigger-contract-test.md`.
 
 Resultado atualizado:
 
-- o identity contract Podium `2.0` continua suficiente para mapping de identidade, mas não congela ficha técnica ampla;
-- enrichment interno verificado do Podium ainda não constitui um read contract técnico suficiente para um Comparador útil;
-- iniciar Comparador agora permanece **REPROVADO** para evitar matriz pobre ou Listing fallback;
+- iniciar Comparador permanece **REPROVADO** enquanto não houver enrichment técnico publicado suficiente do Podium;
 - Saved Search permanece entregue como intenção Buyer persistida;
-- o contrato mínimo de detecção de nova oferta **PASSA**: opt-in explícito, matcher público compartilhado, somente Published, ledger `(SavedSearchId, ListingId)` e idempotência de replay/republish;
-- varrer Saved Searches/delivery de forma síncrona dentro de `PublishAsync` foi **REPROVADO** por acoplamento e latência proporcional ao volume de intenções;
-- próxima boundary do BPT2: **provar o gatilho confiável da detecção na transição para público**, cobrindo atomicidade e retry antes de escolher evento/outbox/background job;
-- provider/canal de delivery, frequência e digest permanecem não decididos.
+- detecção de nova oferta **PASSA** com matcher público compartilhado, somente Published e ledger `(SavedSearchId, ListingId)`;
+- gatilho local transacional **PASSA**: `PublishAsync` persiste request única O(1) via repositório ABP no mesmo UoW, e rollback explícito prova ausência de gap entre Listing e request;
+- Saved Search habilitada só depois da publicação não recebe alerta retroativo; opt-out antes do processamento é preservado;
+- DbContext direto foi **REPROVADO como boundary do trigger** pelo probe; repositório ABP foi mecanicamente comprovado;
+- outbox/distributed event bus permanece **NÃO PROMOVIDO**, pois o requisito de durabilidade local já está atendido sem transporte distribuído;
+- próxima boundary do BPT2: **provar o runner mínimo que drena requests pendentes**, cobrindo claim/concurrency, retry e recuperação após restart antes de escolher background worker/job/polling;
+- provider/canal de delivery, template, digest e price-drop permanecem não decididos.
 
 ## Critérios de aceite do Plan 0049
 
@@ -202,9 +206,10 @@ Resultado atualizado:
 - 2026-08-25 — intenção de produto registrada: >=90% das capabilities úteis/elegíveis do Carros na Web, ambição 100%.
 - 2026-08-25 — cobertura do benchmark não autoriza cópia técnica/conteúdo nem implementação sem custo/valor/provenance.
 - 2026-08-25 — identity contract Podium atual não é confundido com ficha técnica; Comparador continua atrás de enrichment publicado suficiente.
-- 2026-08-25 — Saved Search definido como critérios semânticos da busca pública pertencentes ao Buyer; `Skip`/`Take`/página/`Sort` não compõem identidade, e alertas/jobs/delivery ficam fora desse slice.
-- 2026-08-26 — alerta de nova oferta: detecção e delivery separados; opt-in explícito; matcher compartilha pipeline público; `(SavedSearchId, ListingId)` é o ledger idempotente do baseline.
-- 2026-08-26 — varredura síncrona de todas as buscas dentro de `PublishAsync` não foi promovida; o próximo teste é o trigger confiável/atomicidade.
+- 2026-08-25 — Saved Search definido como critérios semânticos da busca pública pertencentes ao Buyer; `Skip`/`Take`/página/`Sort` não compõem identidade.
+- 2026-08-26 — alerta de nova oferta: detecção e delivery separados; opt-in explícito; matcher compartilha pipeline público; `(SavedSearchId, ListingId)` é o ledger idempotente.
+- 2026-08-26 — varredura síncrona de todas as buscas dentro de `PublishAsync` não foi promovida.
+- 2026-08-26 — trigger confiável decidido como request local durável única por Listing via repositório ABP no UoW de publicação; rollback/replay/temporal eligibility comprovados; outbox distribuído não promovido.
 
 ## Progress log
 
@@ -212,6 +217,6 @@ Resultado atualizado:
 - 2026-08-25 — Plan 0047 entregou Lead closing mínimo.
 - 2026-08-25 — Plan 0048 provou boundary Podium e fixture de projection/replay/redirect/cardinality.
 - 2026-08-25 — Plan 0049 aberto para concluir o restante do roadmap por blocos funcionais.
-- 2026-08-25 — primeira matriz pós-0048 concluída; próximo slice selecionado como publication mapping + enrichment contract mínimo.
-- 2026-08-25 — blocker externo do enrichment acionou o fallback independente; Saved Search baseline implementado com persistência, ownership server-side, dedup semântico, round-trip na public web e smoke HTTP; head funcional fechou workflows verdes antes do closeout documental.
-- 2026-08-26 — contrato de detecção de nova oferta implementado e comprovado por HTTP: Draft/private bloqueado, filtro incompatível não casa, Published compatível gera um ledger, replay/republish não duplicam, ownership/opt-out preservados e nenhum provider participa da detecção.
+- 2026-08-25 — blocker externo do enrichment acionou o fallback independente; Saved Search baseline implementado.
+- 2026-08-26 — contrato de detecção de nova oferta implementado e comprovado por HTTP: Draft/private bloqueado, Published compatível gera ledger, replay/republish não duplicam e nenhum provider participa da detecção.
+- 2026-08-26 — trigger transacional comprovado: request staged via repositório ABP, rollback explícito restaura Draft + zero requests, commit normal deixa uma pendência, opt-in tardio/opt-out são respeitados e republish não duplica request.

@@ -17,17 +17,20 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
     private readonly IVehicleCatalogReader _vehicleCatalog;
     private readonly ICurrentUser _currentUser;
     private readonly IGuidGenerator _guidGenerator;
+    private readonly SavedSearchAlertTrigger _savedSearchAlertTrigger;
 
     public ListingCommandService(
         IRepository<Listing, Guid> listings,
         IVehicleCatalogReader vehicleCatalog,
         ICurrentUser currentUser,
-        IGuidGenerator guidGenerator)
+        IGuidGenerator guidGenerator,
+        SavedSearchAlertTrigger savedSearchAlertTrigger)
     {
         _listings = listings;
         _vehicleCatalog = vehicleCatalog;
         _currentUser = currentUser;
         _guidGenerator = guidGenerator;
+        _savedSearchAlertTrigger = savedSearchAlertTrigger;
     }
 
     public async Task<ListingDto> CreateAsync(CreateListingInput input, CancellationToken cancellationToken = default)
@@ -90,6 +93,7 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
         await RequireCanonicalVehicleAsync(listing.VehicleId, cancellationToken);
         listing.Publish();
         await _listings.UpdateAsync(listing, autoSave: true, cancellationToken: cancellationToken);
+        await _savedSearchAlertTrigger.EnsureEnqueuedAsync(listing.Id, cancellationToken);
         return ToDto(listing);
     }
 

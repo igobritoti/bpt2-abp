@@ -3,6 +3,7 @@ using BomPraTi.Catalog.Domain;
 using BomPraTi.Marketplace;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
+using BomPraTi.Marketplace.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
@@ -60,6 +61,56 @@ try
 
         await uow.CompleteAsync();
         Console.WriteLine(listingId);
+        return;
+    }
+
+    if (args.Length > 0 && string.Equals(args[0], "alert-trigger-rollback", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))
+        {
+            throw new ArgumentException("Usage: alert-trigger-rollback <listingId>");
+        }
+
+        var listingRepository = scope.ServiceProvider.GetRequiredService<IRepository<Listing, Guid>>();
+        var listing = await listingRepository.GetAsync(listingId, includeDetails: false);
+        listing.Publish();
+        await listingRepository.UpdateAsync(listing, autoSave: true);
+        await scope.ServiceProvider.GetRequiredService<SavedSearchAlertTrigger>().EnsureEnqueuedAsync(listingId);
+
+        var requestRepository = scope.ServiceProvider.GetRequiredService<IRepository<SavedSearchAlertDetectionRequest, Guid>>();
+        var staged = await requestRepository.CountAsync(x => x.ListingId == listingId);
+        if (staged != 1)
+        {
+            throw new InvalidOperationException($"Expected one staged alert request before rollback, count={staged}.");
+        }
+
+        await uow.RollbackAsync();
+        Console.WriteLine("ROLLBACK_STAGED");
+        return;
+    }
+
+    if (args.Length > 0 && string.Equals(args[0], "alert-trigger-state", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))
+        {
+            throw new ArgumentException("Usage: alert-trigger-state <listingId>");
+        }
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+        var status = await dbContext.Listings
+            .AsNoTracking()
+            .Where(x => x.Id == listingId)
+            .Select(x => x.Status)
+            .SingleAsync();
+        var requests = await dbContext.SavedSearchAlertDetectionRequests
+            .AsNoTracking()
+            .Where(x => x.ListingId == listingId)
+            .Select(x => x.ProcessedAtUtc)
+            .ToListAsync();
+
+        await uow.CompleteAsync();
+        var processed = requests.Count == 1 && requests[0].HasValue ? "processed" : "pending";
+        Console.WriteLine($"{status}|{requests.Count}|{processed}");
         return;
     }
 

@@ -11,6 +11,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<SavedSearchAlertMatch> SavedSearchAlertMatches => Set<SavedSearchAlertMatch>();
+    public DbSet<SavedSearchAlertDetectionRequest> SavedSearchAlertDetectionRequests => Set<SavedSearchAlertDetectionRequest>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<ListingReport> ListingReports => Set<ListingReport>();
 
@@ -62,6 +63,13 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.ToTable("MarketplaceSavedSearchAlertMatches");
             b.HasIndex(x => new { x.SavedSearchId, x.ListingId }).IsUnique();
             b.HasIndex(x => new { x.SavedSearchId, x.DetectedAtUtc });
+        });
+
+        builder.Entity<SavedSearchAlertDetectionRequest>(b =>
+        {
+            b.ToTable("MarketplaceSavedSearchAlertDetectionRequests");
+            b.HasIndex(x => x.ListingId).IsUnique();
+            b.HasIndex(x => new { x.ProcessedAtUtc, x.EnqueuedAtUtc });
         });
 
         builder.Entity<Lead>(b =>

@@ -8,9 +8,11 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Concluir progressivamente as capabilities restantes do Bom Pra Ti pelo Plan 0049.
 
-O **contrato mínimo de detecção de nova oferta compatível está comprovado**: opt-in é explícito, matching reutiliza a semântica pública, Draft/private não entra, `(SavedSearchId, ListingId)` deduplica reprocessamento e detecção permanece separada de delivery.
+O **gatilho confiável de detecção de nova oferta está comprovado**. A primeira publicação persiste uma `SavedSearchAlertDetectionRequest` única por Listing via repositório ABP no mesmo UoW; rollback explícito desfaz Listing + request juntas; publish não varre Saved Searches; opt-in posterior não gera alerta retroativo; opt-out anterior ao processamento é preservado.
 
-A próxima boundary é provar o **gatilho confiável da detecção quando uma Listing se torna pública**, sem varrer todas as buscas salvas dentro de `PublishAsync`, sem chamar provider externo no request e sem escolher scheduler/event bus/outbox antes do teste de atomicidade/retry exigir.
+O detector continua separado de delivery. Outbox/distributed event bus não é requisito para o boundary local já provado.
+
+A próxima boundary é provar **como requests pendentes são drenadas automaticamente em produção**, antes de escolher infraestrutura por preferência. O teste deve decidir claim/concurrency, retry, recuperação após restart e frequência apenas se necessária. Provider/canal/template de delivery permanecem fora desse slice.
 
 O prerequisite de enrichment do Comparador permanece no bounded context Podium 7 e não bloqueia esta trilha de retenção Buyer.
 
@@ -22,16 +24,16 @@ A meta estratégica adicional continua sendo atingir pelo menos **90% das capabi
 
 ## Acceptance target
 
-Antes de integrar automaticamente a detecção ao lifecycle de publicação, o próximo slice deve provar/decidir:
+Antes de introduzir um runner automático para requests de detecção, o próximo slice deve provar/decidir:
 
-- qual boundary observa com confiabilidade a transição para estado público;
-- como evitar o gap "Listing publicada, match nunca materializado" se houver falha intermediária;
-- como retry/replay preserva a unicidade `(SavedSearchId, ListingId)`;
-- que `PublishAsync` não ganha latência proporcional ao número de Saved Searches;
-- que nenhuma entrega externa participa da transação de publicação;
-- se evento local + UoW é suficiente ou se outbox/background job é realmente exigido pelo caso de falha;
-- scheduler/polling continuam reprovados como default enquanto um gatilho por transição puder resolver o problema;
-- provider/canal permanecem não decididos até o trigger/delivery contract estar fechado.
+- como um worker/processador reivindica uma request pendente sem dois executores processarem a mesma request simultaneamente;
+- que falha durante processamento deixa trabalho recuperável/retryable;
+- que restart não perde request pendente;
+- que replay continua seguro pelo ledger `(SavedSearchId, ListingId)`;
+- como requests concluídas deixam de ser selecionadas;
+- se polling/frequência são necessários e qual requisito determina o intervalo;
+- se `BackgroundWorker`, background job ou mecanismo equivalente é o menor componente suficiente;
+- provider/canal de delivery continuam não decididos e não participam deste teste.
 
 Não implementar price-drop, Comparator, Promotions ou outro bloco em paralelo enquanto esse slice estiver ativo.
 
@@ -44,6 +46,7 @@ Não implementar price-drop, Comparator, Promotions ou outro bloco em paralelo e
 - Plano ativo: [`../exec-plans/active/0049-post-mvp-capability-completion.md`](../exec-plans/active/0049-post-mvp-capability-completion.md).
 - Contrato Saved Search auditado: [`../audits/2026-08-25-saved-search-contract-test.md`](../audits/2026-08-25-saved-search-contract-test.md).
 - Contrato de detecção de nova oferta: [`../audits/2026-08-25-new-listing-alert-contract-test.md`](../audits/2026-08-25-new-listing-alert-contract-test.md).
+- Contrato do gatilho confiável: [`../audits/2026-08-26-saved-search-alert-trigger-contract-test.md`](../audits/2026-08-26-saved-search-alert-trigger-contract-test.md).
 - Meta Carros na Web: [`../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md`](../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md).
 - Boundary Podium 7: [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
 
@@ -51,7 +54,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 ## Open blockers
 
-Comparator continua bloqueado somente por enrichment técnico publicado suficiente do Podium. Isso não bloqueia o teste do gatilho de alertas sobre Saved Search.
+Comparator continua bloqueado somente por enrichment técnico publicado suficiente do Podium. Isso não bloqueia o teste do runner de detecção sobre Saved Search.
 
 A pesquisa pública do Carros na Web ainda não forneceu inventário atual reproduzível suficiente; isso bloqueia apenas o cálculo de cobertura do benchmark, não o desenvolvimento normal do BPT2.
 
