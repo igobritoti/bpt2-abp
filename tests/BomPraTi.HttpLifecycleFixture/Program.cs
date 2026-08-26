@@ -86,6 +86,7 @@ try
             throw new InvalidOperationException($"Expected one staged alert request before rollback, count={staged}.");
         }
 
+        await uow.RollbackAsync();
         Console.WriteLine("ROLLBACK_STAGED");
         return;
     }

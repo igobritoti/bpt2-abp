@@ -65,14 +65,24 @@ public sealed class SavedSearch : AggregateRoot<Guid>
 
     public void SetAlertEnabled(bool enabled, DateTime changedAtUtc)
     {
-        if (AlertEnabled == enabled)
+        if (enabled)
+        {
+            if (AlertEnabled && AlertEnabledAtUtc.HasValue)
+            {
+                return;
+            }
+
+            AlertEnabled = true;
+            AlertEnabledAtUtc = DateTime.SpecifyKind(changedAtUtc, DateTimeKind.Utc);
+            return;
+        }
+
+        if (!AlertEnabled && AlertEnabledAtUtc is null)
         {
             return;
         }
 
-        AlertEnabled = enabled;
-        AlertEnabledAtUtc = enabled
-            ? DateTime.SpecifyKind(changedAtUtc, DateTimeKind.Utc)
-            : null;
+        AlertEnabled = false;
+        AlertEnabledAtUtc = null;
     }
 }
