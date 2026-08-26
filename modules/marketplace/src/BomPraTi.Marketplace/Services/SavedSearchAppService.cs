@@ -87,7 +87,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
         CancellationToken cancellationToken = default)
     {
         var savedSearch = await GetOwnedAsync(id, cancellationToken);
-        savedSearch.SetAlertEnabled(enabled);
+        savedSearch.SetAlertEnabled(enabled, DateTime.UtcNow);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(savedSearch);
     }
@@ -183,5 +183,6 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             item.MaxMileageKm,
             item.Query,
             item.AlertEnabled,
+            item.AlertEnabledAtUtc,
             item.CreatedAtUtc);
 }
