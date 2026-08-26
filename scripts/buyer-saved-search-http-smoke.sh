@@ -63,11 +63,10 @@ PY
 )"
 BODY_SAME='{"brand":"honda","model":"civic","city":"são paulo","stateCode":"SP","minModelYear":2020,"maxModelYear":2025,"minPrice":80000,"maxPrice":160000,"minMileageKm":0,"maxMileageKm":80000,"query":"turbo"}'
 status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$BODY_SAME")"; [[ "$status" == 200 || "$status" == 201 ]] || exit 1
-SECOND_ID="$(python3 - "$RESPONSE" -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' 2>/dev/null || true)"
-if [[ -z "$SECOND_ID" ]]; then SECOND_ID="$(python3 - "$RESPONSE" <<'PY'
+SECOND_ID="$(python3 - "$RESPONSE" <<'PY'
 import json,sys; print(json.load(open(sys.argv[1]))['id'])
 PY
-)"; fi
+)"
 [[ "$SECOND_ID" == "$FIRST_ID" ]] || { echo "Semantic duplicate created a new SavedSearch" >&2; exit 1; }
 status="$(request GET '/api/app/saved-search/mine' "$ADMIN_TOKEN")"; [[ "$status" == 200 ]] || exit 1
 python3 - "$RESPONSE" "$FIRST_ID" <<'PY'
