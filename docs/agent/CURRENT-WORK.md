@@ -6,26 +6,25 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Testar a persistência/UoW do detector de Favorite price-drop após o PR #77 provar que a primeira queda esperada para uma Listing publicada já favoritada deixa o ledger vazio.
 
-O Plan 0049 foi encerrado por classificação. O retry de Favorite price-drop do PR #77 corrigiu o bug mecânico do smoke do PR #75, mas então revelou falha funcional reproduzível: Draft ignore passa, porém o primeiro match esperado para uma Listing publicada já favoritada permanece com ledger vazio. O PR #77 foi fechado sem merge.
-
-Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
+A hipótese corrente é estreita: o detector rejeitado persistia por `MarketplaceDbContext` injetado diretamente enquanto o fluxo de comando usa repositórios ABP. O slice troca somente essa boundary e mantém o mesmo smoke como falsificador.
 
 ## Active plan
 
-**Nenhum.**
+[`../exec-plans/active/0051-favorite-price-drop-uow-probe.md`](../exec-plans/active/0051-favorite-price-drop-uow-probe.md)
 
-## Próximos gatilhos de reabertura
+## Acceptance target
 
-- probe focado para a persistência/UoW do detector de Favorite price-drop;
-- enrichment técnico publicado do Podium suficiente para Comparator;
-- deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
-- corpus + baseline + métrica para discovery avançado;
-- dataset/licença/metodologia/provenance para inteligência de mercado;
-- evidência operacional suficiente para trust/moderação avançada;
-- tese comercial/parceria concreta para complementares;
-- inventário atual reproduzível do Carros na Web.
+- Draft decrease sem ledger;
+- Favorite existente antes da queda recebe exatamente um match;
+- Favorite tardio sem retroativo;
+- replay idempotente;
+- aumento ignorado;
+- unfavorite impede apenas quedas futuras;
+- Fresh Migration + Buyer Favorites HTTP verdes no head exato.
+
+Se a troca para repositórios ABP não resolver o primeiro match, fechar o slice sem correção adicional e voltar ao sweep de blockers.
 
 ## Source of runtime truth
 
@@ -33,12 +32,13 @@ Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../aud
 - Produto: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Plano ativo: [`../exec-plans/active/0051-favorite-price-drop-uow-probe.md`](../exec-plans/active/0051-favorite-price-drop-uow-probe.md).
 - Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
-- Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
+- Checkpoint anterior: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
 
 ## Open blockers
 
-- Favorite price-drop: falha funcional reproduzida no PR #77; primeiro ledger esperado fica vazio.
+- Favorite price-drop: sob probe de persistência/UoW no Plan 0051.
 - Comparator: enrichment técnico publicado suficiente do Podium.
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
 - Discovery avançado: sem corpus/baseline/métrica.
