@@ -22,7 +22,7 @@ Bom Pra Ti é um marketplace/classificados automotivo brasileiro. O núcleo do p
 - SEO;
 - Vehicle Hub;
 - administração;
-- ingestão de fontes externas.
+- ingestão/publicação de conhecimento externo.
 
 Estar no produto-alvo não significa estar no slice corrente. Capacidades adiadas só são promovidas quando houver necessidade e evidência.
 
@@ -40,27 +40,25 @@ Não modelar prematuramente como requisito central:
 
 ## Catálogo canônico
 
-BPT é a autoridade canônica do catálogo automotivo. Fontes externas, Buscador e integrações são **doadores de dados**, não fonte de verdade.
-
-Fluxo conceitual:
-
-`fonte externa → ingestão/conectividade → validação → normalização → reconciliação → provenance/confidence → aprovação automática/humana → catálogo canônico BPT`
+BPT é a autoridade do catálogo publicado consumido pelo marketplace. Podium 7 é o bounded context produtor/feed de conhecimento automotivo externo; acquisition, evidence, normalization, entity resolution e reconciliation não devem ser duplicados no BPT2.
 
 Separações conceituais:
 
 - **Structure:** Brand, Model, Generation, Version, Vehicle.
 - **Enrichment:** specs, equipamentos, segurança, consumo, preço/mercado, editorial, imagens enriquecidas.
-- **Connectivity/Ingestion:** sources, jobs de importação, APIs, provenance, confidence, reconciliation e validação.
+- **Knowledge producer/feed:** aquisição, evidence, normalization, reconciliation, provenance e conflitos pertencem ao Podium; o BPT2 projeta somente contratos publicados suficientemente definidos.
+
+A identidade Podium não é assumida 1:1 com `VehicleId` BPT2. Uma identidade externa pode projetar zero, um ou vários Vehicles publicados; labels não são chave de integração.
 
 ## Estado entregue do produto
 
-O histórico detalhado e a evidência executada de cada slice ficam em `exec-plans/completed/`. Este documento registra o estado de produto consolidado, não um changelog.
+O histórico detalhado e a evidência executada de cada slice ficam em `exec-plans/completed/` e `audits/`. Este documento registra o estado de produto consolidado, não um changelog.
 
 ### Seller
 
 O ciclo Seller está comprovado por HTTP/OIDC real:
 
-`self-registration/login → profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish/Pause/Archive → Leads próprios → marcar atendido`
+`self-registration/login → profile → My Listings → Vehicle canônico → Draft/Edit → Photos → Publish/Pause/Archive → Leads próprios → marcar atendido → fechar Won/Lost`
 
 Regras consolidadas:
 
@@ -71,7 +69,8 @@ Regras consolidadas:
 - Draft/private nunca aparece ao público;
 - Publish/Pause/Archive permanecem commands do backend;
 - Leads históricos dos Listings próprios permanecem disponíveis mesmo depois de Pause/Archive;
-- `ContactedAtUtc?` é o estado operacional mínimo de atendimento, monotônico e idempotente.
+- `ContactedAtUtc?` representa o atendimento mínimo, monotônico e idempotente;
+- Lead pode ser fechado como `Won` ou `Lost`; repetir o mesmo outcome é idempotente e outcome conflitante é rejeitado.
 
 ### Buyer e contato
 
@@ -85,7 +84,13 @@ Regras consolidadas:
 - usuário auto-cadastrado consegue completar Favorites e ListingReports;
 - Saved Search persiste somente critérios semânticos já suportados pela busca pública e permite listar/excluir apenas itens do próprio Buyer;
 - critérios equivalentes são deduplicados; `Skip`, `Take`, página e `Sort` não compõem a identidade da busca salva;
-- busca salva reabre resultados pelos filtros públicos atuais e não introduz matching privado, alerta, job ou canal de entrega por si só;
+- busca salva reabre resultados pelos filtros públicos atuais;
+- Saved Search possui opt-in explícito de alerta, timestamp de habilitação e ledger idempotente `(SavedSearchId, ListingId)` para detecção;
+- matching de nova oferta reutiliza a mesma semântica da busca pública e considera apenas Listing pública;
+- primeira publicação persiste uma `SavedSearchAlertDetectionRequest` durável e única por Listing no mesmo UoW, sem varrer todas as buscas no request de publicação;
+- runner automático e delivery de alertas permanecem não entregues; nenhum provider/canal foi escolhido;
+- histórico seguro de preço de Listing publicada é persistido; Draft e preço sem alteração não criam histórico;
+- detector de price-drop de Favorite ainda não está entregue: o retry funcional do PR #77 reproduziu ledger vazio no primeiro match esperado e foi fechado sem merge;
 - contato WhatsApp pode ser anônimo; se já existir sessão Buyer válida, o Lead preserva o `UserId` autenticado sem tornar login obrigatório;
 - token Buyer permanece restrito ao boundary same-origin/public-web → API BPT e nunca é enviado ao WhatsApp;
 - novo Lead ou ListingReport só nasce para Listing atualmente público;
@@ -93,7 +98,7 @@ Regras consolidadas:
 
 ### Discovery público e SEO
 
-A experiência pública permanece um cliente desacoplado do host ABP, em Next.js 16 Active LTS/App Router, consumindo a aplicação por HTTP.
+A experiência pública permanece um cliente desacoplado do host ABP, em Next.js 16/App Router, consumindo a aplicação por HTTP.
 
 Capacidades comprovadas:
 
@@ -111,22 +116,22 @@ Capacidades comprovadas:
 - metadata social de Listing, Vehicle Hub, Seller Hub e home;
 - structured data de Listing e Vehicle Hub.
 
-A auditoria de qualidade do Plan 0035 concluiu que fuzzy search, autocomplete, facets, ranking por relevância e engine externa não possuem evidência suficiente para promoção agora.
+Fuzzy search, autocomplete, facets, ranking por relevância, geo/radius, similaridade e engine externa não possuem hoje corpus + baseline + métrica suficientes para promoção.
 
 ### Catálogo e Vehicle Hub
 
-O Catalog é a autoridade de Brand → Model → Generation → Version → Vehicle.
+O Catalog é a autoridade de Brand → Model → Generation → Version → Vehicle publicados no BPT2.
 
-Além da leitura canônica, existe superfície administrativa mínima para carga operacional da identidade automotiva, fechando o blocker de bootstrap identificado no Plan 0027.
+Além da leitura canônica, existe superfície administrativa mínima para carga operacional da identidade automotiva.
 
 O Vehicle Hub:
 
 - lê identidade exclusivamente do Catalog;
 - existe independentemente de oferta ativa;
 - lista somente ofertas públicas daquele Vehicle;
-- possui sitemap e structured data já comprovados.
+- possui sitemap e structured data comprovados.
 
-Enrichment de specs/equipamentos/consumo/preço editorial/imagens continua separado da Structure e não é requisito do marketplace básico.
+Enrichment técnico amplo continua separado da Structure. O contrato consumer de identidade do Podium é insuficiente, por si só, para uma ficha comparável de potência/torque/consumo/dimensões/equipamentos; Comparator 2–4 permanece bloqueado até existir enrichment publicado com unidade, null/unknown, revision e provenance suficientes.
 
 ### Moderação
 
@@ -141,21 +146,35 @@ Regras consolidadas:
 - fila administrativa não expõe identidade/PII Buyer;
 - reports permanecem como histórico;
 - existe autoridade humana mínima para intervenção sobre visibilidade do Listing;
-- taxonomia, scoring, notificações e workflow sofisticado continuam adiados.
+- taxonomia, anexos/evidence, SLA, scoring, notificações e trust signals de provider continuam adiados até problema operacional ou contrato externo justificá-los.
 
-### Ingestion
+### Promoções
 
-O fluxo manual mínimo está fechado:
+Existe baseline patrocinado separado do ranking orgânico:
 
-`candidate externo → fila pendente → operador admin → lookup de Vehicle → reconciliação com Vehicle canônico`
+- promoção possui janela temporal explícita;
+- Listing ativa dentro da janela projeta `IsSponsored=true`;
+- futura/expirada não projeta patrocínio ativo;
+- Draft/private permanece invisível mesmo com promoção;
+- UI pública identifica visualmente `Patrocinado`;
+- ordenação orgânica padrão, `price-asc` e `price-desc` não é alterada pela promoção;
+- não foi portado `HighlightScore` do BPT1.
+
+Planos comerciais, eligibility avançada, prioridade entre campanhas e instrumentação dedicada de impressão/click/Lead continuam dependentes de tese comercial e hipótese mensurável.
+
+### Ingestion / knowledge feed
+
+O BPT2 mantém os contratos legados de ingestão manual já existentes, mas a direção arquitetural corrente para conhecimento automotivo externo é:
+
+`Podium producer/feed → contrato versionado publicado → projeção BPT2 → catálogo publicado BPT2`
 
 Regras consolidadas:
 
-- `(Source, ExternalId)` identifica o registro externo;
-- primeiro payload/provenance permanece preservado;
-- reconciliação só aceita Vehicle validado pelo Catalog;
-- a UI administrativa possui lookup do catálogo em vez de exigir UUID cego;
-- connector/source concreto, matching automático, threshold de confidence e background jobs continuam não decididos.
+- BPT2 não deve duplicar aquisição/evidence/reconciliation já pertencentes ao Podium;
+- integração consome contrato, não persistence/shared DB;
+- correções preservam identidade externa estável e redirects/historical IDs não devem ser resolvidos por labels;
+- public marketplace read path não depende de Podium online;
+- connector/source, polling/scraping e matching automático dentro do BPT2 não são promovidos sem novo requisito.
 
 ### Administração
 
@@ -166,13 +185,13 @@ O host ABP/LeptonXLite contém a superfície administrativa corrente:
 O hub `/admin`:
 
 - exige role `admin`;
-- liga as superfícies operacionais já existentes;
-- apresenta resumo operacional mínimo sem virar um dashboard analítico paralelo;
+- liga as superfícies operacionais existentes;
+- apresenta resumo operacional mínimo sem virar dashboard analítico paralelo;
 - usa navegação nativa ABP via `IMenuContributor`/`AbpNavigationOptions`;
 - não substitui autorização server-side;
 - não cria permission nova, override de tema/layout ou frontend administrativo separado.
 
-A role `admin` continua suficiente para o baseline atual. Permissões administrativas granulares só devem ser promovidas quando aparecer necessidade real de separar autoridades.
+A role `admin` continua suficiente para o baseline atual. Permissões granulares só devem ser promovidas quando aparecer necessidade real de separar autoridades.
 
 ## Requisitos congelados
 
@@ -180,52 +199,52 @@ A role `admin` continua suficiente para o baseline atual. Permissões administra
 - Seller só altera anúncio de sua propriedade.
 - Público nunca recebe Draft/private.
 - Listing usa optimistic concurrency com `ConcurrencyStamp` no caminho da application service.
-- Catálogo automotivo é autoridade canônica e Marketplace/Ingestion consomem seus contratos, não sua implementação.
+- Catálogo automotivo publicado é autoridade do BPT2; Marketplace consome contratos do Catalog.
+- Podium é knowledge producer/feed e não entra no request path público.
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
 - Public web é desacoplado do host ABP e consome a aplicação por HTTP/API.
 - Seller e Buyer usam clientes OIDC públicos dedicados com Authorization Code + PKCE.
 - Favorite, SavedSearch, ListingReport e ownership Seller derivam identidade do servidor; o browser não escolhe owner.
 - A busca pública preserva query string como estado compartilhável e não expõe Draft/private.
-- Saved Search não persiste paginação/ordenação como identidade semântica e não implica alerta automaticamente.
+- Saved Search não persiste paginação/ordenação como identidade semântica.
+- Alert opt-in é explícito; detecção e delivery são boundaries separados.
 - City/StateCode são filtros textuais canônicos atuais; isso não implica geocoding, radius ou autoridade geográfica nova.
 - WhatsApp canônico pertence a Sellers e o Lead é persistido antes do redirect externo.
 - Lead já ocorrido é histórico e não desaparece quando o Listing deixa de ser público.
 - A moderação mínima é humana e server-side; esconder/mostrar UI não cria autoridade.
-- A carga operacional mínima do catálogo usa os aggregates canônicos atuais; fonte externa não vira fonte de verdade.
-- Ingestion reconcilia para Vehicle canônico somente após validação pelo Catalog.
-- O hub `/admin` e o item global `Operações` usam a role `admin` existente; permission granular permanece adiada.
+- Promoção patrocinada não altera ranking orgânico no baseline.
 - IA, engine externa, jobs e infraestrutura distribuída não entram no core sem caso real.
 
-O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/`; detalhes de execução ficam nos plans concluídos.
+O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/`; detalhes de execução ficam nos plans/audits.
 
 ## Slice ativo
 
-O Plan 0049 permanece ativo para concluir progressivamente as capabilities pós-MVP.
+**Nenhum execution plan funcional está ativo.**
 
-O Saved Search baseline está entregue. A próxima boundary é testar o contrato mínimo de **alerta de nova oferta compatível** reutilizando a intenção persistida da busca salva. Isso não autoriza presumir background job, scheduler, provider ou canal antes de provar o requisito.
+O último roadmap amplo, Plan 0049, foi concluído por classificação. O retry Plan 0050/PR #77 não foi mergeado porque, após corrigir o bug mecânico do smoke, a primeira detecção funcional de price-drop esperada permaneceu com ledger vazio.
 
-Comparator continua bloqueado por enrichment técnico publicado suficiente do Podium; esse blocker não impede a trilha independente de retenção Buyer.
+O checkpoint atual de gatilhos está em `audits/2026-08-26-post-plan0050-trigger-sweep.md`.
 
-## Decisões ainda abertas
+## Decisões ainda abertas / gatilhos
 
-Só devem ser resolvidas quando houver necessidade de produto e evidência suficiente:
+Só resolver quando houver necessidade de produto e evidência suficiente:
 
-- analytics agregados, CRM, deduplicação, scoring, atribuição de marketing, notas/etapas, exportação e resolução de perfil/PII Buyer para Leads;
-- perfil Buyer, alertas de nova oferta compatível, price-drop e preferências/opt-in/unsubscribe;
-- taxonomia/motivo de denúncia, workflow multiestado, scoring e notificações de moderação;
+- probe focado para explicar a persistência/UoW do detector de Favorite price-drop;
+- deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; ABP Background Jobs não elimina a necessidade de distributed lock real em cluster;
+- enrichment técnico publicado do Podium para Comparator e Vehicle Hub enriquecido;
+- analytics agregados, scoring, atribuição de marketing, notas/etapas adicionais e exportação de Leads somente se houver pergunta operacional concreta;
+- taxonomia/motivo de denúncia, workflow multiestado, SLA, anexos/evidence, scoring e notificações de moderação;
 - permissões administrativas granulares e eventual frontend admin separado;
 - geração dedicada de social image, landing pages, estratégia editorial/keywords, Search Console/analytics e ranking SEO/search;
-- geocoding/GPS, raio/distância, bairros/CEP, autocomplete/facets de localização, ranking por proximidade e landing pages/SEO locais;
-- connector/source concreto de ingestão, scraping/polling, matching automático, threshold de confidence, workflow de aprovação e background jobs;
-- promoções/boost comercial;
-- enrichment do Vehicle Hub — specs, equipamentos, segurança, consumo, preço/mercado, editorial e imagens enriquecidas — além de páginas agregadas e slugs semânticos;
-- schemas PostgreSQL separados por módulo;
-- FK física entre módulos;
-- estratégia final de busca quando benchmark/carga justificar;
-- distributed locks quando surgir disputa real que optimistic concurrency/UoW não resolvam;
-- background jobs quando houver caso assíncrono real;
+- geocoding/GPS, raio/distância, bairros/CEP, autocomplete/facets, ranking por proximidade e SEO local;
+- corpus + baseline + métrica para relevance/ranking, similar vehicles e upgrade suggestions;
+- instrumentação comercial de promoções e planos/pagamentos de promoção quando houver tese comercial;
+- inteligência de mercado quando houver dataset/licença/metodologia/provenance exibível;
+- Compra Assistida, financiamento, seguros e credits/payments quando parceria/modelo comercial justificar;
+- schemas PostgreSQL separados por módulo e FK física entre módulos somente se houver necessidade medida;
 - object storage/provider final quando a topologia exigir;
-- eventual troca do framework do public web se houver evidência que justifique — o boundary HTTP preserva a reversibilidade.
+- eventual troca do framework do public web se houver evidência que justifique — o boundary HTTP preserva reversibilidade;
+- inventário Carros na Web quando o acesso atual for reproduzível o suficiente para calcular cobertura sem denominador artificial.
 
 ## Regra de evolução
 
