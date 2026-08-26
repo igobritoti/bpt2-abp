@@ -1,6 +1,6 @@
 # Plan 0051 — Favorite price-drop UoW probe
 
-Status: ATIVO
+Status: **ATIVO**
 
 ## Objetivo
 
@@ -31,3 +31,4 @@ Este slice não envia notificações, não escolhe provider/canal e não cria ru
 ## Progress log
 
 - 2026-08-26 — Plan aberto sobre `main` fresco após PR #77 revelar falha funcional real.
+- 2026-08-26 — Harness do primeiro head revelou apenas formatação não canônica de `Status`; corrigido para `Status: **ATIVO**` sem alterar produto.
