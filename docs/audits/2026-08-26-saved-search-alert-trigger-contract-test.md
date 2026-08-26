@@ -2,7 +2,7 @@
 
 Data: 2026-08-26
 Plano: 0049
-Status: **EM TESTE**
+Status: **PASSA**
 
 ## Pergunta
 
@@ -16,79 +16,81 @@ A documentação oficial atual do ABP define métodos de application service com
 
 `IListingCommandService` herda `IApplicationService`, portanto `PublishAsync` é uma boundary convencional de UoW do ABP.
 
-### A/B — lifecycle BPT2
+### B — lifecycle BPT2
 
-`ListingCommandService.PublishAsync` hoje valida ownership/Vehicle, muda a Listing para `Published` e persiste pelo repositório.
+`PublishAsync` altera a Listing para `Published`, persiste pelo repositório ABP e garante uma única `SavedSearchAlertDetectionRequest` por `ListingId`. O trigger não varre Saved Searches e não chama provider externo.
 
-`ModerationListingCommandService.RestoreAsync` também retorna a Listing a `Published`, mas isso é restauração/reentrada de uma oferta já publicada, não necessariamente uma nova oferta.
+O experimento refutou usar um `MarketplaceDbContext` injetado diretamente como boundary do trigger: o probe de rollback não conseguiu provar atomicidade por esse caminho. O trigger foi então movido para `IRepository<SavedSearchAlertDetectionRequest, Guid>`, alinhado ao UoW ambiente.
 
-### B — detector existente
+### B — rollback transacional
 
-`SavedSearchAlertDetectionAppService.EvaluateAsync` carrega todas as Saved Searches com alerta habilitado e avalia o candidato contra o matcher público compartilhado. Esse custo é proporcional ao número de intenções habilitadas, portanto o detector não deve ser chamado diretamente dentro de `PublishAsync`.
+O fixture abre UoW transacional explícito, grava `Published` e a request com `autoSave`, confirma a request staged pelo mesmo repositório/UoW e executa `RollbackAsync`. Uma execução seguinte, com contexto novo, observa `Draft` e zero requests.
 
-O ledger `(SavedSearchId, ListingId)` já torna a materialização final idempotente.
+Isso prova mecanicamente que Listing + intenção durável fazem rollback juntas no boundary testado.
 
-## Hipóteses falsificáveis
+### B — processamento tardio e elegibilidade temporal
 
-T1. A primeira chamada de `PublishAsync` deve persistir, no mesmo UoW, uma intenção durável O(1) identificada por `ListingId`.
+O smoke HTTP prova que:
 
-T2. Se o UoW falhar depois de gravar a mudança da Listing e a intenção de detecção, ambos devem fazer rollback; não pode existir `Published` sem intenção durável por falha intermediária.
+- Draft não cria match;
+- publish normal deixa exatamente uma request pendente;
+- Saved Search habilitada antes do enqueue pode casar;
+- Saved Search habilitada somente depois da publicação não recebe alerta retroativo;
+- opt-out antes do processamento suprime o match;
+- processor conclui a request somente após avaliação pública;
+- replay e pause → publish não duplicam request nem match.
 
-T3. Retry/re-publish da mesma Listing não cria segunda intenção de nova oferta.
+`AlertEnabledAtUtc` permanece nulo quando não há opt-in datado. Estado legado `AlertEnabled=true` sem timestamp não recebe data inventada; um novo opt-in explícito estabelece a data.
 
-T4. O trigger não avalia Saved Searches, não chama provider externo e não depende de scheduler/polling.
+## Resultado das hipóteses
 
-T5. O processor pode executar depois da transação de publicação e deve marcar a intenção como processada somente quando puder avaliar uma Listing pública.
+- T1 — **PASSA**: primeira publicação deixa intenção O(1) por `ListingId`.
+- T2 — **PASSA**: rollback explícito restaura Draft e remove a intenção staged.
+- T3 — **PASSA**: retry/re-publish preserva uma única request.
+- T4 — **PASSA**: trigger não avalia Saved Searches nem chama provider.
+- T5 — **PASSA**: processor pode rodar depois e marca request processada.
+- T6 — **PASSA**: opt-in posterior à publicação não é retroativo.
+- T7 — **PASSA**: opt-out anterior ao processamento é respeitado.
+- T8 — **PASSA para este boundary**: outbox/distributed event bus não é necessário para garantir a intenção local transacional já comprovada.
 
-T6. Uma Saved Search criada ou habilitada somente depois do instante da primeira publicação não deve receber retroativamente um alerta de “nova oferta” apenas porque o processor rodou tarde.
+## Decisão
 
-T7. Desativação antes do processamento deve continuar suprimindo o match/delivery, preservando opt-out.
+**PASSA** o desenho mínimo:
 
-T8. Se uma intenção durável na mesma transação + processor idempotente resolver os casos acima, outbox/distributed event bus/background job permanecem não promovidos. Eles só ganham necessidade quando houver requisito de transporte/worker/retry que o estado local não satisfaça.
-
-## Modelo experimental mínimo
-
-Candidato:
-
-`PublishAsync → SavedSearchAlertDetectionRequest(ListingId, EnqueuedAtUtc) [mesmo UoW]`
+`PublishAsync → SavedSearchAlertDetectionRequest(ListingId, EnqueuedAtUtc) [mesmo UoW via repositório ABP]`
 
 Depois, fora do request de publicação:
 
 `DetectionRequest pendente → detector → SavedSearchAlertMatch → request.ProcessedAtUtc`
 
-Invariantes propostas:
+A request é o boundary durável de trabalho; `(SavedSearchId, ListingId)` continua sendo o ledger idempotente de match.
 
-- uma única request por `ListingId`;
-- `EnqueuedAtUtc` representa a primeira publicação observada pelo trigger;
-- re-publish/restore não cria uma nova “nova oferta”;
-- Saved Search precisa estar habilitada antes/de no instante de enqueue para ser candidata;
-- request só é concluída após avaliação pública bem-sucedida;
-- provider/delivery não participa do processamento deste slice.
+## O que foi rejeitado
 
-## Casos mínimos de teste
+- scan de Saved Searches dentro de `PublishAsync`;
+- delivery/provider dentro da transação de publicação;
+- trigger baseado em `MarketplaceDbContext` direto quando a participação no UoW não foi mecanicamente sustentada pelo probe;
+- backfill inventado de `AlertEnabledAtUtc`;
+- promover outbox distribuído apenas por preferência arquitetural.
 
-1. Draft sem publish → nenhuma request.
-2. Experimento de UoW que publica + enfileira e falha antes de `Complete` → Listing continua Draft e request não existe.
-3. Publish normal → Listing Published e exatamente uma request pendente.
-4. Repetir trigger/re-publish → continua uma request.
-5. Saved Search habilitada antes do publish + Listing compatível → processor gera um match e conclui request.
-6. Saved Search habilitada somente após publish, antes do processor → não recebe match retroativo.
-7. Saved Search habilitada antes do publish, mas desabilitada antes do processor → não recebe match.
-8. Processor repetido depois de concluído → zero novos matches.
-9. Nenhum provider externo é chamado; publish não faz scan de Saved Searches.
+## Próxima boundary
 
-## Critério de decisão
+O gap restante não é mais atomicidade de publicação. É a execução automática do processor em produção.
 
-**PASSA** se os casos 1–9 forem reproduzidos com uma intenção local durável na mesma transação, custo O(1) no publish e processor idempotente.
+O próximo slice deve provar o menor runner que drena requests pendentes com:
 
-**NÃO PASSA** se houver gap de commit entre Listing e intenção, se a publicação precisar escanear Saved Searches, se houver alerta retroativo por atraso do processor ou se retries criarem duplicatas.
+- claim/concurrency sem processamento duplo;
+- retry após falha;
+- recuperação de request pendente após restart;
+- idempotência do ledger já existente;
+- custo operacional explícito.
+
+Só depois desse contrato escolher `BackgroundWorker`, job/scheduler ou mecanismo equivalente. Provider/canal/template de delivery continuam separados.
 
 ## Ainda não decidido
 
-- quem executará o processor em produção;
-- background worker/job concreto;
-- local event bus vs chamada direta ao trigger O(1);
-- distributed event bus/outbox;
-- frequência/retry operacional;
+- mecanismo concreto que executa o processor em produção;
+- frequência/polling se realmente necessários;
+- política de retry/backoff;
 - provider/canal/template/digest de delivery;
 - price-drop.
