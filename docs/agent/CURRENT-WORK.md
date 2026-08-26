@@ -8,47 +8,43 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0049 foi encerrado por classificação após percorrer todos os blocos A–H. Nenhum bloco restante possui simultaneamente precondições suficientes, contrato falsificável e ausência de blocker para ser promovido sem inventar requisito, provider, dataset ou infraestrutura.
+O Plan 0049 foi encerrado por classificação. O retry de Favorite price-drop do PR #77 corrigiu o bug mecânico do smoke do PR #75, mas então revelou falha funcional reproduzível: Draft ignore passa, porém o primeiro match esperado para uma Listing publicada já favoritada permanece com ledger vazio. O PR #77 foi fechado sem merge.
+
+Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
 
 ## Active plan
 
 **Nenhum.**
 
-O último plano concluído é [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
-
 ## Próximos gatilhos de reabertura
 
-Abrir um novo plano somente quando houver nova evidência suficiente em pelo menos um destes pontos:
-
-- enrichment técnico publicado do Podium suficiente para destravar o contrato de consumo BPT2/Comparador;
-- decisão reproduzível de claim/concurrency/retry/restart para o runner de Saved Search;
-- correção futura, em slice próprio, do detector de price-drop que falhou no PR #75;
+- probe focado para a persistência/UoW do detector de Favorite price-drop;
+- enrichment técnico publicado do Podium suficiente para Comparator;
+- deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
 - corpus + baseline + métrica para discovery avançado;
 - dataset/licença/metodologia/provenance para inteligência de mercado;
-- provider/privacy/legal ou problema operacional observado para trust/moderação avançada;
-- tese comercial/parceria concreta para Compra Assistida, financiamento, seguros, credits/payments;
-- inventário atual reproduzível do Carros na Web para cálculo de cobertura.
+- evidência operacional suficiente para trust/moderação avançada;
+- tese comercial/parceria concreta para complementares;
+- inventário atual reproduzível do Carros na Web.
 
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
-- Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
-- Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
-- Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Último plano concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
-- Meta Carros na Web: [`../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md`](../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md).
-- Boundary Podium 7: [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
-
-Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
+- Produto: [`../PRODUCT.md`](../PRODUCT.md).
+- Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
+- Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
+- Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
 
 ## Open blockers
 
+- Favorite price-drop: falha funcional reproduzida no PR #77; primeiro ledger esperado fica vazio.
 - Comparator: enrichment técnico publicado suficiente do Podium.
-- Saved Search runner: claim/concurrency, retry e restart ainda não decididos por teste seguro.
-- Favorite price-drop detector: PR #75 fechado sem merge após falha no smoke específico.
-- Inteligência de mercado: dataset/licença/metodologia/provenance.
-- Carros na Web: inventário público atual ainda não reproduzível.
+- Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
+- Discovery avançado: sem corpus/baseline/métrica.
+- Inteligência de mercado: sem dataset/licença/metodologia/provenance.
+- Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
 
 ## Update rule
 
-Atualize este snapshot somente quando mudar o outcome ativo, plano ativo, próximo acceptance target ou blocker real. História vai para execution plan concluído/ADR, não para baixo deste arquivo.
+Atualize este snapshot somente quando mudar outcome, plano, acceptance target ou blocker real.
