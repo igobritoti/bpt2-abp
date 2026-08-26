@@ -15,4 +15,5 @@ public sealed record SavedSearchDto(
     int? MinMileageKm,
     int? MaxMileageKm,
     string? Query,
+    bool AlertEnabled,
     DateTime CreatedAtUtc);

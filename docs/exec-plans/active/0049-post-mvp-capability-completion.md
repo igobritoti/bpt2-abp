@@ -30,6 +30,7 @@ Este plano usa três entradas:
 - Seller/Listing lifecycle baseline;
 - Favorites;
 - Saved Search baseline para Buyer autenticado;
+- contrato mínimo de detecção de nova oferta compatível — opt-in explícito, semântica pública compartilhada e ledger idempotente;
 - Buyer contact/WhatsApp → Lead;
 - Lead mínimo `Novo/Atendido/Fechado` com outcome `Won/Lost`;
 - moderação mínima humana;
@@ -79,11 +80,13 @@ Primeiro slice deve usar apenas atributos que tenham autoridade/provenance sufic
 Investigar/implementar por menor prova:
 
 1. [x] Saved Search semantic criteria (sem persistir Skip/Take/Sort);
-2. [ ] alertas de nova oferta compatível;
+2. [~] alertas de nova oferta compatível — **detecção/opt-in/dedup comprovados; trigger confiável e delivery pendentes**;
 3. [ ] price-drop de Favorite/listing quando existir versionamento seguro de preço;
-4. [ ] preferências/opt-in/dedup/unsubscribe.
+4. [ ] preferências/opt-in/dedup/unsubscribe além do estado mínimo já provado para alertas.
 
-O Saved Search fechado persiste somente filtros semânticos já suportados pela busca pública, deriva ownership do Buyer autenticado, deduplica critérios equivalentes e reabre resultados pelos filtros públicos atuais. Paginação/ordenação não fazem parte da identidade salva. Alertas, jobs e canal de entrega não foram introduzidos nesse slice.
+O Saved Search fechado persiste somente filtros semânticos já suportados pela busca pública, deriva ownership do Buyer autenticado, deduplica critérios equivalentes e reabre resultados pelos filtros públicos atuais. Paginação/ordenação não fazem parte da identidade salva.
+
+O contrato de detecção fechado usa somente Listing pública, reutiliza a mesma semântica da busca pública, exige opt-in explícito e persiste um único `(SavedSearchId, ListingId)`. O experimento rejeitou varredura síncrona ingênua dentro de `PublishAsync`; detector e delivery permanecem separados.
 
 ### Bloco D — Promotions
 
@@ -169,16 +172,18 @@ Preferir: alto valor + alta dependência desbloqueada + baixo/medio risco + test
 
 ## Próxima decisão operacional
 
-Checkpoint inicial executado em `docs/audits/2026-08-25-post-0048-capability-implementation-matrix.md`.
+Checkpoint do alerta de nova oferta concluído em `docs/audits/2026-08-25-new-listing-alert-contract-test.md`.
 
 Resultado atualizado:
 
-- o identity contract Podium `2.0` é suficiente para mapping de identidade, mas não congela ficha técnica ampla;
+- o identity contract Podium `2.0` continua suficiente para mapping de identidade, mas não congela ficha técnica ampla;
 - enrichment interno verificado do Podium ainda não constitui um read contract técnico suficiente para um Comparador útil;
 - iniciar Comparador agora permanece **REPROVADO** para evitar matriz pobre ou Listing fallback;
-- o fallback independente **Saved Search** foi implementado e comprovado por Fresh Migration, Public Web e smoke HTTP autenticado;
-- próxima boundary do BPT2: **testar o contrato mínimo de alerta de nova oferta compatível**, reutilizando Saved Search como intenção persistida, antes de escolher job scheduler/provider/canal;
-- o teste deve separar matching determinístico, estado de processamento/dedup, opt-in/unsubscribe e delivery; infraestrutura assíncrona não é requisito presumido.
+- Saved Search permanece entregue como intenção Buyer persistida;
+- o contrato mínimo de detecção de nova oferta **PASSA**: opt-in explícito, matcher público compartilhado, somente Published, ledger `(SavedSearchId, ListingId)` e idempotência de replay/republish;
+- varrer Saved Searches/delivery de forma síncrona dentro de `PublishAsync` foi **REPROVADO** por acoplamento e latência proporcional ao volume de intenções;
+- próxima boundary do BPT2: **provar o gatilho confiável da detecção na transição para público**, cobrindo atomicidade e retry antes de escolher evento/outbox/background job;
+- provider/canal de delivery, frequência e digest permanecem não decididos.
 
 ## Critérios de aceite do Plan 0049
 
@@ -198,6 +203,8 @@ Resultado atualizado:
 - 2026-08-25 — cobertura do benchmark não autoriza cópia técnica/conteúdo nem implementação sem custo/valor/provenance.
 - 2026-08-25 — identity contract Podium atual não é confundido com ficha técnica; Comparador continua atrás de enrichment publicado suficiente.
 - 2026-08-25 — Saved Search definido como critérios semânticos da busca pública pertencentes ao Buyer; `Skip`/`Take`/página/`Sort` não compõem identidade, e alertas/jobs/delivery ficam fora desse slice.
+- 2026-08-26 — alerta de nova oferta: detecção e delivery separados; opt-in explícito; matcher compartilha pipeline público; `(SavedSearchId, ListingId)` é o ledger idempotente do baseline.
+- 2026-08-26 — varredura síncrona de todas as buscas dentro de `PublishAsync` não foi promovida; o próximo teste é o trigger confiável/atomicidade.
 
 ## Progress log
 
@@ -206,4 +213,5 @@ Resultado atualizado:
 - 2026-08-25 — Plan 0048 provou boundary Podium e fixture de projection/replay/redirect/cardinality.
 - 2026-08-25 — Plan 0049 aberto para concluir o restante do roadmap por blocos funcionais.
 - 2026-08-25 — primeira matriz pós-0048 concluída; próximo slice selecionado como publication mapping + enrichment contract mínimo.
-- 2026-08-25 — blocker externo do enrichment acionou o fallback independente; Saved Search baseline implementado com persistência, ownership server-side, dedup semântico, round-trip na public web e smoke HTTP; head funcional fechou 18/18 workflows verdes antes do closeout documental.
+- 2026-08-25 — blocker externo do enrichment acionou o fallback independente; Saved Search baseline implementado com persistência, ownership server-side, dedup semântico, round-trip na public web e smoke HTTP; head funcional fechou workflows verdes antes do closeout documental.
+- 2026-08-26 — contrato de detecção de nova oferta implementado e comprovado por HTTP: Draft/private bloqueado, filtro incompatível não casa, Published compatível gera um ledger, replay/republish não duplicam, ownership/opt-out preservados e nenhum provider participa da detecção.

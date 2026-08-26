@@ -91,25 +91,80 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
         return page.Items;
     }
 
+    public async Task<bool> MatchesAsync(
+        Guid listingId,
+        PublicListingSearchInput input,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var listings = await BuildFilteredListingsAsync(input, cancellationToken);
+        if (listings is null)
+        {
+            return false;
+        }
+
+        return await listings.AnyAsync(x => x.Id == listingId, cancellationToken);
+    }
+
     public async Task<PagedResultDto<PublicListingDto>> SearchPageAsync(
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(input);
-
-        if (input.MinPrice.HasValue && input.MaxPrice.HasValue && input.MinPrice > input.MaxPrice)
+        var listings = await BuildFilteredListingsAsync(input, cancellationToken);
+        if (listings is null)
         {
             return EmptyPage();
+        }
+
+        var totalCount = await listings.LongCountAsync(cancellationToken);
+        if (totalCount == 0)
+        {
+            return EmptyPage();
+        }
+
+        var boundedSkip = Math.Max(0, input.Skip);
+        var boundedTake = Math.Clamp(input.Take, 1, 100);
+        var orderedListings = OrderListings(listings, input.Sort);
+
+        var rows = await orderedListings
+            .Skip(boundedSkip)
+            .Take(boundedTake)
+            .Select(x => new ListingRow(
+                x.Id,
+                x.SellerId,
+                x.VehicleId,
+                x.Title,
+                x.Price,
+                x.Description,
+                x.ManufactureYear,
+                x.MileageKm,
+                x.Color,
+                x.City,
+                x.StateCode))
+            .ToListAsync(cancellationToken);
+
+        var items = await ProjectRowsAsync(rows, cancellationToken);
+        return new PagedResultDto<PublicListingDto>(totalCount, items);
+    }
+
+    private async Task<IQueryable<Listing>?> BuildFilteredListingsAsync(
+        PublicListingSearchInput input,
+        CancellationToken cancellationToken)
+    {
+        if (input.MinPrice.HasValue && input.MaxPrice.HasValue && input.MinPrice > input.MaxPrice)
+        {
+            return null;
         }
 
         if (input.MinModelYear.HasValue && input.MaxModelYear.HasValue && input.MinModelYear > input.MaxModelYear)
         {
-            return EmptyPage();
+            return null;
         }
 
         if (input.MinMileageKm.HasValue && input.MaxMileageKm.HasValue && input.MinMileageKm > input.MaxMileageKm)
         {
-            return EmptyPage();
+            return null;
         }
 
         var listings = ListingVisibility.PublicOnly(_dbContext.Listings.AsNoTracking());
@@ -136,7 +191,7 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
 
             if (vehicleIds.Count == 0)
             {
-                return EmptyPage();
+                return null;
             }
 
             listings = listings.Where(x => vehicleIds.Contains(x.VehicleId));
@@ -185,35 +240,7 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
                     || vehicleIds.Contains(x.VehicleId));
         }
 
-        var totalCount = await listings.LongCountAsync(cancellationToken);
-        if (totalCount == 0)
-        {
-            return EmptyPage();
-        }
-
-        var boundedSkip = Math.Max(0, input.Skip);
-        var boundedTake = Math.Clamp(input.Take, 1, 100);
-        var orderedListings = OrderListings(listings, input.Sort);
-
-        var rows = await orderedListings
-            .Skip(boundedSkip)
-            .Take(boundedTake)
-            .Select(x => new ListingRow(
-                x.Id,
-                x.SellerId,
-                x.VehicleId,
-                x.Title,
-                x.Price,
-                x.Description,
-                x.ManufactureYear,
-                x.MileageKm,
-                x.Color,
-                x.City,
-                x.StateCode))
-            .ToListAsync(cancellationToken);
-
-        var items = await ProjectRowsAsync(rows, cancellationToken);
-        return new PagedResultDto<PublicListingDto>(totalCount, items);
+        return listings;
     }
 
     private static IOrderedQueryable<Listing> OrderListings(IQueryable<Listing> listings, string? sort)
