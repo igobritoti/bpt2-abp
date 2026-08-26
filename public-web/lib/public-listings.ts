@@ -35,6 +35,7 @@ export type PublicListing = {
   city: string;
   stateCode: string;
   photos: PublicListingPhoto[];
+  isSponsored: boolean;
 };
 
 export type PublicListingSort = "price-asc" | "price-desc";
@@ -178,5 +179,6 @@ export function vehicleLabel(listing: PublicListing): string {
   const parts = [listing.vehicle.brand, listing.vehicle.model, listing.vehicle.version]
     .map((value) => value?.trim())
     .filter(Boolean);
-  return parts.join(" ");
+  const label = parts.join(" ");
+  return listing.isSponsored ? `Patrocinado · ${label}` : label;
 }
