@@ -9,6 +9,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<ListingPhoto> ListingPhotos => Set<ListingPhoto>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<ListingReport> ListingReports => Set<ListingReport>();
 
@@ -42,6 +43,16 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
         {
             b.ToTable("MarketplaceFavorites");
             b.HasIndex(x => new { x.UserId, x.ListingId }).IsUnique();
+        });
+
+        builder.Entity<SavedSearch>(b =>
+        {
+            b.ToTable("MarketplaceSavedSearches");
+            b.Property(x => x.CriteriaKey).HasMaxLength(64).IsRequired();
+            b.Property(x => x.MinPrice).HasPrecision(18, 2);
+            b.Property(x => x.MaxPrice).HasPrecision(18, 2);
+            b.HasIndex(x => new { x.UserId, x.CriteriaKey }).IsUnique();
+            b.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
         });
 
         builder.Entity<Lead>(b =>

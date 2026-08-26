@@ -6,11 +6,11 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Concluir progressivamente as capabilities restantes do Bom Pra Ti a partir do estado entregue, da matriz BPT1 → BPT2 e de benchmarks externos, sem reabrir decisões de arquitetura secundárias que não bloqueiam produto.
+Concluir progressivamente as capabilities restantes do Bom Pra Ti pelo Plan 0049.
 
-O Podium 7 está reconhecido como knowledge producer/alimentador do catálogo. O BPT2 continua owner do catálogo publicado. A topologia de repositório e eventual convergência Python→.NET estão **adiadas** até os triggers mensuráveis da ADR-0011.
+O **Saved Search baseline está concluído**. A próxima boundary independente do BPT2 é testar o contrato mínimo de **alerta de nova oferta compatível** usando a intenção persistida do Saved Search, sem presumir scheduler, provider ou canal de entrega. O prerequisite de enrichment do Comparador permanece no bounded context Podium 7 e não deve bloquear esta trilha de retenção Buyer.
 
-A meta estratégica adicional é atingir pelo menos **90% das capabilities úteis/elegíveis do Carros na Web**, mirando 100% quando custo, dados, licenças, risco e valor justificarem.
+A meta estratégica adicional continua sendo atingir pelo menos **90% das capabilities úteis/elegíveis do Carros na Web**, mirando 100% quando custo, dados, licenças, risco e valor justificarem.
 
 ## Active plan
 
@@ -18,15 +18,17 @@ A meta estratégica adicional é atingir pelo menos **90% das capabilities útei
 
 ## Acceptance target
 
-O Plan 0049 deve primeiro atualizar a matriz restante após Lead closing + boundary Podium e selecionar **um único próximo slice** por dependência/valor.
+Antes de implementar alerta de nova oferta compatível, o próximo slice deve provar/decidir:
 
-Prioridade técnica atual:
+- qual evento/estado representa uma oferta tornando-se publicamente elegível para matching;
+- que matching reutiliza critérios semânticos do Saved Search e nunca inclui Draft/private;
+- como evitar reprocessamento/notificação duplicada da mesma oferta para a mesma intenção;
+- onde ficam opt-in, desativação/unsubscribe e estado mínimo do alerta;
+- separação entre detectar match e entregar notificação;
+- se existe necessidade real de background job/scheduler e qual frequência decorre do requisito, em vez de escolher infraestrutura primeiro;
+- provider/canal de entrega permanecem não decididos até haver contrato e requisito suficiente.
 
-1. provar o menor contrato de publication mapping/enrichment Podium → BPT2;
-2. usar esse enrichment para destravar o Comparador 2–4 quando suficiente;
-3. se houver blocker externo no mapping, avançar para gap independente seguro da matriz.
-
-O inventário Carros na Web é uma trilha paralela e não interrompe um slice ativo sem evidência de blocker material.
+Não implementar price-drop, Comparator, Promotions ou outro bloco em paralelo enquanto esse slice estiver ativo.
 
 ## Source of runtime truth
 
@@ -35,19 +37,17 @@ O inventário Carros na Web é uma trilha paralela e não interrompe um slice at
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Plano ativo: [`../exec-plans/active/0049-post-mvp-capability-completion.md`](../exec-plans/active/0049-post-mvp-capability-completion.md).
+- Contrato Saved Search auditado: [`../audits/2026-08-25-saved-search-contract-test.md`](../audits/2026-08-25-saved-search-contract-test.md).
 - Meta Carros na Web: [`../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md`](../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md).
-- Boundary Podium 7 concluída: [`../exec-plans/completed/0048-pbev-reconciliation-experiment.md`](../exec-plans/completed/0048-pbev-reconciliation-experiment.md).
-- Auditoria monorepo/convergência: [`../audits/2026-08-25-podium7-monorepo-convergence-measurement.md`](../audits/2026-08-25-podium7-monorepo-convergence-measurement.md).
-- Minimal Lead closing concluído: [`../exec-plans/completed/0047-minimal-lead-closing.md`](../exec-plans/completed/0047-minimal-lead-closing.md).
-- Roadmap BPT1 → BPT2 concluído: [`../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md`](../exec-plans/completed/0046-bpt1-capability-roadmap-audit.md).
+- Boundary Podium 7: [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
 ## Open blockers
 
-Nenhum blocker funcional externo conhecido.
+Comparator continua bloqueado somente por enrichment técnico publicado suficiente do Podium. Isso não bloqueia o teste/implementação de alertas sobre Saved Search.
 
-A aquisição/reconciliation automotiva pertence ao Podium 7 e não deve ser duplicada no BPT2. A pesquisa pública do Carros na Web ainda não forneceu inventário atual reproduzível suficiente; isso bloqueia apenas o cálculo de cobertura do benchmark, não o desenvolvimento normal do BPT2.
+A pesquisa pública do Carros na Web ainda não forneceu inventário atual reproduzível suficiente; isso bloqueia apenas o cálculo de cobertura do benchmark, não o desenvolvimento normal do BPT2.
 
 ## Update rule
 

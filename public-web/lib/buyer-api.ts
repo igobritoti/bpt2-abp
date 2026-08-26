@@ -1,4 +1,4 @@
-import type { PublicListing } from "./public-listings";
+import type { PublicListing, PublicListingSearch } from "./public-listings";
 
 function apiBaseUrl(): string {
   return (
@@ -66,4 +66,34 @@ export async function reportListing(accessToken: string, listingId: string): Pro
     accessToken,
     { method: "POST" },
   );
+}
+
+export type SavedSearch = Omit<PublicListingSearch, "sort" | "skip" | "take"> & {
+  id: string;
+  createdAtUtc: string;
+};
+
+export type SavedSearchCriteria = Omit<PublicListingSearch, "sort" | "skip" | "take">;
+
+export async function createSavedSearch(
+  accessToken: string,
+  criteria: SavedSearchCriteria,
+): Promise<SavedSearch> {
+  const response = await buyerRequest("/api/app/saved-search", accessToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(criteria),
+  });
+  return (await response.json()) as SavedSearch;
+}
+
+export async function getMySavedSearches(accessToken: string): Promise<SavedSearch[]> {
+  const response = await buyerRequest("/api/app/saved-search/mine", accessToken);
+  return (await response.json()) as SavedSearch[];
+}
+
+export async function deleteSavedSearch(accessToken: string, id: string): Promise<void> {
+  await buyerRequest(`/api/app/saved-search/${encodeURIComponent(id)}`, accessToken, {
+    method: "DELETE",
+  });
 }

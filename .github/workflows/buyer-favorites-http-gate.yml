@@ -9,6 +9,7 @@ on:
       - 'main/BomPraTi/appsettings.json'
       - 'public-web/**'
       - 'scripts/buyer-favorites-http-smoke.sh'
+      - 'scripts/buyer-saved-search-http-smoke.sh'
       - 'scripts/buyer-listing-report-http-smoke.sh'
       - 'scripts/moderation-report-inbox-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
@@ -45,6 +46,7 @@ jobs:
       - name: Syntax check Buyer HTTP smokes
         run: |
           bash -n scripts/buyer-favorites-http-smoke.sh
+          bash -n scripts/buyer-saved-search-http-smoke.sh
           bash -n scripts/buyer-listing-report-http-smoke.sh
           bash -n scripts/moderation-report-inbox-http-smoke.sh
       - name: Apply fresh database
@@ -67,6 +69,8 @@ jobs:
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
       - name: Exercise Buyer Favorites over HTTP
         run: bash scripts/buyer-favorites-http-smoke.sh
+      - name: Exercise Buyer Saved Searches over HTTP
+        run: bash scripts/buyer-saved-search-http-smoke.sh
       - name: Exercise Buyer Listing Reports over HTTP
         run: bash scripts/buyer-listing-report-http-smoke.sh
       - name: Exercise Moderation Report Inbox and Admin Surface over HTTP

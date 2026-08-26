@@ -1,0 +1,153 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { User } from "oidc-client-ts";
+import {
+  deleteSavedSearch,
+  getMySavedSearches,
+  type SavedSearch,
+} from "../../lib/buyer-api";
+import { getCurrentBuyerUser, getBuyerUserManager, signInBuyer } from "../../lib/buyer-auth";
+
+function searchHref(search: SavedSearch): string {
+  const params = new URLSearchParams();
+  const setText = (name: string, value?: string) => {
+    if (value) params.set(name, value);
+  };
+  const setNumber = (name: string, value?: number) => {
+    if (value !== undefined) params.set(name, String(value));
+  };
+
+  setText("vehicleId", search.vehicleId);
+  setText("sellerId", search.sellerId);
+  setText("query", search.query);
+  setText("brand", search.brand);
+  setText("model", search.model);
+  setText("city", search.city);
+  setText("stateCode", search.stateCode);
+  setNumber("minModelYear", search.minModelYear);
+  setNumber("maxModelYear", search.maxModelYear);
+  setNumber("minPrice", search.minPrice);
+  setNumber("maxPrice", search.maxPrice);
+  setNumber("minMileageKm", search.minMileageKm);
+  setNumber("maxMileageKm", search.maxMileageKm);
+  return params.size > 0 ? `/?${params.toString()}` : "/";
+}
+
+function searchLabel(search: SavedSearch): string {
+  const parts = [
+    search.query,
+    search.brand,
+    search.model,
+    search.city,
+    search.stateCode,
+    search.vehicleId ? "veículo específico" : undefined,
+    search.sellerId ? "vendedor específico" : undefined,
+    search.minModelYear !== undefined ? `a partir de ${search.minModelYear}` : undefined,
+    search.maxModelYear !== undefined ? `até ${search.maxModelYear}` : undefined,
+    search.minPrice !== undefined ? `mín. R$ ${search.minPrice}` : undefined,
+    search.maxPrice !== undefined ? `máx. R$ ${search.maxPrice}` : undefined,
+    search.minMileageKm !== undefined ? `mín. ${search.minMileageKm} km` : undefined,
+    search.maxMileageKm !== undefined ? `máx. ${search.maxMileageKm} km` : undefined,
+  ].filter(Boolean);
+  return parts.join(" · ") || "Todos os anúncios públicos";
+}
+
+export default function SavedSearchesPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [items, setItems] = useState<SavedSearch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const currentUser = await getCurrentBuyerUser();
+        setUser(currentUser);
+        if (currentUser) setItems(await getMySavedSearches(currentUser.access_token));
+      } catch (reason: unknown) {
+        setError(reason instanceof Error ? reason.message : "Não foi possível carregar suas buscas salvas.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, []);
+
+  async function remove(id: string) {
+    if (!user) return;
+    setError(null);
+    try {
+      await deleteSavedSearch(user.access_token, id);
+      setItems((current) => current.filter((item) => item.id !== id));
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível remover a busca salva.");
+    }
+  }
+
+  return (
+    <main className="shell seller-shell">
+      <nav className="back-nav" aria-label="Voltar para anúncios">
+        <Link href="/">← Todos os anúncios</Link>
+      </nav>
+      <header className="seller-dashboard-header">
+        <div>
+          <p className="eyebrow">Conta do comprador</p>
+          <h1>Buscas salvas.</h1>
+          <p className="lede">Guarde filtros de descoberta para reabrir o mesmo conjunto lógico de resultados.</p>
+        </div>
+        {user ? (
+          <button className="secondary-action" type="button" onClick={() => getBuyerUserManager().signoutRedirect()}>
+            Sair
+          </button>
+        ) : null}
+      </header>
+
+      {loading ? <p className="seller-shell-status">Verificando sessão…</p> : null}
+      {error ? <p className="seller-auth-error">{error}</p> : null}
+
+      {!loading && !user ? (
+        <section className="seller-auth-card">
+          <h2>Entre para acessar suas buscas salvas</h2>
+          <p>A autenticação Buyer continua usando Authorization Code + PKCE.</p>
+          <button className="primary-action" type="button" onClick={() => signInBuyer("/buscas-salvas")}>
+            Entrar
+          </button>
+        </section>
+      ) : null}
+
+      {!loading && user ? (
+        <section className="listing-section" aria-labelledby="saved-search-list-title">
+          <div className="section-heading">
+            <h2 id="saved-search-list-title">Critérios salvos</h2>
+            <p className="result-count">{items.length} busca(s)</p>
+          </div>
+          {items.length === 0 ? (
+            <div className="empty-state">
+              <h3>Nenhuma busca salva.</h3>
+              <p>Refine a descoberta na página inicial e use “Salvar busca”.</p>
+            </div>
+          ) : (
+            <div className="listing-grid">
+              {items.map((item) => (
+                <article className="listing-card" key={item.id}>
+                  <div className="listing-body">
+                    <h3>{searchLabel(item)}</h3>
+                    <p>Salva em {new Date(item.createdAtUtc).toLocaleString("pt-BR")}</p>
+                    <p>
+                      <Link href={searchHref(item)}>Ver resultados</Link>
+                    </p>
+                    <button className="secondary-action" type="button" onClick={() => remove(item.id)}>
+                      Remover busca
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+    </main>
+  );
+}
