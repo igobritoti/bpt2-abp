@@ -172,9 +172,27 @@ curl --fail --silent --show-error "$WEB_BASE/?query=Sponsored%20Contract" -o "$T
 python3 - "$TMP/page.html" <<'PY'
 from html.parser import HTMLParser
 import sys
+
 class P(HTMLParser):
-    def __init__(self): super().__init__(); self.parts=[]
-    def handle_data(self,d): self.parts.append(d)
+    ignored = {'script', 'style', 'template', 'noscript'}
+
+    def __init__(self):
+        super().__init__()
+        self.parts=[]
+        self.depth=0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.ignored:
+            self.depth += 1
+
+    def handle_endtag(self, tag):
+        if tag in self.ignored and self.depth:
+            self.depth -= 1
+
+    def handle_data(self, data):
+        if self.depth == 0:
+            self.parts.append(data)
+
 p=P(); p.feed(open(sys.argv[1], encoding='utf-8').read()); text=' '.join(p.parts)
 if text.count('Patrocinado') != 1:
     raise SystemExit(f"Expected one visible Patrocinado label, got {text.count('Patrocinado')}")
