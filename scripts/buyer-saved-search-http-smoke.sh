@@ -31,7 +31,8 @@ PY
 
 request(){ local method="$1" path="$2" token="${3:-}" body="${4:-}"; local a=(--silent --show-error --output "$RESPONSE" --write-out '%{http_code}' --request "$method"); [[ -z "$token" ]] || a+=(-H "Authorization: Bearer $token"); [[ -z "$body" ]] || a+=(-H 'Content-Type: application/json' --data "$body"); curl "${a[@]}" "$BASE$path"; }
 token_for(){
-  local username="$1" password="$2" file="$TMP/token-$username.json" status
+  local username="$1" password="$2"
+  local file="$TMP/token-$username.json" status
   status="$(curl --silent --show-error --output "$file" --write-out '%{http_code}' -X POST "$BASE/connect/token" -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=BomPraTi_App' --data-urlencode "username=$username" --data-urlencode "password=$password" --data-urlencode 'scope=BomPraTi')"
   [[ "$status" == 200 ]] || { echo "Token failed $status: $(cat "$file")" >&2; exit 1; }
   python3 - "$file" <<'PY'
@@ -39,7 +40,8 @@ import json,sys; print(json.load(open(sys.argv[1]))['access_token'])
 PY
 }
 register_user(){
-  local username="$1" password="$2" email="$username@example.invalid" body status
+  local username="$1" password="$2"
+  local email="$username@example.invalid" body status
   body="$(python3 - "$username" "$email" "$password" <<'PY'
 import json,sys; print(json.dumps({'userName':sys.argv[1],'emailAddress':sys.argv[2],'password':sys.argv[3],'appName':'MVC'}))
 PY
