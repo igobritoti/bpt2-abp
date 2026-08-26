@@ -20,6 +20,7 @@ public sealed class SavedSearch : AggregateRoot<Guid>
     public int? MaxMileageKm { get; private set; }
     public string? Query { get; private set; }
     public bool AlertEnabled { get; private set; }
+    public DateTime? AlertEnabledAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private SavedSearch() { }
@@ -62,8 +63,16 @@ public sealed class SavedSearch : AggregateRoot<Guid>
         CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
     }
 
-    public void SetAlertEnabled(bool enabled)
+    public void SetAlertEnabled(bool enabled, DateTime changedAtUtc)
     {
+        if (AlertEnabled == enabled)
+        {
+            return;
+        }
+
         AlertEnabled = enabled;
+        AlertEnabledAtUtc = enabled
+            ? DateTime.SpecifyKind(changedAtUtc, DateTimeKind.Utc)
+            : null;
     }
 }
