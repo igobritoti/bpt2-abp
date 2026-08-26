@@ -2,7 +2,7 @@
 
 Data: 2026-08-25
 Plano: 0049
-Status: **EM TESTE**
+Status: **PASSA — contrato de detecção comprovado; gatilho/delivery permanecem separados**
 
 ## Pergunta
 
@@ -14,62 +14,75 @@ Qual é o menor contrato seguro para detectar que uma nova oferta pública corre
 
 `SavedSearch` persiste a intenção semântica do Buyer: VehicleId, SellerId, Brand, Model, City, StateCode, faixas de ano/preço/quilometragem e Query. Paginação e ordenação não fazem parte da identidade semântica.
 
+O experimento adicionou `AlertEnabled`, explicitamente desligado por padrão, sem transformar buscas existentes em alertas implicitamente.
+
 ### A — elegibilidade pública
 
 `ListingVisibility.IsPublic` e `ListingVisibility.PublicOnly` consideram pública somente uma Listing com `Status == Published`.
 
 ### A — transição de publicação
 
-`ListingCommandService.PublishAsync` valida ownership e Vehicle canônico, executa `listing.Publish()` e persiste a Listing. O caminho atual não publica evento de domínio/integração nem agenda background job.
+`ListingCommandService.PublishAsync` valida ownership e Vehicle canônico, executa `listing.Publish()` e persiste a Listing. O caminho permanece sem provider externo e sem varredura síncrona de todas as buscas salvas.
 
 ### A — semântica da busca pública
 
-`PublicListingQuery.SearchPageAsync` aplica a autoridade atual de matching público: VehicleId, SellerId, filtros canônicos Brand/Model/ano via Catalog, City, StateCode, preço, quilometragem e Query textual/identidade canônica, sempre começando de `ListingVisibility.PublicOnly`.
+`PublicListingQuery` passou a expor `MatchesAsync(listingId, criteria)` reutilizando o mesmo pipeline de filtros da busca pública. A detecção não mantém uma segunda taxonomia de matching.
 
-### A — infraestrutura assíncrona
+### A — ledger de detecção
 
-Busca no repositório atual não encontrou uso explícito de `ILocalEventBus`, `IDistributedEventBus`, `IBackgroundJobManager`, Hangfire, Quartz ou outbox para esse fluxo.
+`SavedSearchAlertMatch` persiste a identidade `(SavedSearchId, ListingId)` com unicidade no banco. Reprocessamento e `Pause → Publish` da mesma Listing não criam um segundo match.
 
-## Hipóteses falsificáveis
+### A — separação detector/delivery
 
-H1. Uma oferta só pode gerar match enquanto for publicamente elegível pela mesma regra de `ListingVisibility`.
+`SavedSearchAlertDetectionService` é uma boundary explícita para avaliar uma Listing pública e materializar matches pendentes. Ele não envia e-mail, push, WhatsApp nem chama provider externo.
 
-H2. O matcher de alerta deve produzir o mesmo resultado semântico da busca pública para os critérios persistidos no Saved Search; duplicar uma segunda taxonomia de filtros é reprovado.
+### B — teste HTTP reproduzido
 
-H3. `(SavedSearchId, ListingId)` é a menor identidade suficiente de detecção para impedir duplicação quando a mesma Listing é reprocessada, pausada e republicada ou restaurada, salvo requisito futuro explícito de renotificação.
+O smoke autenticado provou mecanicamente:
 
-H4. Detecção e entrega são responsabilidades separadas: o slice pode provar um match persistido/pendente sem escolher e-mail, push, WhatsApp ou outro provider.
+1. busca com alerta desligado não gera match;
+2. Listing Draft não gera match mesmo com alerta ligado;
+3. Saved Search incompatível não gera match;
+4. Listing compatível publicada gera exatamente um match;
+5. reprocessamento gera zero novos matches;
+6. `Pause → Publish` não duplica o ledger;
+7. outro Buyer não lê matches nem altera opt-in da busca alheia;
+8. o matcher usa os critérios públicos atuais, incluindo identidade/localidade/faixas;
+9. nenhum delivery externo é necessário para materializar o match.
 
-H5. O caminho síncrono de Publish pode ser usado como ponto de teste/integração inicial sem introduzir scheduler. Isso será rejeitado se acoplar delivery ao request, quebrar atomicidade ou exigir latência proporcional ao número de buscas salvas.
+O mesmo head funcional passou Fresh Migration, Architecture, Host, Product API, Public Discovery, Buyer Favorites/Saved Search e os demais workflows correntes.
 
-H6. Opt-in deve ser explícito. Uma busca salva existente não deve começar a alertar automaticamente apenas porque a capability foi adicionada.
+## Resultado das hipóteses
 
-## Casos mínimos de teste
+- **H1 PASSA.** Somente Listing publicamente elegível pode gerar match.
+- **H2 PASSA.** Matching reutiliza o pipeline da busca pública.
+- **H3 PASSA.** `(SavedSearchId, ListingId)` é suficiente para idempotência do baseline.
+- **H4 PASSA.** Detecção e entrega podem permanecer separadas.
+- **H5 REPROVADA na forma ingênua.** Varrer buscas salvas/delivery dentro de `PublishAsync` criaria latência proporcional ao número de intenções e acoplamento indevido. O publish não foi alterado para fazer essa varredura.
+- **H6 PASSA.** Opt-in é explícito e default false.
 
-1. Saved Search desativada para alerta + Listing compatível publicada → nenhum match de alerta.
-2. Saved Search ativada + Listing Draft compatível → nenhum match.
-3. Saved Search ativada + Listing incompatível publicada → nenhum match.
-4. Saved Search ativada + Listing compatível publicada → exatamente um match pendente.
-5. Reprocessar a mesma Listing para a mesma Saved Search → continua exatamente um match.
-6. Pause → Publish da mesma Listing → não duplica o match anterior.
-7. Outro Buyer não lê/controla o estado de alerta da busca alheia.
-8. Matching de filtros de identidade/localidade/faixas/query deve ser equivalente ao resultado da busca pública para a Listing candidata.
-9. Delivery externo não é necessário para o teste de detecção.
+## Decisão
 
-## Critério de decisão
+**PASSA** o contrato mínimo de detecção de nova oferta compatível.
 
-**PASSA** para implementação mínima se for possível provar os casos 1–9 com estado determinístico, ownership server-side e sem divergência da busca pública.
+Decidido:
 
-**NÃO PASSA** se o desenho exigir copiar a lógica de filtros, enviar provider externo no request de Publish, tratar Draft/private como candidato, ou permitir duplicatas por reprocessamento.
+- fonte de elegibilidade = `ListingVisibility`;
+- semântica de matching = mesma da busca pública;
+- opt-in explícito no Saved Search;
+- ledger único por `(SavedSearchId, ListingId)`;
+- detecção separada de delivery;
+- reprocessamento/republish não renotifica por padrão no baseline.
 
-## Decisão ainda não tomada
+Não decidido:
 
-Não estão decididos neste checkpoint:
-
-- scheduler/polling vs evento/transação;
+- mecanismo confiável que chama o detector quando a Listing entra/reentra em estado público;
+- evento local/distribuído, outbox ou job;
 - provider/canal de entrega;
-- frequência de envio;
-- batching/digest;
-- retries externos;
+- frequência, batching/digest e retries externos;
 - template/conteúdo da mensagem;
 - price-drop.
+
+## Próxima boundary
+
+Provar o menor **gatilho confiável de detecção** para uma Listing que se torna pública, sem chamar provider no request e sem exigir scan global/scheduler por hipótese. O teste deve cobrir atomicidade, retry/idempotência e falha entre persistir a publicação e materializar os matches antes de escolher event bus/outbox/background job.
