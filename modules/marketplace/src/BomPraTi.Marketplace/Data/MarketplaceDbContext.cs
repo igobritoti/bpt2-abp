@@ -49,11 +49,6 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
         {
             b.ToTable("MarketplaceSavedSearches");
             b.Property(x => x.CriteriaKey).HasMaxLength(64).IsRequired();
-            b.Property(x => x.Brand).HasMaxLength(120);
-            b.Property(x => x.Model).HasMaxLength(120);
-            b.Property(x => x.City).HasMaxLength(120);
-            b.Property(x => x.StateCode).HasMaxLength(2);
-            b.Property(x => x.Query).HasMaxLength(240);
             b.Property(x => x.MinPrice).HasPrecision(18, 2);
             b.Property(x => x.MaxPrice).HasPrecision(18, 2);
             b.HasIndex(x => new { x.UserId, x.CriteriaKey }).IsUnique();
