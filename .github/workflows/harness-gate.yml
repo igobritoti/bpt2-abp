@@ -9,6 +9,8 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/generate-repo-facts.py'
+      - 'scripts/podium7-contract-projection-experiment.py'
+      - 'scripts/fixtures/podium7-catalog-contract-v2-projection.json'
       - '.github/workflows/harness-gate.yml'
   push:
     branches:
@@ -20,6 +22,8 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/generate-repo-facts.py'
+      - 'scripts/podium7-contract-projection-experiment.py'
+      - 'scripts/fixtures/podium7-catalog-contract-v2-projection.json'
       - '.github/workflows/harness-gate.yml'
 
 permissions:
@@ -31,6 +35,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Syntax check harness tooling
-        run: python3 -m py_compile scripts/check-harness.py scripts/generate-repo-facts.py
+        run: python3 -m py_compile scripts/check-harness.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
       - name: Validate knowledge base and generated facts
         run: python3 scripts/check-harness.py
+      - name: Validate Podium 7 catalog projection boundary
+        run: python3 scripts/podium7-contract-projection-experiment.py scripts/fixtures/podium7-catalog-contract-v2-projection.json
