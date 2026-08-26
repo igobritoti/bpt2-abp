@@ -10,6 +10,7 @@ import {
   vehicleLabel,
 } from "@/lib/public-listings";
 import { publicUrl } from "@/lib/site-url";
+import SavedSearchButton from "./saved-search-button";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -136,8 +137,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     skip,
     take,
   };
+  const savedSearchCriteria = {
+    query: query || undefined,
+    brand: brand || undefined,
+    model: model || undefined,
+    city: city || undefined,
+    stateCode: stateCode || undefined,
+    minModelYear,
+    maxModelYear,
+    minPrice,
+    maxPrice,
+    minMileageKm,
+    maxMileageKm,
+  };
   const page = await getPublicListings(search);
-  const hasActiveFilters = Boolean(
+  const hasSemanticFilters = Boolean(
     query ||
       brand ||
       model ||
@@ -148,9 +162,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       minPrice !== undefined ||
       maxPrice !== undefined ||
       minMileageKm !== undefined ||
-      maxMileageKm !== undefined ||
-      sort,
+      maxMileageKm !== undefined,
   );
+  const hasActiveFilters = hasSemanticFilters || Boolean(sort);
   const hasPrevious = skip > 0;
   const hasNext = skip + page.items.length < page.totalCount;
   const currentPage = Math.floor(skip / take) + 1;
@@ -164,6 +178,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <p className="lede">
           Busque anúncios públicos, refine pelo veículo, localização, quilometragem e preço e fale direto com o vendedor.
         </p>
+        <p><Link href="/buscas-salvas">Minhas buscas salvas</Link></p>
       </header>
 
       <section className={styles.discovery} aria-labelledby="discovery-title">
@@ -172,11 +187,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <p className="eyebrow">Descoberta</p>
             <h2 id="discovery-title">Refine sua busca</h2>
           </div>
-          {hasActiveFilters ? (
-            <Link className={styles.clearFilters} href="/">
-              Limpar filtros
-            </Link>
-          ) : null}
+          <div>
+            {hasSemanticFilters ? <SavedSearchButton criteria={savedSearchCriteria} /> : null}
+            {hasActiveFilters ? (
+              <Link className={styles.clearFilters} href="/">
+                Limpar filtros
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         <form action="/" className={styles.discoveryForm} method="get">
