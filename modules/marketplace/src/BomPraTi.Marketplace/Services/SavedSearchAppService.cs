@@ -81,18 +81,48 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
         return items.Select(ToDto).ToList();
     }
 
+    public async Task<SavedSearchDto> SetAlertEnabledAsync(
+        Guid id,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var savedSearch = await GetOwnedAsync(id, cancellationToken);
+        savedSearch.SetAlertEnabled(enabled);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(savedSearch);
+    }
+
+    public async Task<IReadOnlyList<SavedSearchAlertMatchDto>> GetMatchesAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        _ = await GetOwnedAsync(id, cancellationToken);
+        return await _dbContext.SavedSearchAlertMatches
+            .AsNoTracking()
+            .Where(x => x.SavedSearchId == id)
+            .OrderByDescending(x => x.DetectedAtUtc)
+            .ThenBy(x => x.Id)
+            .Select(x => new SavedSearchAlertMatchDto(x.Id, x.SavedSearchId, x.ListingId, x.DetectedAtUtc))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var savedSearch = await GetOwnedAsync(id, cancellationToken);
+        var matches = await _dbContext.SavedSearchAlertMatches
+            .Where(x => x.SavedSearchId == id)
+            .ToListAsync(cancellationToken);
+        _dbContext.SavedSearchAlertMatches.RemoveRange(matches);
+        _dbContext.SavedSearches.Remove(savedSearch);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<SavedSearch> GetOwnedAsync(Guid id, CancellationToken cancellationToken)
     {
         var userId = CurrentUserId();
         var savedSearch = await _dbContext.SavedSearches
             .SingleOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken);
-        if (savedSearch is null)
-        {
-            throw new EntityNotFoundException<SavedSearch>(id);
-        }
-
-        _dbContext.SavedSearches.Remove(savedSearch);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return savedSearch ?? throw new EntityNotFoundException<SavedSearch>(id);
     }
 
     private Guid CurrentUserId() =>
@@ -152,5 +182,6 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             item.MinMileageKm,
             item.MaxMileageKm,
             item.Query,
+            item.AlertEnabled,
             item.CreatedAtUtc);
 }

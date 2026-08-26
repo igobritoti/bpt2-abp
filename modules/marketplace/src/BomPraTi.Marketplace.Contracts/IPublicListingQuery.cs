@@ -24,4 +24,9 @@ public interface IPublicListingQuery
     Task<PagedResultDto<PublicListingDto>> SearchPageAsync(
         PublicListingSearchInput input,
         CancellationToken cancellationToken = default);
+
+    Task<bool> MatchesAsync(
+        Guid listingId,
+        PublicListingSearchInput input,
+        CancellationToken cancellationToken = default);
 }
