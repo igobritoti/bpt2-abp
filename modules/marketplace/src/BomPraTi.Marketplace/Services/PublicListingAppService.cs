@@ -28,13 +28,36 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
         _mediaContent = mediaContent;
     }
 
-    public Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
-        _query.GetAsync(id, cancellationToken);
+    public async Task<PublicListingDto?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _query.GetAsync(id, cancellationToken);
+        if (listing is null)
+        {
+            return null;
+        }
 
-    public Task<PagedResultDto<PublicListingDto>> GetListAsync(
+        var sponsored = await LoadActiveSponsoredListingIdsAsync(new[] { id }, cancellationToken);
+        return listing with { IsSponsored = sponsored.Contains(id) };
+    }
+
+    public async Task<PagedResultDto<PublicListingDto>> GetListAsync(
         PublicListingSearchInput input,
-        CancellationToken cancellationToken = default) =>
-        _query.SearchPageAsync(input, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        var page = await _query.SearchPageAsync(input, cancellationToken);
+        if (page.Items.Count == 0)
+        {
+            return page;
+        }
+
+        var sponsored = await LoadActiveSponsoredListingIdsAsync(
+            page.Items.Select(x => x.Id).ToArray(),
+            cancellationToken);
+        var items = page.Items
+            .Select(x => x with { IsSponsored = sponsored.Contains(x.Id) })
+            .ToList();
+        return new PagedResultDto<PublicListingDto>(page.TotalCount, items);
+    }
 
     public async Task<IRemoteStreamContent> GetPhotoAsync(
         Guid id,
@@ -62,5 +85,24 @@ public class PublicListingAppService : IPublicListingAppService, ITransientDepen
         }
 
         return new RemoteStreamContent(media.Content, null, media.ContentType, media.Length);
+    }
+
+    private async Task<HashSet<Guid>> LoadActiveSponsoredListingIdsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        CancellationToken cancellationToken)
+    {
+        if (listingIds.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        var now = DateTime.UtcNow;
+        var ids = await _dbContext.ListingPromotions
+            .AsNoTracking()
+            .Where(x => listingIds.Contains(x.ListingId))
+            .Where(x => x.StartsAtUtc <= now && now < x.EndsAtUtc)
+            .Select(x => x.ListingId)
+            .ToListAsync(cancellationToken);
+        return ids.ToHashSet();
     }
 }

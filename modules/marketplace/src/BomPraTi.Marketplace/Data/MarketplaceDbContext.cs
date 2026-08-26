@@ -8,6 +8,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
 {
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<ListingPhoto> ListingPhotos => Set<ListingPhoto>();
+    public DbSet<ListingPromotion> ListingPromotions => Set<ListingPromotion>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<SavedSearchAlertMatch> SavedSearchAlertMatches => Set<SavedSearchAlertMatch>();
@@ -39,6 +40,13 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.ToTable("MarketplaceListingPhotos");
             b.HasIndex(x => new { x.ListingId, x.SortOrder });
             b.HasIndex(x => new { x.ListingId, x.MediaAssetId }).IsUnique();
+        });
+
+        builder.Entity<ListingPromotion>(b =>
+        {
+            b.ToTable("MarketplaceListingPromotions");
+            b.HasIndex(x => x.ListingId).IsUnique();
+            b.HasIndex(x => new { x.StartsAtUtc, x.EndsAtUtc });
         });
 
         builder.Entity<Favorite>(b =>

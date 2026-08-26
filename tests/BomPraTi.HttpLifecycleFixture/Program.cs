@@ -64,6 +64,32 @@ try
         return;
     }
 
+    if (args.Length > 0 && string.Equals(args[0], "promotion", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 3 || !Guid.TryParse(args[1], out var listingId))
+        {
+            throw new ArgumentException("Usage: promotion <listingId> <active|future|expired>");
+        }
+
+        var now = DateTime.UtcNow;
+        var (startsAtUtc, endsAtUtc) = args[2].Trim().ToLowerInvariant() switch
+        {
+            "active" => (now.AddHours(-1), now.AddHours(1)),
+            "future" => (now.AddHours(1), now.AddHours(2)),
+            "expired" => (now.AddHours(-2), now.AddHours(-1)),
+            _ => throw new ArgumentException("Promotion state must be active, future or expired.")
+        };
+
+        var promotionId = Guid.NewGuid();
+        await scope.ServiceProvider.GetRequiredService<IRepository<ListingPromotion, Guid>>()
+            .InsertAsync(
+                new ListingPromotion(promotionId, listingId, startsAtUtc, endsAtUtc, now),
+                autoSave: true);
+        await uow.CompleteAsync();
+        Console.WriteLine(promotionId);
+        return;
+    }
+
     if (args.Length > 0 && string.Equals(args[0], "alert-trigger-rollback", StringComparison.OrdinalIgnoreCase))
     {
         if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))

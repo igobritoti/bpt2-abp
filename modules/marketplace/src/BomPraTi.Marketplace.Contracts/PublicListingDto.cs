@@ -13,4 +13,5 @@ public sealed record PublicListingDto(
     string? Color,
     string City,
     string StateCode,
-    IReadOnlyList<PublicListingPhotoDto> Photos);
+    IReadOnlyList<PublicListingPhotoDto> Photos,
+    bool IsSponsored = false);
