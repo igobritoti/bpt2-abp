@@ -19,6 +19,7 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
     private readonly ICurrentUser _currentUser;
     private readonly IGuidGenerator _guidGenerator;
     private readonly SavedSearchAlertTrigger _savedSearchAlertTrigger;
+    private readonly FavoritePriceDropDetector _favoritePriceDropDetector;
 
     public ListingCommandService(
         IRepository<Listing, Guid> listings,
@@ -26,7 +27,8 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
         IVehicleCatalogReader vehicleCatalog,
         ICurrentUser currentUser,
         IGuidGenerator guidGenerator,
-        SavedSearchAlertTrigger savedSearchAlertTrigger)
+        SavedSearchAlertTrigger savedSearchAlertTrigger,
+        FavoritePriceDropDetector favoritePriceDropDetector)
     {
         _listings = listings;
         _priceChanges = priceChanges;
@@ -34,6 +36,7 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
         _currentUser = currentUser;
         _guidGenerator = guidGenerator;
         _savedSearchAlertTrigger = savedSearchAlertTrigger;
+        _favoritePriceDropDetector = favoritePriceDropDetector;
     }
 
     public async Task<ListingDto> CreateAsync(CreateListingInput input, CancellationToken cancellationToken = default)
@@ -91,15 +94,21 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
 
         if (wasPublished && listing.Price != previousPrice)
         {
+            var priceChange = new ListingPriceChange(
+                _guidGenerator.Create(),
+                listing.Id,
+                previousPrice,
+                listing.Price,
+                DateTime.UtcNow);
             await _priceChanges.InsertAsync(
-                new ListingPriceChange(
-                    _guidGenerator.Create(),
-                    listing.Id,
-                    previousPrice,
-                    listing.Price,
-                    DateTime.UtcNow),
+                priceChange,
                 autoSave: false,
                 cancellationToken: cancellationToken);
+
+            if (listing.Price < previousPrice)
+            {
+                await _favoritePriceDropDetector.DetectAsync(priceChange, cancellationToken);
+            }
         }
 
         await _listings.UpdateAsync(listing, autoSave: true, cancellationToken: cancellationToken);
