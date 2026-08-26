@@ -13,7 +13,7 @@ using Volo.Abp.Users;
 namespace BomPraTi.Marketplace.Services;
 
 [Authorize]
-public sealed class SavedSearchAppService : ISavedSearchAppService, ITransientDependency
+public class SavedSearchAppService : ISavedSearchAppService, ITransientDependency
 {
     private readonly MarketplaceDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
