@@ -77,10 +77,8 @@ try
         await listingRepository.UpdateAsync(listing, autoSave: true);
         await scope.ServiceProvider.GetRequiredService<SavedSearchAlertTrigger>().EnsureEnqueuedAsync(listingId);
 
-        var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
-        var staged = await dbContext.SavedSearchAlertDetectionRequests
-            .AsNoTracking()
-            .CountAsync(x => x.ListingId == listingId);
+        var requestRepository = scope.ServiceProvider.GetRequiredService<IRepository<SavedSearchAlertDetectionRequest, Guid>>();
+        var staged = await requestRepository.CountAsync(x => x.ListingId == listingId);
         if (staged != 1)
         {
             throw new InvalidOperationException($"Expected one staged alert request before rollback, count={staged}.");
