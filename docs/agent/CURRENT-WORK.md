@@ -6,28 +6,22 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Validar em slice próprio o detector de price-drop de Favorites que foi fechado sem merge no PR #75 após uma falha mecânica do smoke Bash antes de o contrato funcional ser exercitado.
 
-O Plan 0049 foi encerrado por classificação após percorrer todos os blocos A–H. Nenhum bloco restante possui simultaneamente precondições suficientes, contrato falsificável e ausência de blocker para ser promovido sem inventar requisito, provider, dataset ou infraestrutura.
+O retry não altera domínio por hipótese: primeiro corrige somente a inicialização de variáveis locais sob `set -u` e reroda o mesmo contrato. Se o comportamento funcional falhar depois disso, a falha passa a ser evidência de produto e o slice deve ser reavaliado sem mascarar o resultado.
 
 ## Active plan
 
-**Nenhum.**
+[`../exec-plans/active/0050-favorite-price-drop-retry.md`](../exec-plans/active/0050-favorite-price-drop-retry.md)
 
-O último plano concluído é [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
+## Acceptance target
 
-## Próximos gatilhos de reabertura
-
-Abrir um novo plano somente quando houver nova evidência suficiente em pelo menos um destes pontos:
-
-- enrichment técnico publicado do Podium suficiente para destravar o contrato de consumo BPT2/Comparador;
-- decisão reproduzível de claim/concurrency/retry/restart para o runner de Saved Search;
-- correção futura, em slice próprio, do detector de price-drop que falhou no PR #75;
-- corpus + baseline + métrica para discovery avançado;
-- dataset/licença/metodologia/provenance para inteligência de mercado;
-- provider/privacy/legal ou problema operacional observado para trust/moderação avançada;
-- tese comercial/parceria concreta para Compra Assistida, financiamento, seguros, credits/payments;
-- inventário atual reproduzível do Carros na Web para cálculo de cobertura.
+- smoke Bash passa syntax;
+- Fresh Migration permanece verde;
+- Buyer Favorites regressivo permanece verde;
+- Favorite price-drop prova Draft ignored, existing Favorite, no retroactive match, replay idempotent, increase ignored e unfavorite stops future match;
+- nenhum provider, delivery, scheduler ou runner entra neste slice;
+- merge somente com CI fresco no head exato e review/base refresh limpos.
 
 ## Source of runtime truth
 
@@ -35,9 +29,9 @@ Abrir um novo plano somente quando houver nova evidência suficiente em pelo men
 - Produto e escopo consolidado: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos estruturais/versões/counters derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões congeladas: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Último plano concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
+- Plano ativo: [`../exec-plans/active/0050-favorite-price-drop-retry.md`](../exec-plans/active/0050-favorite-price-drop-retry.md).
+- Último roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
 - Meta Carros na Web: [`../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md`](../strategy/2026-08-25-carros-na-web-functional-coverage-goal.md).
-- Boundary Podium 7: [`../adr/0011-podium7-catalog-integration-boundary.md`](../adr/0011-podium7-catalog-integration-boundary.md).
 
 Não copie SHAs, número de testes/checks ou “runtime ready” para este arquivo; consulte as fontes executáveis quando a tarefa depender deles.
 
@@ -45,7 +39,7 @@ Não copie SHAs, número de testes/checks ou “runtime ready” para este arqui
 
 - Comparator: enrichment técnico publicado suficiente do Podium.
 - Saved Search runner: claim/concurrency, retry e restart ainda não decididos por teste seguro.
-- Favorite price-drop detector: PR #75 fechado sem merge após falha no smoke específico.
+- Favorite price-drop: em retry no Plan 0050; a única falha observada no PR #75 foi mecânica do smoke.
 - Inteligência de mercado: dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível.
 
