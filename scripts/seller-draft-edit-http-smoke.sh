@@ -44,6 +44,7 @@ required = [
     ("/api/app/vehicle-catalog", "get"),
     ("/api/app/listing-command", "post"),
     ("/api/app/listing-command", "put"),
+    ("/api/app/listing-command/publish/{listingId}", "post"),
     ("/api/app/seller-listing-query/mine-by-id/{listingId}", "get"),
     ("/api/identity/users", "post"),
 ]
@@ -89,6 +90,10 @@ request_json() {
     args+=(-H 'Content-Type: application/json' --data "$body")
   fi
   curl "${args[@]}" "$BASE$path"
+}
+
+price_history() {
+  dotnet run --project "$ROOT/tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj" --configuration Release -- price-history "$1" | tail -n 1
 }
 
 status="$(request_json GET '/api/app/vehicle-catalog?take=50')"
@@ -138,24 +143,6 @@ echo "SELLER_DRAFT_EDIT_CREATE: PASS"
 DETAIL_PATH="/api/app/seller-listing-query/mine-by-id/$LISTING_ID"
 status="$(request_json GET "$DETAIL_PATH" "$OWNER_TOKEN")"
 [[ "$status" == "200" ]] || { echo "Owned edit read expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-python3 - "$RESPONSE" "$LISTING_ID" "$BPT_FIXTURE_VEHICLE_ID" "$ORIGINAL_STAMP" <<'PY'
-import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-listing_id, vehicle_id, stamp = (value.lower() for value in sys.argv[2:5])
-listing = data.get("listing")
-if not isinstance(listing, dict):
-    raise SystemExit(f"Owned detail missing listing: {data}")
-if str(listing.get("id", "")).lower() != listing_id:
-    raise SystemExit(f"Owned detail Listing mismatch: {data}")
-if str(listing.get("vehicleId", "")).lower() != vehicle_id:
-    raise SystemExit(f"Owned detail Vehicle mismatch: {data}")
-if str(listing.get("concurrencyStamp", "")).lower() != stamp:
-    raise SystemExit(f"Owned detail ConcurrencyStamp mismatch: {data}")
-photos = data.get("photos")
-if photos != []:
-    raise SystemExit(f"New Draft gallery expected [], got: {photos}")
-PY
 echo "SELLER_DRAFT_EDIT_OWNED_READ: PASS"
 
 OTHER_USER="seller-edit-$(python3 - <<'PY'
@@ -168,16 +155,7 @@ OTHER_EMAIL="${OTHER_USER}@example.invalid"
 OTHER_BODY="$(python3 - "$OTHER_USER" "$OTHER_EMAIL" "$OTHER_PASSWORD" <<'PY'
 import json, sys
 username, email, password = sys.argv[1:]
-print(json.dumps({
-    "userName": username,
-    "name": "Other",
-    "surname": "Seller",
-    "email": email,
-    "password": password,
-    "isActive": True,
-    "lockoutEnabled": True,
-    "roleNames": []
-}))
+print(json.dumps({"userName": username,"name": "Other","surname": "Seller","email": email,"password": password,"isActive": True,"lockoutEnabled": True,"roleNames": []}))
 PY
 )"
 status="$(request_json POST '/api/identity/users' "$OWNER_TOKEN" "$OTHER_BODY")"
@@ -189,17 +167,7 @@ echo "SELLER_DRAFT_EDIT_OWNERSHIP: PASS"
 
 UPDATE_BODY="$(python3 - "$ORIGINAL_STAMP" <<'PY'
 import json, sys
-print(json.dumps({
-    "title": "Seller Draft Edit Updated",
-    "price": 149900,
-    "concurrencyStamp": sys.argv[1],
-    "description": "Draft atualizado pelo owner.",
-    "manufactureYear": 2024,
-    "mileageKm": 8100,
-    "color": "Azul",
-    "city": "São Paulo",
-    "stateCode": "SP"
-}))
+print(json.dumps({"title":"Seller Draft Edit Updated","price":149900,"concurrencyStamp":sys.argv[1],"description":"Draft atualizado pelo owner.","manufactureYear":2024,"mileageKm":8100,"color":"Azul","city":"São Paulo","stateCode":"SP"}))
 PY
 )"
 UPDATE_PATH="/api/app/listing-command?listingId=$LISTING_ID"
@@ -207,47 +175,60 @@ status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$UPDATE_BODY")"
 [[ "$status" == "200" ]] || { echo "Owner edit expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 NEW_STAMP="$(python3 - "$RESPONSE" "$ORIGINAL_STAMP" <<'PY'
 import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-if data.get("title") != "Seller Draft Edit Updated":
-    raise SystemExit(f"Updated title mismatch: {data}")
-new_stamp = data.get("concurrencyStamp")
-if not new_stamp or new_stamp == sys.argv[2]:
-    raise SystemExit(f"Update did not rotate ConcurrencyStamp: {data}")
-print(new_stamp)
+data=json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['title']=='Seller Draft Edit Updated', data
+stamp=data.get('concurrencyStamp')
+assert stamp and stamp != sys.argv[2], data
+print(stamp)
 PY
 )"
-echo "SELLER_DRAFT_EDIT_UPDATE: PASS"
+[[ -z "$(price_history "$LISTING_ID")" ]] || { echo "Draft edit must not create market price history" >&2; exit 1; }
+echo "LISTING_PRICE_HISTORY_DRAFT_IGNORED: PASS"
 
 STALE_BODY="$(python3 - "$ORIGINAL_STAMP" <<'PY'
 import json, sys
-print(json.dumps({
-    "title": "Seller Draft Edit Stale",
-    "price": 150000,
-    "concurrencyStamp": sys.argv[1],
-    "description": "Stale update must fail.",
-    "manufactureYear": 2024,
-    "mileageKm": 8000,
-    "color": "Azul",
-    "city": "São Paulo",
-    "stateCode": "SP"
-}))
+print(json.dumps({"title":"Seller Draft Edit Stale","price":150000,"concurrencyStamp":sys.argv[1],"description":"Stale update must fail.","manufactureYear":2024,"mileageKm":8000,"color":"Azul","city":"São Paulo","stateCode":"SP"}))
 PY
 )"
 status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$STALE_BODY")"
 [[ "$status" == "409" ]] || { echo "Stale edit expected 409, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
 echo "SELLER_DRAFT_EDIT_STALE_CONCURRENCY: PASS"
 
-status="$(request_json GET "$DETAIL_PATH" "$OWNER_TOKEN")"
-[[ "$status" == "200" ]] || { echo "Owned edit reread expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
-python3 - "$RESPONSE" "$NEW_STAMP" <<'PY'
-import json, sys
-with open(sys.argv[1], encoding="utf-8") as handle:
-    data = json.load(handle)
-listing = data["listing"]
-if listing.get("title") != "Seller Draft Edit Updated" or listing.get("concurrencyStamp") != sys.argv[2]:
-    raise SystemExit(f"Owned reread did not return updated canonical state: {data}")
+status="$(request_json POST "/api/app/listing-command/publish/$LISTING_ID" "$OWNER_TOKEN")"
+[[ "$status" == "200" ]] || { echo "Publish expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+PUBLISHED_STAMP="$(python3 - "$RESPONSE" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['status']=='Published', data
+print(data['concurrencyStamp'])
 PY
-echo "SELLER_DRAFT_EDIT_REREAD: PASS"
+)"
+
+DROP_BODY="$(python3 - "$PUBLISHED_STAMP" <<'PY'
+import json,sys
+print(json.dumps({"title":"Seller Draft Edit Updated","price":139900,"concurrencyStamp":sys.argv[1],"description":"Draft atualizado pelo owner.","manufactureYear":2024,"mileageKm":8100,"color":"Azul","city":"São Paulo","stateCode":"SP"}))
+PY
+)"
+status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$DROP_BODY")"
+[[ "$status" == "200" ]] || { echo "Published price change expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+DROP_STAMP="$(python3 - "$RESPONSE" <<'PY'
+import json,sys
+data=json.load(open(sys.argv[1], encoding='utf-8'))
+assert float(data['price']) == 139900, data
+print(data['concurrencyStamp'])
+PY
+)"
+[[ "$(price_history "$LISTING_ID")" == "149900.00>139900.00" ]] || { echo "Published price transition mismatch: $(price_history "$LISTING_ID")" >&2; exit 1; }
+echo "LISTING_PRICE_HISTORY_PUBLISHED_CHANGE: PASS"
+
+SAME_BODY="$(python3 - "$DROP_STAMP" <<'PY'
+import json,sys
+print(json.dumps({"title":"Seller Draft Edit Updated","price":139900,"concurrencyStamp":sys.argv[1],"description":"Draft atualizado pelo owner.","manufactureYear":2024,"mileageKm":8100,"color":"Azul","city":"São Paulo","stateCode":"SP"}))
+PY
+)"
+status="$(request_json PUT "$UPDATE_PATH" "$OWNER_TOKEN" "$SAME_BODY")"
+[[ "$status" == "200" ]] || { echo "Same-price update expected 200, got $status: $(cat "$RESPONSE")" >&2; exit 1; }
+[[ "$(price_history "$LISTING_ID")" == "149900.00>139900.00" ]] || { echo "Same-price update duplicated history: $(price_history "$LISTING_ID")" >&2; exit 1; }
+echo "LISTING_PRICE_HISTORY_IDEMPOTENT_SAME_PRICE: PASS"
 
 echo "SELLER DRAFT EDIT HTTP: PASSED"

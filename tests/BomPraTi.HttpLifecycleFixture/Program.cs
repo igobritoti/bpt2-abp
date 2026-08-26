@@ -90,6 +90,27 @@ try
         return;
     }
 
+    if (args.Length > 0 && string.Equals(args[0], "price-history", StringComparison.OrdinalIgnoreCase))
+    {
+        if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))
+        {
+            throw new ArgumentException("Usage: price-history <listingId>");
+        }
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+        var changes = await dbContext.ListingPriceChanges
+            .AsNoTracking()
+            .Where(x => x.ListingId == listingId)
+            .OrderBy(x => x.ChangedAtUtc)
+            .ThenBy(x => x.Id)
+            .Select(x => new { x.PreviousPrice, x.NewPrice })
+            .ToListAsync();
+
+        await uow.CompleteAsync();
+        Console.WriteLine(string.Join(";", changes.Select(x => $"{x.PreviousPrice:0.00}>{x.NewPrice:0.00}")));
+        return;
+    }
+
     if (args.Length > 0 && string.Equals(args[0], "alert-trigger-rollback", StringComparison.OrdinalIgnoreCase))
     {
         if (args.Length != 2 || !Guid.TryParse(args[1], out var listingId))

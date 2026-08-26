@@ -9,6 +9,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<Listing> Listings => Set<Listing>();
     public DbSet<ListingPhoto> ListingPhotos => Set<ListingPhoto>();
     public DbSet<ListingPromotion> ListingPromotions => Set<ListingPromotion>();
+    public DbSet<ListingPriceChange> ListingPriceChanges => Set<ListingPriceChange>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<SavedSearchAlertMatch> SavedSearchAlertMatches => Set<SavedSearchAlertMatch>();
@@ -47,6 +48,14 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.ToTable("MarketplaceListingPromotions");
             b.HasIndex(x => x.ListingId).IsUnique();
             b.HasIndex(x => new { x.StartsAtUtc, x.EndsAtUtc });
+        });
+
+        builder.Entity<ListingPriceChange>(b =>
+        {
+            b.ToTable("MarketplaceListingPriceChanges");
+            b.Property(x => x.PreviousPrice).HasPrecision(18, 2);
+            b.Property(x => x.NewPrice).HasPrecision(18, 2);
+            b.HasIndex(x => new { x.ListingId, x.ChangedAtUtc });
         });
 
         builder.Entity<Favorite>(b =>

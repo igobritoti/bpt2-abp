@@ -14,6 +14,7 @@ namespace BomPraTi.Marketplace.Services;
 public class ListingCommandService : IListingCommandService, ITransientDependency
 {
     private readonly IRepository<Listing, Guid> _listings;
+    private readonly IRepository<ListingPriceChange, Guid> _priceChanges;
     private readonly IVehicleCatalogReader _vehicleCatalog;
     private readonly ICurrentUser _currentUser;
     private readonly IGuidGenerator _guidGenerator;
@@ -21,12 +22,14 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
 
     public ListingCommandService(
         IRepository<Listing, Guid> listings,
+        IRepository<ListingPriceChange, Guid> priceChanges,
         IVehicleCatalogReader vehicleCatalog,
         ICurrentUser currentUser,
         IGuidGenerator guidGenerator,
         SavedSearchAlertTrigger savedSearchAlertTrigger)
     {
         _listings = listings;
+        _priceChanges = priceChanges;
         _vehicleCatalog = vehicleCatalog;
         _currentUser = currentUser;
         _guidGenerator = guidGenerator;
@@ -63,6 +66,9 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
         ArgumentException.ThrowIfNullOrWhiteSpace(input.ConcurrencyStamp);
 
         var listing = await GetOwnedAsync(listingId, cancellationToken);
+        var previousPrice = listing.Price;
+        var wasPublished = listing.Status == ListingStatus.Published;
+
         listing.ConcurrencyStamp = input.ConcurrencyStamp;
         listing.ChangeTitle(input.Title);
         listing.ChangePrice(input.Price);
@@ -81,6 +87,19 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
                 input.Color ?? listing.Color,
                 input.City ?? listing.City,
                 input.StateCode ?? listing.StateCode);
+        }
+
+        if (wasPublished && listing.Price != previousPrice)
+        {
+            await _priceChanges.InsertAsync(
+                new ListingPriceChange(
+                    _guidGenerator.Create(),
+                    listing.Id,
+                    previousPrice,
+                    listing.Price,
+                    DateTime.UtcNow),
+                autoSave: false,
+                cancellationToken: cancellationToken);
         }
 
         await _listings.UpdateAsync(listing, autoSave: true, cancellationToken: cancellationToken);
