@@ -1,31 +1,28 @@
-using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
-using Microsoft.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace BomPraTi.Marketplace.Services;
 
 public class SavedSearchAlertTrigger : ITransientDependency
 {
-    private readonly MarketplaceDbContext _dbContext;
+    private readonly IRepository<SavedSearchAlertDetectionRequest, Guid> _requests;
 
-    public SavedSearchAlertTrigger(MarketplaceDbContext dbContext)
+    public SavedSearchAlertTrigger(IRepository<SavedSearchAlertDetectionRequest, Guid> requests)
     {
-        _dbContext = dbContext;
+        _requests = requests;
     }
 
     public async Task EnsureEnqueuedAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
-        if (await _dbContext.SavedSearchAlertDetectionRequests
-            .AsNoTracking()
-            .AnyAsync(x => x.ListingId == listingId, cancellationToken))
+        if (await _requests.AnyAsync(x => x.ListingId == listingId, cancellationToken: cancellationToken))
         {
             return;
         }
 
-        await _dbContext.SavedSearchAlertDetectionRequests.AddAsync(
+        await _requests.InsertAsync(
             new SavedSearchAlertDetectionRequest(Guid.NewGuid(), listingId, DateTime.UtcNow),
-            cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            autoSave: true,
+            cancellationToken: cancellationToken);
     }
 }
