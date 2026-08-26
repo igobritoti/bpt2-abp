@@ -26,5 +26,6 @@ public class SavedSearchAlertTrigger : ITransientDependency
         await _dbContext.SavedSearchAlertDetectionRequests.AddAsync(
             new SavedSearchAlertDetectionRequest(Guid.NewGuid(), listingId, DateTime.UtcNow),
             cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
