@@ -19,6 +19,8 @@ function searchHref(search: SavedSearch): string {
     if (value !== undefined) params.set(name, String(value));
   };
 
+  setText("vehicleId", search.vehicleId);
+  setText("sellerId", search.sellerId);
   setText("query", search.query);
   setText("brand", search.brand);
   setText("model", search.model);
@@ -40,6 +42,8 @@ function searchLabel(search: SavedSearch): string {
     search.model,
     search.city,
     search.stateCode,
+    search.vehicleId ? "veículo específico" : undefined,
+    search.sellerId ? "vendedor específico" : undefined,
     search.minModelYear !== undefined ? `a partir de ${search.minModelYear}` : undefined,
     search.maxModelYear !== undefined ? `até ${search.maxModelYear}` : undefined,
     search.minPrice !== undefined ? `mín. R$ ${search.minPrice}` : undefined,
