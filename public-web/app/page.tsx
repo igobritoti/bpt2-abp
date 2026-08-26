@@ -81,6 +81,8 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
     }
   };
 
+  setText("vehicleId", search.vehicleId);
+  setText("sellerId", search.sellerId);
   setText("query", search.query);
   setText("brand", search.brand);
   setText("model", search.model);
@@ -103,6 +105,8 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const raw = await searchParams;
+  const vehicleId = textParam(raw, "vehicleId");
+  const sellerId = textParam(raw, "sellerId");
   const query = textParam(raw, "query");
   const brand = textParam(raw, "brand");
   const model = textParam(raw, "model");
@@ -122,6 +126,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 
   const search: PublicListingSearch = {
+    vehicleId: vehicleId || undefined,
+    sellerId: sellerId || undefined,
     query: query || undefined,
     brand: brand || undefined,
     model: model || undefined,
@@ -138,6 +144,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     take,
   };
   const savedSearchCriteria = {
+    vehicleId: vehicleId || undefined,
+    sellerId: sellerId || undefined,
     query: query || undefined,
     brand: brand || undefined,
     model: model || undefined,
@@ -152,7 +160,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
   const page = await getPublicListings(search);
   const hasSemanticFilters = Boolean(
-    query ||
+    vehicleId ||
+      sellerId ||
+      query ||
       brand ||
       model ||
       city ||
@@ -198,6 +208,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <form action="/" className={styles.discoveryForm} method="get">
+          {vehicleId ? <input name="vehicleId" type="hidden" value={vehicleId} /> : null}
+          {sellerId ? <input name="sellerId" type="hidden" value={sellerId} /> : null}
           <label className={styles.queryField}>
             Busca
             <input
