@@ -61,10 +61,12 @@ assert 'sort' not in x and 'skip' not in x and 'take' not in x,x
 print(x['id'])
 PY
 )"
-BODY_SAME='{"brand":"honda","model":"civic","city":"são paulo","stateCode":"SP","minModelYear":2020,"maxModelYear":2025,"minPrice":80000,"maxPrice":160000,"minMileageKm":0,"maxMileageKm":80000,"query":"turbo"}'
-status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$BODY_SAME")"; [[ "$status" == 200 || "$status" == 201 ]] || exit 1
+BODY_SAME='{"brand":"honda","model":"civic","city":"são paulo","stateCode":"SP","minModelYear":2020,"maxModelYear":2025,"minPrice":80000.00,"maxPrice":160000.0,"minMileageKm":0,"maxMileageKm":80000,"query":"turbo","sort":"price-desc","skip":40,"take":1}'
+status="$(request POST '/api/app/saved-search' "$ADMIN_TOKEN" "$BODY_SAME")"; [[ "$status" == 200 || "$status" == 201 ]] || { echo "Semantic replay failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 SECOND_ID="$(python3 - "$RESPONSE" <<'PY'
-import json,sys; print(json.load(open(sys.argv[1]))['id'])
+import json,sys
+x=json.load(open(sys.argv[1])); assert 'sort' not in x and 'skip' not in x and 'take' not in x,x
+print(x['id'])
 PY
 )"
 [[ "$SECOND_ID" == "$FIRST_ID" ]] || { echo "Semantic duplicate created a new SavedSearch" >&2; exit 1; }
