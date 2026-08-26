@@ -114,8 +114,8 @@ public sealed class SavedSearchAppService : ISavedSearchAppService, ITransientDe
     private static string BuildCriteriaKey(SavedSearchCriteriaInput input)
     {
         static string TextKey(string? value) => value?.ToLowerInvariant() ?? string.Empty;
-        static string NumberKey<T>(T? value) where T : struct, IFormattable =>
-            value?.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty;
+        static string IntKey(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        static string DecimalKey(decimal? value) => value?.ToString("G29", CultureInfo.InvariantCulture) ?? string.Empty;
         static string Part(string value) => $"{value.Length}:{value}";
 
         var canonical = string.Concat(
@@ -125,12 +125,12 @@ public sealed class SavedSearchAppService : ISavedSearchAppService, ITransientDe
             Part(TextKey(input.Model)),
             Part(TextKey(input.City)),
             Part(TextKey(input.StateCode)),
-            Part(NumberKey(input.MinModelYear)),
-            Part(NumberKey(input.MaxModelYear)),
-            Part(NumberKey(input.MinPrice)),
-            Part(NumberKey(input.MaxPrice)),
-            Part(NumberKey(input.MinMileageKm)),
-            Part(NumberKey(input.MaxMileageKm)),
+            Part(IntKey(input.MinModelYear)),
+            Part(IntKey(input.MaxModelYear)),
+            Part(DecimalKey(input.MinPrice)),
+            Part(DecimalKey(input.MaxPrice)),
+            Part(IntKey(input.MinMileageKm)),
+            Part(IntKey(input.MaxMileageKm)),
             Part(TextKey(input.Query)));
 
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
