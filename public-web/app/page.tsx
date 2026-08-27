@@ -86,6 +86,7 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
   setText("query", search.query);
   setText("brand", search.brand);
   setText("model", search.model);
+  setText("color", search.color);
   setText("city", search.city);
   setText("stateCode", search.stateCode);
   setNumber("minModelYear", search.minModelYear);
@@ -110,6 +111,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const query = textParam(raw, "query");
   const brand = textParam(raw, "brand");
   const model = textParam(raw, "model");
+  const color = textParam(raw, "color");
   const city = textParam(raw, "city");
   const stateCode = textParam(raw, "stateCode");
   const minModelYear = integerParam(raw, "minModelYear");
@@ -131,6 +133,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     query: query || undefined,
     brand: brand || undefined,
     model: model || undefined,
+    color: color || undefined,
     city: city || undefined,
     stateCode: stateCode || undefined,
     minModelYear,
@@ -149,6 +152,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     query: query || undefined,
     brand: brand || undefined,
     model: model || undefined,
+    color: color || undefined,
     city: city || undefined,
     stateCode: stateCode || undefined,
     minModelYear,
@@ -165,6 +169,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       query ||
       brand ||
       model ||
+      color ||
       city ||
       stateCode ||
       minModelYear !== undefined ||
@@ -228,6 +233,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <label>
             Modelo
             <input defaultValue={model} name="model" placeholder="Ex.: Civic" />
+          </label>
+
+          <label>
+            Cor
+            <input defaultValue={color} maxLength={64} name="color" placeholder="Ex.: Prata" />
           </label>
 
           <label>
