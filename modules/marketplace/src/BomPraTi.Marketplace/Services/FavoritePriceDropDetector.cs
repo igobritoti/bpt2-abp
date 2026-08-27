@@ -32,12 +32,16 @@ public sealed class FavoritePriceDropDetector : ITransientDependency
             return;
         }
 
+        var changedAtUtc = priceChange.ChangedAtUtc.Kind == DateTimeKind.Utc
+            ? priceChange.ChangedAtUtc
+            : DateTime.SpecifyKind(priceChange.ChangedAtUtc, DateTimeKind.Utc);
+
         var favoritesQuery = await _favorites.GetQueryableAsync();
         var favoriteUserIds = await favoritesQuery
             .AsNoTracking()
             .Where(x =>
                 x.ListingId == priceChange.ListingId
-                && x.CreatedAtUtc <= priceChange.ChangedAtUtc)
+                && x.CreatedAtUtc <= changedAtUtc)
             .Select(x => x.UserId)
             .Distinct()
             .ToListAsync(cancellationToken);
