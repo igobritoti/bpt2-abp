@@ -146,13 +146,16 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
             join model in _dbContext.Models.AsNoTracking() on vehicle.ModelId equals model.Id
             join version in _dbContext.Versions.AsNoTracking() on vehicle.VersionId equals version.Id
+            join generation in _dbContext.Generations.AsNoTracking()
+                on vehicle.GenerationId equals (Guid?)generation.Id into generationRows
+            from generation in generationRows.DefaultIfEmpty()
             select new
             {
                 vehicle.Id,
-                vehicle.GenerationId,
                 vehicle.ModelYear,
                 Brand = brand.Name,
                 Model = model.Name,
+                Generation = generation == null ? null : generation.Name,
                 Version = version.Name
             };
 
@@ -178,6 +181,16 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             vehicles = vehicles.Where(x => x.ModelYear.HasValue && x.ModelYear.Value <= input.MaxModelYear.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(input.Query))
+        {
+            var query = input.Query.Trim().ToLowerInvariant();
+            vehicles = vehicles.Where(x =>
+                x.Brand.ToLower().Contains(query)
+                || x.Model.ToLower().Contains(query)
+                || x.Version.ToLower().Contains(query)
+                || (x.Generation != null && x.Generation.ToLower().Contains(query)));
+        }
+
         var rows = await vehicles
             .OrderBy(x => x.Brand)
             .ThenBy(x => x.Model)
@@ -188,25 +201,12 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             .Take(Math.Clamp(take, 1, 100))
             .ToListAsync(cancellationToken);
 
-        var generationIds = rows
-            .Where(x => x.GenerationId.HasValue)
-            .Select(x => x.GenerationId!.Value)
-            .Distinct()
-            .ToArray();
-
-        var generations = generationIds.Length == 0
-            ? new Dictionary<Guid, string>()
-            : await _dbContext.Generations
-                .AsNoTracking()
-                .Where(x => generationIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
-
         return rows
             .Select(x => new VehicleRefDto(
                 x.Id,
                 x.Brand,
                 x.Model,
-                x.GenerationId.HasValue ? generations.GetValueOrDefault(x.GenerationId.Value) : null,
+                x.Generation,
                 x.Version,
                 x.ModelYear))
             .ToList();
