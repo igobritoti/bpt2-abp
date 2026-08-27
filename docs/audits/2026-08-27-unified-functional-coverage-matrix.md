@@ -26,6 +26,7 @@ Fontes principais:
 - `docs/audits/2026-08-25-capability-final-decision-matrix.md` — decisões históricas do Plan 0046;
 - `docs/audits/2026-08-26-post-plan0050-trigger-sweep.md` e checkpoint posterior — blockers/gatilhos;
 - `docs/audits/2026-08-27-external-functional-benchmark-refresh.md` — benchmark externo corrente e deltas de discovery;
+- `docs/contracts/vehicle-technical-sheet-consumer-contract.md` — boundary consumer atual para enrichment/ficha técnica;
 - execution plans e PRs já concluídos para evidência detalhada.
 
 ## Matriz
@@ -40,10 +41,10 @@ Fontes principais:
 | Buyer | Favorites | JÁ EXISTE | add/remove/mine/isolation e visibilidade pública | só extensão com hipótese própria |
 | Discovery | Busca textual + identidade canônica | JÁ EXISTE | Title + Brand/Model/Generation/Version | corpus/métrica apenas para extensões |
 | Discovery | Filtros/paginação/query string/preço | JÁ EXISTE | comportamento público comprovado | só novo gap de produto |
-| Discovery | Filtro por cor | GAP REAL | `Listing.Color` já existe e é público, mas não integra `PublicListingSearchInput`; benchmark atual reproduz cor como filtro externo | teste de normalização + composição + Saved Search/matching |
-| Discovery | Seleção guiada de versão/Vehicle | PARCIAL | backend aceita `VehicleId`, mas formulário público só o preserva oculto e não oferece seletor canônico visível | provar contrato público de resolução + hipótese UX |
+| Discovery | Filtro por cor | JÁ EXISTE | PR #89: igualdade textual trim + case-insensitive, composição com filtros e integração com Saved Search/dedup/matching | só novo gap de produto |
+| Discovery | Seleção guiada de versão/Vehicle | JÁ EXISTE | PR #92 / Plan 0053: Catalog paginado por identidade + combobox público acessível; valor semântico persistido é somente `VehicleId` | só extensão com hipótese própria |
 | Discovery | Ordenação por recência | BLOQUEADO | busca só ordena por preço; default é `Id` e Listing não possui instante canônico observado para “recente” | definir/persistir semântica de primeira publicação/republicação |
-| Discovery | Fuzzy/autocomplete/facets/relevance | BLOQUEADO | sem corpus, baseline e métrica suficientes | corpus fixo + métrica reproduzível |
+| Discovery | Fuzzy/autocomplete/facets/relevance | BLOQUEADO | sem corpus, baseline e métrica suficientes; o seletor canônico entregue não autoriza fuzzy/relevance | corpus fixo + métrica reproduzível |
 | Discovery | Geo/radius/proximidade | BLOQUEADO | City/StateCode atuais não implicam autoridade geográfica | autoridade geográfica + comportamento de distância |
 | Public Detail | Detalhe, galeria e WhatsApp CTA | JÁ EXISTE | fluxo público real | só novo gap de produto |
 | Leads | Persistência de Lead WhatsApp | JÁ EXISTE | Lead nasce antes do redirect; anônimo permitido | só novo gap de produto |
@@ -73,15 +74,15 @@ Fontes principais:
 | SEO | Social image dedicada/SEO local/editorial | ADIADO | não há hipótese/estratégia fechada suficiente | keyword/landing/analytics/SEO question concreta |
 | Catalog | Brand→Model→Generation→Version→Vehicle | JÁ EXISTE | Catalog é autoridade publicada | só novo gap estrutural |
 | Vehicle Hub | Hub público + ofertas públicas | JÁ EXISTE | identidade canônica, sitemap e structured data | enrichment publicado |
-| Vehicle Knowledge | Enrichment técnico amplo | BLOQUEADO | identity Podium atual é insuficiente para specs comparáveis | contrato publicado com unidade/null/revision/provenance |
-| Comparator | Comparador 2–4 Vehicles | BLOQUEADO | valor/donor fortes, mas Structure isolada é insuficiente | enrichment mínimo comprovado |
+| Vehicle Knowledge | Enrichment técnico amplo | BLOQUEADO | consumer contract agora explícito; ainda falta producer publicar fatos quantitativos estáveis com unidade/null/revision/provenance | cumprir gate do contrato consumer |
+| Comparator | Comparador 2–4 Vehicles | BLOQUEADO | valor/donor fortes, mas Structure isolada é insuficiente | enrichment mínimo comprovado conforme consumer contract |
 | Recommendations | Similar vehicles | BLOQUEADO | donor existe, mas falta dataset/baseline/relevance metric BPT2 | dataset fixo + métrica offline |
 | Recommendations | Upgrade suggestions | BLOQUEADO | mesma ausência de baseline/métrica | dataset fixo + métrica offline |
 | Market | Contexto/inteligência de preço de mercado | BLOQUEADO | sem dataset/licença/metodologia/provenance | dataset verificável + metodologia |
 | Admin | Hub `/admin` + resumo operacional | JÁ EXISTE | role admin + superfícies existentes | só novo gap de autoridade/operação |
 | Admin | Permissões granulares/frontend separado | ADIADO | role `admin` suficiente no baseline | necessidade real de separar autoridades |
 | Integration | Ingestão manual legada | JÁ EXISTE | contratos legados mantidos | somente se houver novo requisito |
-| Integration | Podium producer/feed boundary | PARCIAL | boundary e direção definidos; enrichment consumer insuficiente | contrato versionado publicado suficiente |
+| Integration | Podium producer/feed boundary | PARCIAL | Structure feed entregue; consumer contract de ficha técnica definido no #93; producer ainda precisa provar/publicar enrichment suficiente | medir `powertrain`/`transmission`/`body_style` e depois contrato quantitativo versionado |
 | Integration | Scraping/polling/matching automático no BPT2 | DESCARTADO/ADIADO | acquisition/evidence/reconciliation pertencem ao Podium | novo requisito que altere boundary |
 | Services | Compra Assistida | ADIADO | donor implementado, mas problema incremental não provado no BPT2 | provar gap não coberto por discovery/comparator |
 | Services | Financiamento | ADIADO | complementar ao core | parceria/tese comercial |
@@ -102,18 +103,20 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 ## Gaps atualmente elegíveis para investigação sem reabrir trabalho entregue
 
-Nenhum item deve ser tratado automaticamente como próximo feature. Os candidatos que podem ser investigados quando houver pergunta concreta são:
+Color e seleção guiada canônica deixaram esta lista porque foram entregues pelos PRs #89 e #92.
 
-- filtro público por cor, com primeiro teste restrito a semântica normalizada e consistência com Saved Search/matching;
-- seleção guiada de versão/Vehicle, somente após provar contrato público adequado e valor além da busca textual;
-- attribution de marketing mínima, se surgir pergunta real de aquisição;
+Nenhum item abaixo deve ser tratado automaticamente como próximo feature. Os candidatos só podem ser investigados quando houver pergunta concreta ou o gatilho documentado mudar:
+
+- attribution de marketing mínima, se surgir pergunta real de aquisição + privacy contract;
 - instrumentação mínima embutida em uma hipótese de produto específica;
 - workflow adicional de Leads somente se o Won/Lost atual se mostrar insuficiente;
 - Compra Assistida somente se discovery/comparator não cobrirem o problema observado.
 
 Ordenação por recência não é elegível enquanto não existir semântica temporal canônica verificável para Listing/publicação.
 
-Os demais candidatos de maior porte continuam bloqueados por pré-condições explícitas: enrichment/Comparator, discovery avançado/recomendações, runner de alertas, trust externo e inteligência de mercado.
+Os candidatos de maior porte continuam bloqueados por pré-condições explícitas: enrichment/Comparator, discovery avançado/recomendações, runner de alertas, trust externo e inteligência de mercado.
+
+Para ficha técnica, o próximo gate válido é upstream: medir no Podium o catálogo publicável para `powertrain`, `transmission` e `body_style`; fatos quantitativos só podem avançar quando houver contrato versionado com unidade, ausência semântica, revision e provenance.
 
 ## Autoridade
 
