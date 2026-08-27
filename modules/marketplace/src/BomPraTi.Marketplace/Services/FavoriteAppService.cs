@@ -43,7 +43,7 @@ public class FavoriteAppService : IFavoriteAppService, ITransientDependency
         }
 
         await _dbContext.Favorites.AddAsync(
-            new Favorite(Guid.NewGuid(), userId, listingId),
+            new Favorite(Guid.NewGuid(), userId, listingId, DateTime.UtcNow),
             cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
