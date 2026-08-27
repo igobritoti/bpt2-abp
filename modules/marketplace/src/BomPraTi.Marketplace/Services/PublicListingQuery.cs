@@ -197,6 +197,12 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
             listings = listings.Where(x => vehicleIds.Contains(x.VehicleId));
         }
 
+        if (!string.IsNullOrWhiteSpace(input.Color))
+        {
+            var normalizedColor = input.Color.Trim().ToLowerInvariant();
+            listings = listings.Where(x => x.Color != null && x.Color.ToLower() == normalizedColor);
+        }
+
         if (!string.IsNullOrWhiteSpace(input.City))
         {
             var normalizedCity = input.City.Trim().ToLowerInvariant();
