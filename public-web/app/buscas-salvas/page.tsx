@@ -6,6 +6,7 @@ import type { User } from "oidc-client-ts";
 import {
   deleteSavedSearch,
   getMySavedSearches,
+  setSavedSearchMonitoring,
   type SavedSearch,
 } from "../../lib/buyer-api";
 import { getCurrentBuyerUser, getBuyerUserManager, signInBuyer } from "../../lib/buyer-auth";
@@ -61,6 +62,7 @@ export default function SavedSearchesPage() {
   const [items, setItems] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -76,6 +78,20 @@ export default function SavedSearchesPage() {
     }
     void load();
   }, []);
+
+  async function toggleMonitoring(item: SavedSearch) {
+    if (!user) return;
+    setError(null);
+    setUpdatingId(item.id);
+    try {
+      const updated = await setSavedSearchMonitoring(user.access_token, item.id, !item.alertEnabled);
+      setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o monitoramento.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   async function remove(id: string) {
     if (!user) return;
@@ -140,7 +156,24 @@ export default function SavedSearchesPage() {
                     <p>
                       <Link href={searchHref(item)}>Ver resultados</Link>
                     </p>
-                    <button className="secondary-action" type="button" onClick={() => remove(item.id)}>
+                    <p aria-live="polite">
+                      {item.alertEnabled
+                        ? "Monitoramento ativo para novas ofertas compatíveis."
+                        : "Monitoramento de novas ofertas desligado."}
+                    </p>
+                    <button
+                      className="secondary-action"
+                      disabled={updatingId === item.id}
+                      type="button"
+                      onClick={() => void toggleMonitoring(item)}
+                    >
+                      {updatingId === item.id
+                        ? "Atualizando…"
+                        : item.alertEnabled
+                          ? "Desativar monitoramento"
+                          : "Monitorar novas ofertas"}
+                    </button>
+                    <button className="secondary-action" type="button" onClick={() => void remove(item.id)}>
                       Remover busca
                     </button>
                   </div>
