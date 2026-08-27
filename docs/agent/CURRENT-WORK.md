@@ -8,9 +8,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0051 fechou o probe de Favorite price-drop. O detector passou o contrato congelado completo após três achados encadeados: repository ABP corrigiu a ausência do primeiro match; replay pós-commit revelou necessidade de provenance temporal do Favorite; `CreatedAtUtc` + normalização UTC de `ListingPriceChange.ChangedAtUtc` eliminaram retroatividade e preservaram idempotência no smoke.
+O Plan 0052 fechou o primeiro slice estrutural `Podium 7 -> BPT2 Catalog` usando o contrato Catalog JSON `2.0`. O BPT2 agora possui adapter no Ingestion boundary que preserva `podium7/entity.id` como identidade externa, converge `redirectsFrom` para o mesmo `VehicleId`, mantém replay idempotente e falha explicitamente quando o contrato não pode ser representado sem perda semântica.
 
-O sweep pós-Plan 0051 revalidou os gatilhos restantes e não encontrou nova pré-condição mecanicamente satisfeita para abrir outro slice funcional.
+`variant = null` permanece não projetável no V1 porque `Vehicle.VersionId` é obrigatório. Model-year range real permanece não projetável porque `Vehicle.ModelYear?` é escalar. Nenhum placeholder ou limite arbitrário é inventado. Comparator continua bloqueado por enrichment técnico publicado insuficiente e não foi ampliado por este slice.
 
 ## Active plan
 
@@ -32,10 +32,10 @@ O sweep pós-Plan 0051 revalidou os gatilhos restantes e não encontrou nova pr�
 - Produto: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
+- Podium feed concluído: [`../exec-plans/completed/0052-podium-catalog-feed-v1.md`](../exec-plans/completed/0052-podium-catalog-feed-v1.md).
 - Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
 - Price-drop concluído: [`../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md`](../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md).
-- Checkpoint atual: [`../audits/2026-08-27-post-plan0051-trigger-sweep.md`](../audits/2026-08-27-post-plan0051-trigger-sweep.md).
-- Checkpoint anterior: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
+- Checkpoint anterior: [`../audits/2026-08-27-post-plan0051-trigger-sweep.md`](../audits/2026-08-27-post-plan0051-trigger-sweep.md).
 
 ## Open blockers
 
