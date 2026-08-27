@@ -10,6 +10,7 @@ public sealed class SavedSearch : AggregateRoot<Guid>
     public Guid? SellerId { get; private set; }
     public string? Brand { get; private set; }
     public string? Model { get; private set; }
+    public string? Color { get; private set; }
     public string? City { get; private set; }
     public string? StateCode { get; private set; }
     public int? MinModelYear { get; private set; }
@@ -33,6 +34,7 @@ public sealed class SavedSearch : AggregateRoot<Guid>
         Guid? sellerId,
         string? brand,
         string? model,
+        string? color,
         string? city,
         string? stateCode,
         int? minModelYear,
@@ -50,6 +52,7 @@ public sealed class SavedSearch : AggregateRoot<Guid>
         SellerId = sellerId;
         Brand = brand;
         Model = model;
+        Color = color;
         City = city;
         StateCode = stateCode;
         MinModelYear = minModelYear;
