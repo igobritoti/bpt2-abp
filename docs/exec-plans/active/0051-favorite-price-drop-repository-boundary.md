@@ -30,10 +30,11 @@ A analogia é hipótese arquitetural até o smoke confirmar ou refutar neste sli
 - aumento → ignorado;
 - unfavorite antes da próxima queda → não recebe match futuro.
 
-## Critério de decisão
+## Critérios de aceite
 
 - **PASSA** somente se o smoke completo passar sem relaxamento e os regressivos aplicáveis permanecerem verdes;
 - **REPROVADA** a hipótese se o primeiro match continuar ausente ou surgir outra falha funcional no mesmo contrato;
+- a fixture de replay deve observar o estado somente depois do commit do UoW;
 - merge somente com CI fresco no head exato e base/review refresh limpos.
 
 ## Fora de escopo
@@ -42,3 +43,15 @@ A analogia é hipótese arquitetural até o smoke confirmar ou refutar neste sli
 - notificações externas;
 - runner/background worker;
 - alterações no Comparator, Podium, discovery ou market intelligence.
+
+## Progress log
+
+- 2026-08-27 — slice reconstruído sobre `main` `acd7efd48bc6a00baa4a9187c769a611c1303085` e PR #82 aberto em draft.
+- 2026-08-27 — primeiro CI do repository boundary avançou além da falha original: Draft ignored, existing Favorite, no retroactive immediate check e replay check passaram; falhou na leitura seguinte após aumento.
+- 2026-08-27 — fixture endurecida para concluir o UoW de replay antes de abrir novo scope e ler o ledger, eliminando leitura pré-commit como falso verde possível.
+
+## Decision log
+
+- 2026-08-27 — manter o contrato HTTP congelado; mudanças de teste só podem aumentar observabilidade/rigor, nunca relaxar asserções.
+- 2026-08-27 — não concluir que repository boundary resolve todo o detector: há evidência de que corrige a ausência do primeiro match, mas o contrato completo continua em investigação.
+- 2026-08-27 — `Favorite` atualmente não registra instante de criação; qualquer correção temporal para replay exige nova evidência antes de alterar domínio.
