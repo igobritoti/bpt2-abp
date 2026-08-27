@@ -34,6 +34,14 @@ Entregar no mesmo slice:
 - remoção dos filtros textuais Brand/Model existentes;
 - mudança de Saved Search além de reutilizar o `VehicleId` já suportado.
 
+## Decision log
+
+- Reutilizar `VehicleId` como único valor semântico selecionado; labels de Brand/Model/Generation/Version/ModelYear são apresentação.
+- Reutilizar a semântica textual já existente no `VehicleCatalogReader`, sem criar fuzzy search, synonyms ou ranking.
+- Manter `take`/`skip` e o limite máximo de 100 no endpoint atual; autocomplete usa somente os 12 primeiros resultados do query.
+- Usar proxy server-side do Next para o componente cliente não depender diretamente da URL interna do host ABP.
+- Manter Brand/Model e busca textual geral existentes; o seletor canônico é uma opção adicional, não uma substituição neste slice.
+
 ## Critérios de aceite
 
 - [ ] catálogo paginado aceita `query` sem quebrar Brand/Model/year existentes;
@@ -43,3 +51,9 @@ Entregar no mesmo slice:
 - [ ] limpar seleção remove `vehicleId` sem afetar outros filtros;
 - [ ] public-web build e smoke de discovery passam no head exato;
 - [ ] documentação de produto e current-work refletem o estado final.
+
+## Progress log
+
+- 2026-08-27 — Plan aberto sobre `main` `f3e4d5a36aa29baba0ec969a301e2903fa1f9e42`.
+- 2026-08-27 — `VehicleCatalogSearchInput.Query`, busca paginada por identidade, proxy Next, combobox público e smoke HTTP focado implementados.
+- 2026-08-27 — PR #92 aberto draft; primeiro Harness Gate falhou apenas por seções canônicas ausentes neste plan e facts gerados ainda indicando zero planos ativos. Nenhuma falha funcional foi reportada nesse gate.
