@@ -40,7 +40,7 @@ O slice expõe somente **monitoramento de novas ofertas**. `AlertEnabled` não s
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md).
-- Consumer contract técnico: [`../contracts/vehicle-technical-sheet-consumer-contract.md`](../contracts/vehicle-technical-sheet-consumer-contract.md).
+- Consumer contract técnico: [`../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md`](../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md).
 
 ## Open blockers
 
