@@ -11,7 +11,7 @@ using Volo.Abp.Domain.Entities;
 namespace BomPraTi.Ingestion.Services;
 
 [Authorize(Roles = "admin")]
-public sealed class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransientDependency
+public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransientDependency
 {
     private const string Source = "podium7";
     private const string SupportedContractVersion = "2.0";
