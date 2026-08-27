@@ -90,7 +90,7 @@ Regras consolidadas:
 - primeira publicação persiste uma `SavedSearchAlertDetectionRequest` durável e única por Listing no mesmo UoW, sem varrer todas as buscas no request de publicação;
 - runner automático e delivery de alertas permanecem não entregues; nenhum provider/canal foi escolhido;
 - histórico seguro de preço de Listing publicada é persistido; Draft e preço sem alteração não criam histórico;
-- detector de price-drop de Favorite ainda não está entregue: o retry funcional do PR #77 reproduziu ledger vazio no primeiro match esperado e foi fechado sem merge;
+- detector de price-drop de Favorite está entregue: queda de preço em Listing publicada cria ledger apenas para Buyers que já tinham favoritado antes da queda; replay é idempotente, Favorite posterior não recebe retroativo, aumento é ignorado e unfavorite impede match futuro;
 - contato WhatsApp pode ser anônimo; se já existir sessão Buyer válida, o Lead preserva o `UserId` autenticado sem tornar login obrigatório;
 - token Buyer permanece restrito ao boundary same-origin/public-web → API BPT e nunca é enviado ao WhatsApp;
 - novo Lead ou ListingReport só nasce para Listing atualmente público;
@@ -221,15 +221,14 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 **Nenhum execution plan funcional está ativo.**
 
-O último roadmap amplo, Plan 0049, foi concluído por classificação. O retry Plan 0050/PR #77 não foi mergeado porque, após corrigir o bug mecânico do smoke, a primeira detecção funcional de price-drop esperada permaneceu com ledger vazio.
+O último roadmap amplo, Plan 0049, foi concluído por classificação. O Plan 0051/PR #82 fechou o probe de Favorite price-drop e foi mergeado após o contrato congelado passar integralmente no CI do head exato.
 
-O checkpoint atual de gatilhos está em `audits/2026-08-26-post-plan0050-trigger-sweep.md`.
+O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; o checkpoint histórico anterior permanece em `audits/2026-08-26-post-plan0050-trigger-sweep.md`.
 
 ## Decisões ainda abertas / gatilhos
 
 Só resolver quando houver necessidade de produto e evidência suficiente:
 
-- probe focado para explicar a persistência/UoW do detector de Favorite price-drop;
 - deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; ABP Background Jobs não elimina a necessidade de distributed lock real em cluster;
 - enrichment técnico publicado do Podium para Comparator e Vehicle Hub enriquecido;
 - analytics agregados, scoring, atribuição de marketing, notas/etapas adicionais e exportação de Leads somente se houver pergunta operacional concreta;
