@@ -6,25 +6,25 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Fechar o gap de consentimento explícito para alertas de Saved Search no public web: o backend já persiste `AlertEnabled`/`AlertEnabledAtUtc` e expõe `SetAlertEnabledAsync`, mas a experiência Buyer ainda não mostra nem aciona esse opt-in.
+Fechar o gap entre o opt-in de monitoramento de Saved Search já persistido no backend e a experiência pública: o backend possui `AlertEnabled`/`AlertEnabledAtUtc` e `SetAlertEnabledAsync`, mas o Buyer ainda não consegue controlar esse estado no public web.
 
-O slice tornará a preferência explicitamente **alerta por e-mail**, sem afirmar que delivery externo já está operacional. Provider, resolução/verificação do destinatário, retry e scheduler permanecem boundaries separados.
+O slice expõe somente **monitoramento de novas ofertas**. `AlertEnabled` não será reinterpretado como consentimento de e-mail; delivery externo, canal, destinatário verificável, retry e scheduler permanecem boundaries separados.
 
 ## Active plan
 
-[`../exec-plans/active/0054-saved-search-email-opt-in.md`](../exec-plans/active/0054-saved-search-email-opt-in.md)
+[`../exec-plans/active/0054-saved-search-monitoring-opt-in.md`](../exec-plans/active/0054-saved-search-monitoring-opt-in.md)
 
 ## Acceptance target
 
 - client model reflete o estado de alerta já publicado pelo backend;
-- Buyer habilita/desabilita alertas por e-mail em busca própria;
+- Buyer habilita/desabilita monitoramento em busca própria;
 - estado da UI acompanha a resposta persistida;
-- copy distingue preferência registrada de delivery efetivamente enviado;
+- copy não promete e-mail/notificação externa;
 - prova focada + Public Web Gate verdes no head exato.
 
 ## Próximos gatilhos independentes
 
-- delivery de e-mail de Saved Search somente após consentimento explícito, destinatário verificável e estado durável/recovery do side effect;
+- delivery externo de Saved Search somente após consentimento por canal, destinatário verificável e estado durável/recovery do side effect;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
 - medição executável de `powertrain`/`transmission`/`body_style` no Podium para decidir projeção BPT2;
 - enrichment técnico publicado suficiente para Comparator;
@@ -45,7 +45,7 @@ O slice tornará a preferência explicitamente **alerta por e-mail**, sem afirma
 ## Open blockers
 
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
-- Saved Search e-mail delivery: ainda sem destinatário verificado + durable delivery/recovery contract comprovado.
+- Saved Search external delivery: sem consentimento de canal comprovado + destinatário verificável + durable delivery/recovery contract.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
 - Discovery avançado: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
