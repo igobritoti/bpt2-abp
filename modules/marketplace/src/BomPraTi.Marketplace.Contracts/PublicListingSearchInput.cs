@@ -6,6 +6,7 @@ public sealed class PublicListingSearchInput
     public Guid? SellerId { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
+    public string? Color { get; init; }
     public string? City { get; init; }
     public string? StateCode { get; init; }
     public int? MinModelYear { get; init; }
