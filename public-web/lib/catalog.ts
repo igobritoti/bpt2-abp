@@ -66,6 +66,13 @@ export async function getVehicle(id: string): Promise<VehicleRef | null> {
 }
 
 export function vehicleRefLabel(vehicle: VehicleRef): string {
+  return [vehicle.brand, vehicle.model, vehicle.version]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function vehicleSelectorLabel(vehicle: VehicleRef): string {
   const identity = [vehicle.brand, vehicle.model, vehicle.generation, vehicle.version]
     .map((value) => value?.trim())
     .filter(Boolean)
