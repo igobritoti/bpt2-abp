@@ -25,6 +25,7 @@ Fontes principais:
 - `docs/audits/2026-08-25-bpt1-bpt2-capability-delta-matrix.md` — auditoria donor reconciliada;
 - `docs/audits/2026-08-25-capability-final-decision-matrix.md` — decisões históricas do Plan 0046;
 - `docs/audits/2026-08-26-post-plan0050-trigger-sweep.md` e checkpoint posterior — blockers/gatilhos;
+- `docs/audits/2026-08-27-external-functional-benchmark-refresh.md` — benchmark externo corrente e deltas de discovery;
 - execution plans e PRs já concluídos para evidência detalhada.
 
 ## Matriz
@@ -39,6 +40,9 @@ Fontes principais:
 | Buyer | Favorites | JÁ EXISTE | add/remove/mine/isolation e visibilidade pública | só extensão com hipótese própria |
 | Discovery | Busca textual + identidade canônica | JÁ EXISTE | Title + Brand/Model/Generation/Version | corpus/métrica apenas para extensões |
 | Discovery | Filtros/paginação/query string/preço | JÁ EXISTE | comportamento público comprovado | só novo gap de produto |
+| Discovery | Filtro por cor | GAP REAL | `Listing.Color` já existe e é público, mas não integra `PublicListingSearchInput`; benchmark atual reproduz cor como filtro externo | teste de normalização + composição + Saved Search/matching |
+| Discovery | Seleção guiada de versão/Vehicle | PARCIAL | backend aceita `VehicleId`, mas formulário público só o preserva oculto e não oferece seletor canônico visível | provar contrato público de resolução + hipótese UX |
+| Discovery | Ordenação por recência | BLOQUEADO | busca só ordena por preço; default é `Id` e Listing não possui instante canônico observado para “recente” | definir/persistir semântica de primeira publicação/republicação |
 | Discovery | Fuzzy/autocomplete/facets/relevance | BLOQUEADO | sem corpus, baseline e métrica suficientes | corpus fixo + métrica reproduzível |
 | Discovery | Geo/radius/proximidade | BLOQUEADO | City/StateCode atuais não implicam autoridade geográfica | autoridade geográfica + comportamento de distância |
 | Public Detail | Detalhe, galeria e WhatsApp CTA | JÁ EXISTE | fluxo público real | só novo gap de produto |
@@ -100,10 +104,14 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 Nenhum item deve ser tratado automaticamente como próximo feature. Os candidatos que podem ser investigados quando houver pergunta concreta são:
 
+- filtro público por cor, com primeiro teste restrito a semântica normalizada e consistência com Saved Search/matching;
+- seleção guiada de versão/Vehicle, somente após provar contrato público adequado e valor além da busca textual;
 - attribution de marketing mínima, se surgir pergunta real de aquisição;
 - instrumentação mínima embutida em uma hipótese de produto específica;
 - workflow adicional de Leads somente se o Won/Lost atual se mostrar insuficiente;
 - Compra Assistida somente se discovery/comparator não cobrirem o problema observado.
+
+Ordenação por recência não é elegível enquanto não existir semântica temporal canônica verificável para Listing/publicação.
 
 Os demais candidatos de maior porte continuam bloqueados por pré-condições explícitas: enrichment/Comparator, discovery avançado/recomendações, runner de alertas, trust externo e inteligência de mercado.
 
