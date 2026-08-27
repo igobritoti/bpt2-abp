@@ -1,6 +1,6 @@
 # Current work
 
-Last verified: **2026-08-26**
+Last verified: **2026-08-27**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
@@ -8,19 +8,16 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0049 foi encerrado por classificação. O retry de Favorite price-drop do PR #77 corrigiu o bug mecânico do smoke do PR #75, mas então revelou falha funcional reproduzível: Draft ignore passa, porém o primeiro match esperado para uma Listing publicada já favoritada permanece com ledger vazio. O PR #77 foi fechado sem merge.
-
-Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
+O Plan 0051 fechou o probe de Favorite price-drop. O detector passou o contrato congelado completo após três achados encadeados: repository ABP corrigiu a ausência do primeiro match; replay pós-commit revelou necessidade de provenance temporal do Favorite; `CreatedAtUtc` + normalização UTC de `ListingPriceChange.ChangedAtUtc` eliminaram retroatividade e preservaram idempotência no smoke.
 
 ## Active plan
 
 **Nenhum.**
 
-## Próximos gatilhos de reabertura
+## Próximos gatilhos independentes
 
-- probe focado para a persistência/UoW do detector de Favorite price-drop;
-- enrichment técnico publicado do Podium suficiente para Comparator;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
+- enrichment técnico publicado do Podium suficiente para Comparator;
 - corpus + baseline + métrica para discovery avançado;
 - dataset/licença/metodologia/provenance para inteligência de mercado;
 - evidência operacional suficiente para trust/moderação avançada;
@@ -34,13 +31,13 @@ Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../aud
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
-- Checkpoint atual: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
+- Price-drop concluído: [`../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md`](../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md).
+- Checkpoint anterior: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
 
 ## Open blockers
 
-- Favorite price-drop: falha funcional reproduzida no PR #77; primeiro ledger esperado fica vazio.
-- Comparator: enrichment técnico publicado suficiente do Podium.
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
+- Comparator: enrichment técnico publicado suficiente do Podium.
 - Discovery avançado: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
