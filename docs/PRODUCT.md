@@ -103,7 +103,9 @@ A experiência pública permanece um cliente desacoplado do host ABP, em Next.js
 Capacidades comprovadas:
 
 - busca textual por título e identidade canônica Brand/Model/Generation/Version;
-- filtros Brand, Model, ano, preço, quilometragem, City e StateCode;
+- filtros Brand, Model, Color, ano, preço, quilometragem, City e StateCode;
+- Color usa igualdade textual com trim + case-insensitive, sem taxonomia ou inferência de sinônimos;
+- Color compõe com os filtros existentes e integra Saved Search/deduplicação/matching de alertas pela mesma semântica pública;
 - filtros combinados, paginação e preservação de estado pela query string;
 - ordenação pública por preço;
 - zero-results explícito;
@@ -164,17 +166,27 @@ Planos comerciais, eligibility avançada, prioridade entre campanhas e instrumen
 
 ### Ingestion / knowledge feed
 
-O BPT2 mantém os contratos legados de ingestão manual já existentes, mas a direção arquitetural corrente para conhecimento automotivo externo é:
+A primeira integração estrutural `Podium 7 -> BPT2 Catalog` está entregue sobre o contrato Catalog JSON `2.0`:
 
-`Podium producer/feed → contrato versionado publicado → projeção BPT2 → catálogo publicado BPT2`
+`Podium producer/feed → contrato versionado publicado → Ingestion boundary BPT2 → projeção Catalog BPT2 → catálogo publicado BPT2`
+
+Capacidades comprovadas:
+
+- `podium7/entity.id` é preservado como identidade externa estável no Ingestion boundary;
+- `redirectsFrom` converge para o mesmo `VehicleId`, inclusive quando um ID histórico já estava reconciliado antes da canonicalização;
+- replay do mesmo canonical ID é idempotente;
+- labels são dados projetados e não chave persistida do vínculo Podium → BPT2;
+- `variant = null` falha explicitamente no V1 porque o domínio BPT2 exige `Vehicle.VersionId`;
+- model-year range real falha explicitamente porque `Vehicle.ModelYear?` é escalar; nenhum limite é escolhido arbitrariamente;
+- BPT2 continua independente da disponibilidade online do Podium no public marketplace read path.
 
 Regras consolidadas:
 
 - BPT2 não deve duplicar aquisição/evidence/reconciliation já pertencentes ao Podium;
 - integração consome contrato, não persistence/shared DB;
 - correções preservam identidade externa estável e redirects/historical IDs não devem ser resolvidos por labels;
-- public marketplace read path não depende de Podium online;
-- connector/source, polling/scraping e matching automático dentro do BPT2 não são promovidos sem novo requisito.
+- connector/source, polling/scraping e matching automático dentro do BPT2 não são promovidos sem novo requisito;
+- `powertrain`, `transmission` e `body_style` permanecem candidatos de projeção, não capacidades BPT2 entregues, até existir medição de cobertura/normalização suficiente no catálogo Podium consumível.
 
 ### Administração
 
@@ -221,15 +233,16 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 **Nenhum execution plan funcional está ativo.**
 
-O último roadmap amplo, Plan 0049, foi concluído por classificação. O Plan 0051/PR #82 fechou o probe de Favorite price-drop e foi mergeado após o contrato congelado passar integralmente no CI do head exato.
+O último slice estrutural concluído é o Plan 0052, que entregou o primeiro feed `Podium 7 -> BPT2 Catalog`. O filtro público por Color também está entregue e comprovado, incluindo Saved Search e matching de alertas pela mesma semântica.
 
-O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; o checkpoint histórico anterior permanece em `audits/2026-08-26-post-plan0050-trigger-sweep.md`.
+O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inventários e checkpoints específicos ficam em `audits/`.
 
 ## Decisões ainda abertas / gatilhos
 
 Só resolver quando houver necessidade de produto e evidência suficiente:
 
 - deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; ABP Background Jobs não elimina a necessidade de distributed lock real em cluster;
+- medição de cobertura/normalização de `powertrain`, `transmission` e `body_style` no catálogo Podium consumível antes de projetar esses campos ou abrir filtros públicos no BPT2;
 - enrichment técnico publicado do Podium para Comparator e Vehicle Hub enriquecido;
 - analytics agregados, scoring, atribuição de marketing, notas/etapas adicionais e exportação de Leads somente se houver pergunta operacional concreta;
 - taxonomia/motivo de denúncia, workflow multiestado, SLA, anexos/evidence, scoring e notificações de moderação;
