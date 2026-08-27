@@ -34,52 +34,58 @@ Entregar o primeiro slice vertical de integração estrutural `Podium 7 -> BPT2 
 - polling, scheduler ou background runner;
 - resolver automaticamente relações `Podium entity.id == BPT2 VehicleId`.
 
-## Mapeamento inicial
+## Mapeamento V1
 
 - `entity.id` -> identidade externa Podium persistida no Ingestion boundary;
 - `entity.make` -> `Brand.Name`;
 - `entity.model` -> `VehicleModel.Name`;
 - `entity.generation` -> `Generation.Name` quando presente;
-- `entity.variant` -> `VehicleVersion.Name`; quando ausente, o slice deve decidir por evidência se existe representação estrutural segura sem inventar label;
-- `model_year_from/model_year_to` -> não colapsar automaticamente para um único `Vehicle.ModelYear` sem regra comprovada;
+- `entity.variant` -> `VehicleVersion.Name`; `null` falha explicitamente porque o domínio atual exige `Vehicle.VersionId`;
+- `model_year_from/model_year_to` -> `Vehicle.ModelYear` somente quando ambos são `null` ou quando representam um único ano (`from == to`); ranges reais falham explicitamente;
 - `manufacture_year_*` -> fora da projeção V1 enquanto o BPT2 não tiver dimensão equivalente explícita;
-- `redirectsFrom` -> aliases históricos da identidade externa canônica, nunca Vehicles adicionais.
+- `redirectsFrom` -> aliases históricos da identidade externa canônica, nunca Vehicles adicionais;
+- nomes internos com underscore do contrato Podium (`body_style`, `model_year_from`, etc.) são congelados explicitamente no DTO de wire e não dependem do naming convention C#.
 
 ## Critérios de aceite
 
 - payload `2.0` válido produz no máximo a projeção estrutural explicitamente suportada pelo modelo BPT2;
 - versão diferente de `2.0` falha explicitamente;
 - replay do mesmo `entity.id` não cria duplicata;
-- lookup por ID histórico Podium, quando representado por `redirectsFrom`, converge para o mesmo Vehicle BPT2;
-- labels não são usadas como chave de vínculo Podium -> BPT2;
+- ID histórico Podium em `redirectsFrom` converge para o mesmo Vehicle BPT2, inclusive quando o ID histórico já havia sido importado antes da canonicalização;
+- labels não são usadas como chave persistida do vínculo Podium -> BPT2;
 - nenhuma chamada ao Podium entra no request path público;
-- testes estritamente necessários cobrem validação de contrato, idempotência, redirect e leitura do catálogo;
+- testes estritamente necessários cobrem validação de contrato, idempotência, redirect e continuidade histórica;
 - CI final fresco no head exato e review/base refresh limpos antes de merge.
 
 ## Checkpoints
 
-1. Congelar adapter/DTO de entrada `2.0` e regra fail-closed.
-2. Resolver representação segura para `variant = null` e intervalo de model year sem inventar semântica.
-3. Implementar persistência do vínculo externo canônico e aliases históricos.
-4. Implementar projeção Catalog usando boundaries existentes.
-5. Adicionar smoke/regressivos mínimos e documentação factual.
-6. CI final, self-review, base refresh e merge somente verde.
+1. **FEITO** — adapter/DTO de entrada `2.0` com nomes JSON congelados e regra fail-closed.
+2. **FEITO** — `variant = null` e model-year range definidos como não projetáveis no V1.
+3. **FEITO** — persistência do vínculo externo canônico e aliases históricos via Ingestion boundary existente.
+4. **FEITO** — projeção Catalog usando `ICanonicalVehicleAdminAppService`/Contracts existentes.
+5. **EM VALIDAÇÃO** — fixture focado + workflow cobrindo replay, redirects, continuidade histórica e casos fail-closed.
+6. **PENDENTE** — CI final, self-review final, base refresh e merge somente verde.
 
 ## Decisões abertas necessárias
 
-- **variant nulo:** o domínio atual exige `Vehicle.VersionId`; decidir por evidência se o payload pode ser publicado sem variant ou deve permanecer não projetável/reviewável.
-- **intervalo de model year:** `Vehicle` possui apenas `ModelYear?`; não escolher um ano arbitrário de um range.
-- **ownership do vínculo:** preferir Ingestion boundary existente se ele suportar unicidade/aliases sem acoplamento indevido; caso contrário documentar a menor extensão necessária.
+Nenhuma decisão semântica permanece aberta no V1. Falhas de CI podem revelar correções de implementação/teste, mas não autorizam relaxar os contratos acima.
 
 ## Progress log
 
 - 2026-08-27 — nova evidência externa: Podium 7 MVP técnico privado `PASS` e contrato Catalog JSON `2.0` congelado.
-- 2026-08-27 — branch `feat/podium-catalog-feed-v1` aberta sobre `main` `670da15f24a2b9c438b48d3b9a7fbfebe09a51d3`.
-- 2026-08-27 — inspeção do BPT2 confirmou `Vehicle.VersionId` obrigatório, `ModelYear?` escalar e `IngestionRecord` com `Source/ExternalId/ReconciledVehicleId`; estes limites impedem mapping ingênuo de variant nulo e ranges de ano.
+- 2026-08-27 — branch `feat/podium-catalog-feed-v1` aberta sobre `main` `670da15f24a2b9c438b48d3b9a7fbfebe09a51d3`; PR #90 aberto em draft.
+- 2026-08-27 — inspeção do BPT2 confirmou `Vehicle.VersionId` obrigatório, `ModelYear?` escalar e `IngestionRecord` com `Source/ExternalId/ReconciledVehicleId` + índice único `(Source, ExternalId)`.
+- 2026-08-27 — wire DTO `2.0` adicionado com `JsonPropertyName` explícito para preservar exatamente o casing misto do Podium.
+- 2026-08-27 — `PodiumCatalogFeedAppService` implementado no Ingestion boundary; canonical ID e redirects convergem para o mesmo `VehicleId`, e um redirect previamente reconciliado vence labels alterados em replay posterior.
+- 2026-08-27 — fixture `BomPraTi.PodiumCatalogFeedFixture` adicionado cobrindo replay/idempotência, redirects, continuidade de ID histórico e fail-closed para contract version, variant nulo e model-year range.
+- 2026-08-27 — workflow `BPT2 Podium Catalog Feed Gate` adicionado; no head `0b0376aed5a2b48c991316844bd528d5718d1fd6`, os gates aplicáveis foram disparados e permanecem em fila de GitHub Actions no último checkpoint desta sessão.
 
 ## Decision log
 
 - 2026-08-27 — o primeiro slice será estrutural; enrichment/Comparator permanece fora.
-- 2026-08-27 — `entity.id` Podium é a chave de integração externa; nomes são dados projetados, não identidade do vínculo.
-- 2026-08-27 — `redirectsFrom` preserva histórico e deve convergir para a mesma projeção BPT2.
+- 2026-08-27 — `entity.id` Podium é a chave de integração externa; nomes são dados projetados, não identidade persistida do vínculo.
+- 2026-08-27 — `redirectsFrom` preserva histórico e deve convergir para a mesma projeção BPT2; se um redirect já estiver ligado a Vehicle, o novo canonical ID herda esse vínculo sem rematching por labels.
+- 2026-08-27 — `variant = null` não é projetável no V1 porque o domínio BPT2 exige Version; nenhum placeholder será inventado.
+- 2026-08-27 — model-year range real não é projetável no V1 porque `Vehicle.ModelYear` é escalar; nenhum limite do range será escolhido arbitrariamente.
+- 2026-08-27 — `IngestionRecord` permanece o ownership do vínculo/provenance no slice, coerente com `ARCHITECTURE.md`; nenhuma nova persistence paralela foi criada.
 - 2026-08-27 — qualquer incompatibilidade semântica entre o contrato Podium e o domínio BPT2 deve falhar/adiar projeção, nunca ser preenchida por opinião.
