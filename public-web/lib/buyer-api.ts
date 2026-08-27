@@ -70,6 +70,8 @@ export async function reportListing(accessToken: string, listingId: string): Pro
 
 export type SavedSearch = Omit<PublicListingSearch, "sort" | "skip" | "take"> & {
   id: string;
+  alertEnabled: boolean;
+  alertEnabledAtUtc?: string;
   createdAtUtc: string;
 };
 
@@ -90,6 +92,19 @@ export async function createSavedSearch(
 export async function getMySavedSearches(accessToken: string): Promise<SavedSearch[]> {
   const response = await buyerRequest("/api/app/saved-search/mine", accessToken);
   return (await response.json()) as SavedSearch[];
+}
+
+export async function setSavedSearchMonitoring(
+  accessToken: string,
+  id: string,
+  enabled: boolean,
+): Promise<SavedSearch> {
+  const response = await buyerRequest(
+    `/api/app/saved-search/${encodeURIComponent(id)}/set-alert-enabled?enabled=${enabled}`,
+    accessToken,
+    { method: "POST" },
+  );
+  return (await response.json()) as SavedSearch;
 }
 
 export async function deleteSavedSearch(accessToken: string, id: string): Promise<void> {
