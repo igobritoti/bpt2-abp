@@ -25,6 +25,7 @@ PriceDropFixtureModule.ConnectionString = connectionString;
 using var application = await AbpApplicationFactory.CreateAsync<PriceDropFixtureModule>(options => options.UseAutofac());
 await application.InitializeAsync();
 
+string result;
 try
 {
     using var scope = application.ServiceProvider.CreateScope();
@@ -57,14 +58,16 @@ try
         .ToListAsync();
 
     await uow.CompleteAsync();
-    Console.WriteLine(string.Join(
+    result = string.Join(
         ";",
-        rows.Select(x => $"{x.UserId:N}|{x.PreviousPrice:0.00}>{x.NewPrice:0.00}")));
+        rows.Select(x => $"{x.UserId:N}|{x.PreviousPrice:0.00}>{x.NewPrice:0.00}"));
 }
 finally
 {
     await application.ShutdownAsync();
 }
+
+Console.WriteLine($"PRICE_DROP_STATE:{result}");
 
 [DependsOn(typeof(AbpAutofacModule), typeof(BomPraTiCatalogModule), typeof(BomPraTiMarketplaceModule))]
 public sealed class PriceDropFixtureModule : AbpModule
