@@ -26,7 +26,8 @@
   align-items: end;
 }
 
-.discoveryForm label {
+.discoveryForm label,
+.vehicleSelector > label {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -54,6 +55,73 @@
 
 .queryField {
   grid-column: span 2;
+}
+
+.vehicleSelector {
+  position: relative;
+  grid-column: span 2;
+  align-self: stretch;
+}
+
+.vehicleSelectorControl {
+  position: relative;
+  margin-top: 8px;
+}
+
+.clearVehicle {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #444;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.vehicleOptions {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  left: 0;
+  max-height: 280px;
+  margin: 6px 0 0;
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid #cfcfc8;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+  list-style: none;
+}
+
+.vehicleOption {
+  width: 100%;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #171717;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vehicleOption:hover,
+.vehicleOption:focus-visible {
+  background: #f1f1ed;
+  outline: none;
+}
+
+.vehicleSelectorStatus {
+  display: block;
+  min-height: 1.2em;
+  margin-top: 6px;
+  color: #666;
+  font-size: 0.78rem;
+  font-weight: 400;
 }
 
 .submitFilters {
@@ -102,7 +170,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .queryField {
+  .queryField,
+  .vehicleSelector {
     grid-column: 1 / -1;
   }
 }
@@ -121,7 +190,8 @@
     grid-template-columns: 1fr;
   }
 
-  .queryField {
+  .queryField,
+  .vehicleSelector {
     grid-column: auto;
   }
 
