@@ -11,6 +11,7 @@ on:
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/public-buyer-http-smoke.sh'
+      - 'scripts/buyer-saved-search-http-smoke.sh'
       - 'scripts/public-seller-hub-http-smoke.sh'
       - 'scripts/public-hub-social-images-http-smoke.sh'
       - 'scripts/public-seo-http-smoke.sh'
@@ -54,6 +55,7 @@ jobs:
       - name: Syntax check public HTTP smokes
         run: |
           bash -n scripts/public-buyer-http-smoke.sh
+          bash -n scripts/buyer-saved-search-http-smoke.sh
           bash -n scripts/public-seller-hub-http-smoke.sh
           bash -n scripts/public-hub-social-images-http-smoke.sh
           bash -n scripts/public-seo-http-smoke.sh
@@ -94,3 +96,5 @@ jobs:
         run: bash scripts/authenticated-lead-http-smoke.sh
       - name: Prove authenticated Lead forwarding through public web
         run: bash scripts/whatsapp-auth-forwarding-smoke.sh
+      - name: Exercise Saved Search monitoring over HTTP
+        run: bash scripts/buyer-saved-search-http-smoke.sh
