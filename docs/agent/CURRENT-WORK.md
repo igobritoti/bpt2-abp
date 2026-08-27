@@ -6,26 +6,32 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Fechar o gap de consentimento explícito para alertas de Saved Search no public web: o backend já persiste `AlertEnabled`/`AlertEnabledAtUtc` e expõe `SetAlertEnabledAsync`, mas a experiência Buyer ainda não mostra nem aciona esse opt-in.
 
-O Plan 0053 fechou o gap de seleção guiada de veículo na descoberta pública usando o `VehicleId` canônico já suportado pelo marketplace. O Catalog paginado agora aceita consulta textual por Brand/Model/Generation/Version com a semântica existente, e o public web oferece combobox canônico sem carregar o catálogo inteiro no browser nem duplicar taxonomia automotiva.
-
-O closeout preservou o contrato de metadata do Vehicle Hub: `vehicleRefLabel` continua com sua semântica anterior e a UX enriquecida do seletor usa `vehicleSelectorLabel` próprio. No head funcional `df3df6742a7859423bc8623296b8aaa0d21cae0d`, 17/17 workflows aplicáveis ficaram verdes, incluindo Public Discovery, Public Web, Public Buyer/Vehicle Hub, Harness, Architecture e Fresh Migration.
+O slice tornará a preferência explicitamente **alerta por e-mail**, sem afirmar que delivery externo já está operacional. Provider, resolução/verificação do destinatário, retry e scheduler permanecem boundaries separados.
 
 ## Active plan
 
-**Nenhum.**
+[`../exec-plans/active/0054-saved-search-email-opt-in.md`](../exec-plans/active/0054-saved-search-email-opt-in.md)
+
+## Acceptance target
+
+- client model reflete o estado de alerta já publicado pelo backend;
+- Buyer habilita/desabilita alertas por e-mail em busca própria;
+- estado da UI acompanha a resposta persistida;
+- copy distingue preferência registrada de delivery efetivamente enviado;
+- prova focada + Public Web Gate verdes no head exato.
 
 ## Próximos gatilhos independentes
 
-- definir o consumer contract mínimo da ficha técnica/enrichment antes de alterar schema/UI do BPT2 ou solicitar evolução correspondente no Podium;
+- delivery de e-mail de Saved Search somente após consentimento explícito, destinatário verificável e estado durável/recovery do side effect;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
-- enrichment técnico publicado do Podium suficiente para Comparator;
+- medição executável de `powertrain`/`transmission`/`body_style` no Podium para decidir projeção BPT2;
+- enrichment técnico publicado suficiente para Comparator;
 - corpus + baseline + métrica para discovery avançado;
 - dataset/licença/metodologia/provenance para inteligência de mercado;
 - evidência operacional suficiente para trust/moderação avançada;
-- tese comercial/parceria concreta para complementares;
-- inventário atual reproduzível do Carros na Web.
+- tese comercial/parceria concreta para complementares.
 
 ## Source of runtime truth
 
@@ -33,17 +39,15 @@ O closeout preservou o contrato de metadata do Vehicle Hub: `vehicleRefLabel` co
 - Produto: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Seleção canônica concluída: [`../exec-plans/completed/0053-public-canonical-vehicle-selector.md`](../exec-plans/completed/0053-public-canonical-vehicle-selector.md).
-- Podium feed concluído: [`../exec-plans/completed/0052-podium-catalog-feed-v1.md`](../exec-plans/completed/0052-podium-catalog-feed-v1.md).
-- Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
-- Price-drop concluído: [`../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md`](../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md).
 - Cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md).
+- Consumer contract técnico: [`../contracts/vehicle-technical-sheet-consumer-contract.md`](../contracts/vehicle-technical-sheet-consumer-contract.md).
 
 ## Open blockers
 
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
+- Saved Search e-mail delivery: ainda sem destinatário verificado + durable delivery/recovery contract comprovado.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
-- Discovery avançado além da seleção canônica: sem corpus/baseline/métrica.
+- Discovery avançado: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
 
