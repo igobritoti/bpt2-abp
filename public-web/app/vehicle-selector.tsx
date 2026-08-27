@@ -19,9 +19,6 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
   useEffect(() => {
     const query = text.trim();
     if (selected || query.length < 2) {
-      setResults([]);
-      setStatus(null);
-      setLoading(false);
       return;
     }
 
@@ -60,6 +57,9 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
 
   function changeText(value: string) {
     setText(value);
+    setResults([]);
+    setStatus(null);
+    setLoading(false);
     if (selected && value !== vehicleRefLabel(selected)) {
       setSelected(null);
     }
@@ -77,6 +77,7 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
     setText("");
     setResults([]);
     setStatus(null);
+    setLoading(false);
   }
 
   return (
@@ -107,6 +108,7 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
           {results.map((vehicle) => (
             <li key={vehicle.id} role="presentation">
               <button
+                aria-selected="false"
                 className={styles.vehicleOption}
                 onClick={() => choose(vehicle)}
                 role="option"
