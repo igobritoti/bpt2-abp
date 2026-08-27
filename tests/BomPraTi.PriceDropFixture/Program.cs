@@ -42,7 +42,7 @@ try
             .FirstAsync();
         await scope.ServiceProvider.GetRequiredService<FavoritePriceDropDetector>()
             .DetectAsync(priceChange);
-        await dbContext.SaveChangesAsync();
+        await uow.SaveChangesAsync();
     }
     else if (!string.Equals(args[0], "state", StringComparison.OrdinalIgnoreCase))
     {
