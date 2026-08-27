@@ -10,6 +10,8 @@ Nenhum execution plan funcional está ativo.
 
 O Plan 0051 fechou o probe de Favorite price-drop. O detector passou o contrato congelado completo após três achados encadeados: repository ABP corrigiu a ausência do primeiro match; replay pós-commit revelou necessidade de provenance temporal do Favorite; `CreatedAtUtc` + normalização UTC de `ListingPriceChange.ChangedAtUtc` eliminaram retroatividade e preservaram idempotência no smoke.
 
+O sweep pós-Plan 0051 revalidou os gatilhos restantes e não encontrou nova pré-condição mecanicamente satisfeita para abrir outro slice funcional.
+
 ## Active plan
 
 **Nenhum.**
@@ -32,6 +34,7 @@ O Plan 0051 fechou o probe de Favorite price-drop. O detector passou o contrato 
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
 - Price-drop concluído: [`../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md`](../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md).
+- Checkpoint atual: [`../audits/2026-08-27-post-plan0051-trigger-sweep.md`](../audits/2026-08-27-post-plan0051-trigger-sweep.md).
 - Checkpoint anterior: [`../audits/2026-08-26-post-plan0050-trigger-sweep.md`](../audits/2026-08-26-post-plan0050-trigger-sweep.md).
 
 ## Open blockers
