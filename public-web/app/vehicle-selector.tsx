@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { type VehicleRef, vehicleRefLabel } from "@/lib/catalog";
+import { type VehicleRef, vehicleSelectorLabel } from "@/lib/catalog";
 import styles from "./page.module.css";
 
 type VehicleSelectorProps = {
@@ -11,7 +11,7 @@ type VehicleSelectorProps = {
 export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps) {
   const listboxId = useId();
   const [selected, setSelected] = useState<VehicleRef | null>(initialVehicle);
-  const [text, setText] = useState(initialVehicle ? vehicleRefLabel(initialVehicle) : "");
+  const [text, setText] = useState(initialVehicle ? vehicleSelectorLabel(initialVehicle) : "");
   const [results, setResults] = useState<VehicleRef[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -60,16 +60,17 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
     setResults([]);
     setStatus(null);
     setLoading(false);
-    if (selected && value !== vehicleRefLabel(selected)) {
+    if (selected && value !== vehicleSelectorLabel(selected)) {
       setSelected(null);
     }
   }
 
   function choose(vehicle: VehicleRef) {
+    const label = vehicleSelectorLabel(vehicle);
     setSelected(vehicle);
-    setText(vehicleRefLabel(vehicle));
+    setText(label);
     setResults([]);
-    setStatus(`Selecionado: ${vehicleRefLabel(vehicle)}`);
+    setStatus(`Selecionado: ${label}`);
   }
 
   function clear() {
@@ -114,7 +115,7 @@ export default function VehicleSelector({ initialVehicle }: VehicleSelectorProps
                 role="option"
                 type="button"
               >
-                {vehicleRefLabel(vehicle)}
+                {vehicleSelectorLabel(vehicle)}
               </button>
             </li>
           ))}
