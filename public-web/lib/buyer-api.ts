@@ -71,7 +71,7 @@ export async function reportListing(accessToken: string, listingId: string): Pro
 export type SavedSearch = Omit<PublicListingSearch, "sort" | "skip" | "take"> & {
   id: string;
   alertEnabled: boolean;
-  alertEnabledAtUtc?: string;
+  alertEnabledAtUtc: string | null;
   createdAtUtc: string;
 };
 
