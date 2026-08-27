@@ -24,6 +24,7 @@ function searchHref(search: SavedSearch): string {
   setText("query", search.query);
   setText("brand", search.brand);
   setText("model", search.model);
+  setText("color", search.color);
   setText("city", search.city);
   setText("stateCode", search.stateCode);
   setNumber("minModelYear", search.minModelYear);
@@ -40,6 +41,7 @@ function searchLabel(search: SavedSearch): string {
     search.query,
     search.brand,
     search.model,
+    search.color ? `cor ${search.color}` : undefined,
     search.city,
     search.stateCode,
     search.vehicleId ? "veículo específico" : undefined,
