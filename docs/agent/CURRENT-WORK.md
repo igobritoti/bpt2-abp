@@ -31,7 +31,7 @@ O Plan 0052 fechou o primeiro slice estrutural `Podium 7 -> BPT2 Catalog` usando
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
 - Produto: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
-- Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/`).
+- Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Podium feed concluído: [`../exec-plans/completed/0052-podium-catalog-feed-v1.md`](../exec-plans/completed/0052-podium-catalog-feed-v1.md).
 - Roadmap concluído: [`../exec-plans/completed/0049-post-mvp-capability-completion.md`](../exec-plans/completed/0049-post-mvp-capability-completion.md).
 - Price-drop concluído: [`../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md`](../exec-plans/completed/0051-favorite-price-drop-repository-boundary.md).
