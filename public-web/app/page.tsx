@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getVehicle } from "@/lib/catalog";
 import {
   formatPrice,
   getPublicListings,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/public-listings";
 import { publicUrl } from "@/lib/site-url";
 import SavedSearchButton from "./saved-search-button";
+import VehicleSelector from "./vehicle-selector";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -162,7 +164,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     minMileageKm,
     maxMileageKm,
   };
-  const page = await getPublicListings(search);
+  const [page, selectedVehicle] = await Promise.all([
+    getPublicListings(search),
+    vehicleId ? getVehicle(vehicleId) : Promise.resolve(null),
+  ]);
   const hasSemanticFilters = Boolean(
     vehicleId ||
       sellerId ||
@@ -213,8 +218,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <form action="/" className={styles.discoveryForm} method="get">
-          {vehicleId ? <input name="vehicleId" type="hidden" value={vehicleId} /> : null}
           {sellerId ? <input name="sellerId" type="hidden" value={sellerId} /> : null}
+          <VehicleSelector initialVehicle={selectedVehicle} />
+
           <label className={styles.queryField}>
             Busca
             <input
