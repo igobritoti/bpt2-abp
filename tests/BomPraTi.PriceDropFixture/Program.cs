@@ -27,28 +27,33 @@ await application.InitializeAsync();
 
 try
 {
-    using var scope = application.ServiceProvider.CreateScope();
-    var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
-    using var uow = uowManager.Begin(requiresNew: true, isTransactional: true);
-    var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
-
     if (string.Equals(args[0], "replay", StringComparison.OrdinalIgnoreCase))
     {
-        var priceChange = await dbContext.ListingPriceChanges
+        using var replayScope = application.ServiceProvider.CreateScope();
+        var replayUowManager = replayScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+        using var replayUow = replayUowManager.Begin(requiresNew: true, isTransactional: true);
+        var replayDbContext = replayScope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+        var priceChange = await replayDbContext.ListingPriceChanges
+            .AsNoTracking()
             .Where(x => x.ListingId == listingId)
             .OrderByDescending(x => x.ChangedAtUtc)
             .ThenByDescending(x => x.Id)
             .FirstAsync();
-        await scope.ServiceProvider.GetRequiredService<FavoritePriceDropDetector>()
+
+        await replayScope.ServiceProvider.GetRequiredService<FavoritePriceDropDetector>()
             .DetectAsync(priceChange);
-        await dbContext.SaveChangesAsync();
+        await replayUow.CompleteAsync();
     }
     else if (!string.Equals(args[0], "state", StringComparison.OrdinalIgnoreCase))
     {
         throw new ArgumentException("Command must be state or replay.");
     }
 
-    var rows = await dbContext.FavoritePriceDropMatches
+    using var stateScope = application.ServiceProvider.CreateScope();
+    var stateUowManager = stateScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+    using var stateUow = stateUowManager.Begin(requiresNew: true, isTransactional: false);
+    var stateDbContext = stateScope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+    var rows = await stateDbContext.FavoritePriceDropMatches
         .AsNoTracking()
         .Where(x => x.ListingId == listingId)
         .OrderBy(x => x.DetectedAtUtc)
@@ -56,7 +61,7 @@ try
         .Select(x => new { x.UserId, x.PreviousPrice, x.NewPrice })
         .ToListAsync();
 
-    await uow.CompleteAsync();
+    await stateUow.CompleteAsync();
     Console.WriteLine(string.Join(
         ";",
         rows.Select(x => $"{x.UserId:N}|{x.PreviousPrice:0.00}>{x.NewPrice:0.00}")));
