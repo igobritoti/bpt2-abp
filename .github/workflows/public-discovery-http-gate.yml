@@ -12,6 +12,7 @@ on:
       - 'scripts/public-discovery-http-smoke.sh'
       - 'scripts/public-price-sort-http-smoke.sh'
       - 'scripts/public-color-filter-http-smoke.sh'
+      - 'scripts/buyer-saved-search-color-http-smoke.sh'
       - 'scripts/sponsored-listing-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/public-discovery-http-gate.yml'
@@ -51,6 +52,7 @@ jobs:
           bash -n scripts/public-discovery-http-smoke.sh
           bash -n scripts/public-price-sort-http-smoke.sh
           bash -n scripts/public-color-filter-http-smoke.sh
+          bash -n scripts/buyer-saved-search-color-http-smoke.sh
           bash -n scripts/sponsored-listing-http-smoke.sh
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
@@ -75,5 +77,7 @@ jobs:
         run: bash scripts/public-price-sort-http-smoke.sh
       - name: Exercise public color filter over HTTP
         run: bash scripts/public-color-filter-http-smoke.sh
+      - name: Exercise Saved Search color semantics over HTTP
+        run: bash scripts/buyer-saved-search-color-http-smoke.sh
       - name: Exercise sponsored Listing contract over HTTP
         run: bash scripts/sponsored-listing-http-smoke.sh
