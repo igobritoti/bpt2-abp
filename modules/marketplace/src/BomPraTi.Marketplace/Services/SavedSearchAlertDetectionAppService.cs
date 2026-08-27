@@ -82,6 +82,7 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
         SellerId = savedSearch.SellerId,
         Brand = savedSearch.Brand,
         Model = savedSearch.Model,
+        Color = savedSearch.Color,
         City = savedSearch.City,
         StateCode = savedSearch.StateCode,
         MinModelYear = savedSearch.MinModelYear,

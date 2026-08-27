@@ -45,6 +45,7 @@ export type PublicListingSearch = {
   sellerId?: string;
   brand?: string;
   model?: string;
+  color?: string;
   city?: string;
   stateCode?: string;
   minModelYear?: number;
@@ -108,6 +109,7 @@ export async function getPublicListings(
   setText(url.searchParams, "SellerId", input.sellerId);
   setText(url.searchParams, "Brand", input.brand);
   setText(url.searchParams, "Model", input.model);
+  setText(url.searchParams, "Color", input.color);
   setText(url.searchParams, "City", input.city);
   setText(url.searchParams, "StateCode", input.stateCode);
   setNumber(url.searchParams, "MinModelYear", input.minModelYear);

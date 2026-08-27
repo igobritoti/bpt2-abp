@@ -6,6 +6,7 @@ public sealed record SavedSearchDto(
     Guid? SellerId,
     string? Brand,
     string? Model,
+    string? Color,
     string? City,
     string? StateCode,
     int? MinModelYear,
