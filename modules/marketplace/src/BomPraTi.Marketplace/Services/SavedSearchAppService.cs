@@ -51,6 +51,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             criteria.SellerId,
             criteria.Brand,
             criteria.Model,
+            criteria.Color,
             criteria.City,
             criteria.StateCode,
             criteria.MinModelYear,
@@ -133,6 +134,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
         {
             Brand = Clean(input.Brand),
             Model = Clean(input.Model),
+            Color = Clean(input.Color),
             City = Clean(input.City),
             StateCode = Clean(input.StateCode)?.ToUpperInvariant(),
             Query = Clean(input.Query)
@@ -153,6 +155,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             Part(input.SellerId?.ToString("D") ?? string.Empty),
             Part(TextKey(input.Brand)),
             Part(TextKey(input.Model)),
+            Part(TextKey(input.Color)),
             Part(TextKey(input.City)),
             Part(TextKey(input.StateCode)),
             Part(IntKey(input.MinModelYear)),
@@ -173,6 +176,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             item.SellerId,
             item.Brand,
             item.Model,
+            item.Color,
             item.City,
             item.StateCode,
             item.MinModelYear,
