@@ -82,12 +82,18 @@ print(json.load(open(sys.argv[1], encoding='utf-8'))['concurrencyStamp'])
 PY
 }
 
+fixture_state() {
+  local command="$1" listing_id="$2" output
+  output="$(dotnet run --project "$ROOT/tests/BomPraTi.PriceDropFixture/BomPraTi.PriceDropFixture.csproj" --configuration Release -- "$command" "$listing_id")"
+  printf '%s\n' "$output" | sed -n 's/^PRICE_DROP_STATE://p' | tail -n 1
+}
+
 price_drop_state() {
-  dotnet run --project "$ROOT/tests/BomPraTi.PriceDropFixture/BomPraTi.PriceDropFixture.csproj" --configuration Release -- state "$1" | tail -n 1
+  fixture_state state "$1"
 }
 
 replay_price_drop() {
-  dotnet run --project "$ROOT/tests/BomPraTi.PriceDropFixture/BomPraTi.PriceDropFixture.csproj" --configuration Release -- replay "$1" | tail -n 1
+  fixture_state replay "$1"
 }
 
 dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nologo
@@ -160,7 +166,8 @@ echo "FAVORITE_PRICE_DROP_NO_RETROACTIVE_MATCH: PASS"
 echo "FAVORITE_PRICE_DROP_REPLAY_IDEMPOTENT: PASS"
 
 STAMP="$(update_price "$LISTING_ID" "$STAMP" 190000)"
-[[ "$(price_drop_state "$LISTING_ID")" == "$EXPECTED1" ]] || { echo "Price increase produced price-drop ledger" >&2; exit 1; }
+STATE="$(price_drop_state "$LISTING_ID")"
+[[ "$STATE" == "$EXPECTED1" ]] || { echo "Price increase changed price-drop ledger: $STATE" >&2; exit 1; }
 echo "FAVORITE_PRICE_DROP_INCREASE_IGNORED: PASS"
 
 status="$(request_json DELETE "$FAVORITE_PATH" "$BUYER1_TOKEN")"
