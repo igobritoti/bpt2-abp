@@ -35,7 +35,10 @@ public sealed class FavoritePriceDropDetector : ITransientDependency
         var favoritesQuery = await _favorites.GetQueryableAsync();
         var favoriteUserIds = await favoritesQuery
             .AsNoTracking()
-            .Where(x => x.ListingId == priceChange.ListingId)
+            .Where(x =>
+                x.ListingId == priceChange.ListingId
+                && x.CreatedAtUtc.HasValue
+                && x.CreatedAtUtc.Value <= priceChange.ChangedAtUtc)
             .Select(x => x.UserId)
             .Distinct()
             .ToListAsync(cancellationToken);
