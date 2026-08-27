@@ -5,6 +5,7 @@ public sealed record SavedSearchCriteriaInput(
     Guid? SellerId = null,
     string? Brand = null,
     string? Model = null,
+    string? Color = null,
     string? City = null,
     string? StateCode = null,
     int? MinModelYear = null,
