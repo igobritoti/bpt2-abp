@@ -10,6 +10,7 @@ on:
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
       - 'scripts/public-discovery-http-smoke.sh'
+      - 'scripts/public-canonical-vehicle-search-http-smoke.sh'
       - 'scripts/public-price-sort-http-smoke.sh'
       - 'scripts/public-color-filter-http-smoke.sh'
       - 'scripts/buyer-saved-search-color-http-smoke.sh'
@@ -50,6 +51,7 @@ jobs:
       - name: Syntax check Public Discovery smokes
         run: |
           bash -n scripts/public-discovery-http-smoke.sh
+          bash -n scripts/public-canonical-vehicle-search-http-smoke.sh
           bash -n scripts/public-price-sort-http-smoke.sh
           bash -n scripts/public-color-filter-http-smoke.sh
           bash -n scripts/buyer-saved-search-color-http-smoke.sh
@@ -71,6 +73,8 @@ jobs:
           vehicle_id="$(dotnet run --project tests/BomPraTi.HttpLifecycleFixture/BomPraTi.HttpLifecycleFixture.csproj --configuration Release | tail -n 1)"
           test -n "$vehicle_id"
           echo "BPT_FIXTURE_VEHICLE_ID=$vehicle_id" >> "$GITHUB_ENV"
+      - name: Exercise canonical Vehicle search over HTTP
+        run: bash scripts/public-canonical-vehicle-search-http-smoke.sh
       - name: Exercise public discovery over HTTP
         run: bash scripts/public-discovery-http-smoke.sh
       - name: Exercise public price sort over HTTP
