@@ -6,21 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Fechar o gap entre o opt-in de monitoramento de Saved Search já persistido no backend e a experiência pública: o backend possui `AlertEnabled`/`AlertEnabledAtUtc` e `SetAlertEnabledAsync`, mas o Buyer ainda não consegue controlar esse estado no public web.
+Nenhum execution plan funcional está ativo.
 
-O slice expõe somente **monitoramento de novas ofertas**. `AlertEnabled` não será reinterpretado como consentimento de e-mail; delivery externo, canal, destinatário verificável, retry e scheduler permanecem boundaries separados.
+O Plan 0054 fechou o gap de produto entre o estado `AlertEnabled` já existente no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite habilitar/desabilitar explicitamente **monitoramento de novas ofertas** por busca própria.
+
+`AlertEnabled` continua significando monitoramento/detecção. Ele não foi reinterpretado como consentimento de e-mail; delivery externo, canal, destinatário verificável, retry e scheduler permanecem boundaries separados.
 
 ## Active plan
 
-[`../exec-plans/active/0054-saved-search-monitoring-opt-in.md`](../exec-plans/active/0054-saved-search-monitoring-opt-in.md)
+Nenhum.
 
-## Acceptance target
-
-- client model reflete o estado de alerta já publicado pelo backend;
-- Buyer habilita/desabilita monitoramento em busca própria;
-- estado da UI acompanha a resposta persistida;
-- copy não promete e-mail/notificação externa;
-- prova focada + Public Web Gate verdes no head exato.
+Último concluído: [`../exec-plans/completed/0054-saved-search-monitoring-opt-in.md`](../exec-plans/completed/0054-saved-search-monitoring-opt-in.md).
 
 ## Próximos gatilhos independentes
 
