@@ -20,10 +20,17 @@ function serverApiBaseUrl(): string {
   return trimTrailingSlash(value);
 }
 
-export async function getVehicleCatalogPage(skip = 0, take = 100): Promise<VehicleRef[]> {
+export async function getVehicleCatalogPage(
+  skip = 0,
+  take = 100,
+  query?: string,
+): Promise<VehicleRef[]> {
   const url = new URL("/api/app/vehicle-catalog", `${serverApiBaseUrl()}/`);
   url.searchParams.set("skip", String(Math.max(0, skip)));
   url.searchParams.set("take", String(take));
+  if (query?.trim()) {
+    url.searchParams.set("query", query.trim());
+  }
 
   const response = await fetch(url, {
     cache: "no-store",
@@ -59,8 +66,9 @@ export async function getVehicle(id: string): Promise<VehicleRef | null> {
 }
 
 export function vehicleRefLabel(vehicle: VehicleRef): string {
-  return [vehicle.brand, vehicle.model, vehicle.version]
+  const identity = [vehicle.brand, vehicle.model, vehicle.generation, vehicle.version]
     .map((value) => value?.trim())
     .filter(Boolean)
-    .join(" ");
+    .join(" · ");
+  return vehicle.modelYear ? `${identity} · ${vehicle.modelYear}` : identity;
 }
