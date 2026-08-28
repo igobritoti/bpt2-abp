@@ -66,7 +66,9 @@ function integerParam(params: RawSearchParams, name: string): number | undefined
 
 function sortParam(params: RawSearchParams): PublicListingSort | undefined {
   const value = textParam(params, "sort").toLowerCase();
-  return value === "price-asc" || value === "price-desc" ? value : undefined;
+  return value === "price-asc" || value === "price-desc" || value === "recent-desc"
+    ? value
+    : undefined;
 }
 
 function discoveryHref(search: PublicListingSearch, skip: number, take: number): string {
@@ -334,6 +336,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Ordenar
             <select defaultValue={sort ?? ""} name="sort">
               <option value="">Padrão</option>
+              <option value="recent-desc">Mais recentes</option>
               <option value="price-asc">Menor preço</option>
               <option value="price-desc">Maior preço</option>
             </select>
