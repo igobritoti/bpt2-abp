@@ -6,22 +6,18 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Aposentar o workflow histórico `migration-import.yml` que ainda apontava para `bpt2/` e `bpt2-vertical-slice.yml` já removidos, e fechar a auditoria de smokes HTTP/migration authority.
 
-O Plan 0058 removeu o subtree histórico `bpt2/` e aposentou o workflow transitório `bpt2-vertical-slice.yml`. A árvore canônica executável ficou concentrada na raiz atual (`main/`, `modules/`, `public-web/`, `scripts/` e `.github/workflows/`).
-
-O attempt #105 detectou o acoplamento residual do CI; o PR #106 o removeu e provou bootstrap/build/Fresh Migration na raiz antes da remoção definitiva.
+A auditoria confirmou que todos os `scripts/*-http-smoke.sh` da raiz são executados por gates ativos. Também confirmou que a migration versionada do host pertence à infraestrutura ABP/Identity/OpenIddict, enquanto os cinco módulos de negócio usam migrations efêmeras geradas pelo Fresh Migration Gate.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0059-retire-legacy-migration-import.md`](../exec-plans/active/0059-retire-legacy-migration-import.md)
 
-Último concluído: [`../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md`](../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md).
+Acceptance: workflow legado removido, fatos em 19 workflows, audit durável, Harness verde e review/base refresh limpos.
 
 ## Próximos gatilhos independentes
 
-- auditar todos os `scripts/*-http-smoke.sh` contra os workflows ativos para localizar provas órfãs de CI;
-- auditar a autoridade das migrations versionadas do host/módulos versus o Fresh Migration Gate;
 - delivery externo de Saved Search somente após consentimento por canal, destinatário verificável e estado durável/recovery do side effect;
 - delivery externo de Favorite price-drop somente após canal/consentimento/destinatário verificável e durable delivery contract;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
