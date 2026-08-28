@@ -6,15 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Proteger automaticamente a authority de migrations já auditada: a migration do host permanece versionada para infraestrutura ABP/Identity/OpenIddict, enquanto `Data/Migrations/Gate` dos módulos de negócio deve permanecer efêmero e nunca entrar na árvore versionada.
+Nenhum execution plan funcional está ativo.
+
+O Plan 0061 transformou a authority de migrations auditada em uma invariante automática do Harness: qualquer arquivo rastreado sob `Data/Migrations/Gate/` é proibido, enquanto output local não rastreado continua permitido e a migration versionada do host permanece autoridade para infraestrutura ABP/Identity/OpenIddict.
 
 O Plan 0060 já garante que todo `scripts/*-http-smoke.sh` tenha execução real em algum workflow root.
 
 ## Active plan
 
-[`../exec-plans/active/0061-enforce-ephemeral-migration-authority.md`](../exec-plans/active/0061-enforce-ephemeral-migration-authority.md)
+Nenhum.
 
-Acceptance: paths efêmeros detectados de forma fail-closed a partir de `git ls-files`, teste focal verde, Harness verde no head exato e review/base refresh limpos.
+Último concluído: [`../exec-plans/completed/0061-enforce-ephemeral-migration-authority.md`](../exec-plans/completed/0061-enforce-ephemeral-migration-authority.md).
 
 ## Próximos gatilhos independentes
 
