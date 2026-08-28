@@ -38,7 +38,7 @@ export type PublicListing = {
   isSponsored: boolean;
 };
 
-export type PublicListingSort = "price-asc" | "price-desc";
+export type PublicListingSort = "price-asc" | "price-desc" | "recent-desc";
 
 export type PublicListingSearch = {
   vehicleId?: string;
