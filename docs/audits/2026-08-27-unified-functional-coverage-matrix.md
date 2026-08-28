@@ -52,7 +52,7 @@ Fontes principais:
 | Leads | Seller inbox + MarkContacted | JÁ EXISTE | ownership server-side + histórico | só novo gap operacional |
 | Leads | Close Won/Lost | JÁ EXISTE | entregue após auditoria donor; idempotência/conflito cobertos | reabrir somente se fluxo real exigir mais estados |
 | Leads | Pipeline CRM de cinco estados | DESCARTADO | donor não provou necessidade de transplantar `NEGOCIACAO` etc. | ação/SLA/fila real que exija estado adicional |
-| Leads | Attribution marketing | GAP REAL | source/medium/campaign do donor não foram promovidos | pergunta concreta de aquisição + privacy contract |
+| Leads | Attribution marketing | ADIADO | audit de prontidão de 2026-08-27: ausência técnica existe, mas não há pergunta operacional, consumidor, taxonomia nem privacy/retention contract suficientes para promover schema | pergunta concreta de aquisição + consumidor + privacy/retention contract |
 | Leads | Analytics/dashboard amplo | ADIADO | plataforma ampla sem pergunta operacional é premature | pergunta mensurável + consumidor operacional |
 | Saved Search | Salvar/listar/excluir/reabrir critérios | JÁ EXISTE | semântica pública reutilizada; ownership e dedup | só novo gap de produto |
 | Saved Search | Detecção de nova oferta | JÁ EXISTE | opt-in + ledger + matching apenas público | delivery permanece separado |
@@ -103,11 +103,10 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 ## Gaps atualmente elegíveis para investigação sem reabrir trabalho entregue
 
-Color e seleção guiada canônica deixaram esta lista porque foram entregues pelos PRs #89 e #92.
+Color e seleção guiada canônica deixaram esta lista porque foram entregues pelos PRs #89 e #92. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
 
 Nenhum item abaixo deve ser tratado automaticamente como próximo feature. Os candidatos só podem ser investigados quando houver pergunta concreta ou o gatilho documentado mudar:
 
-- attribution de marketing mínima, se surgir pergunta real de aquisição + privacy contract;
 - instrumentação mínima embutida em uma hipótese de produto específica;
 - workflow adicional de Leads somente se o Won/Lost atual se mostrar insuficiente;
 - Compra Assistida somente se discovery/comparator não cobrirem o problema observado.
