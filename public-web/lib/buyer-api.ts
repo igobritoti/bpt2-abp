@@ -75,6 +75,13 @@ export type SavedSearch = Omit<PublicListingSearch, "sort" | "skip" | "take"> & 
   createdAtUtc: string;
 };
 
+export type SavedSearchAlertMatch = {
+  id: string;
+  savedSearchId: string;
+  listingId: string;
+  detectedAtUtc: string;
+};
+
 export type SavedSearchCriteria = Omit<PublicListingSearch, "sort" | "skip" | "take">;
 
 export async function createSavedSearch(
@@ -92,6 +99,17 @@ export async function createSavedSearch(
 export async function getMySavedSearches(accessToken: string): Promise<SavedSearch[]> {
   const response = await buyerRequest("/api/app/saved-search/mine", accessToken);
   return (await response.json()) as SavedSearch[];
+}
+
+export async function getSavedSearchMatches(
+  accessToken: string,
+  id: string,
+): Promise<SavedSearchAlertMatch[]> {
+  const response = await buyerRequest(
+    `/api/app/saved-search/${encodeURIComponent(id)}/matches`,
+    accessToken,
+  );
+  return (await response.json()) as SavedSearchAlertMatch[];
 }
 
 export async function setSavedSearchMonitoring(
