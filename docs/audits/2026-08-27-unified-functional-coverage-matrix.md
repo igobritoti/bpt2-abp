@@ -26,7 +26,7 @@ Fontes principais:
 - `docs/audits/2026-08-25-capability-final-decision-matrix.md` — decisões históricas do Plan 0046;
 - `docs/audits/2026-08-26-post-plan0050-trigger-sweep.md` e checkpoint posterior — blockers/gatilhos;
 - `docs/audits/2026-08-27-external-functional-benchmark-refresh.md` — benchmark externo corrente e deltas de discovery;
-- `docs/contracts/vehicle-technical-sheet-consumer-contract.md` — boundary consumer atual para enrichment/ficha técnica;
+- `docs/audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md` — boundary consumer atual para enrichment/ficha técnica;
 - execution plans e PRs já concluídos para evidência detalhada.
 
 ## Matriz
@@ -43,7 +43,7 @@ Fontes principais:
 | Discovery | Filtros/paginação/query string/preço | JÁ EXISTE | comportamento público comprovado | só novo gap de produto |
 | Discovery | Filtro por cor | JÁ EXISTE | PR #89: igualdade textual trim + case-insensitive, composição com filtros e integração com Saved Search/dedup/matching | só novo gap de produto |
 | Discovery | Seleção guiada de versão/Vehicle | JÁ EXISTE | PR #92 / Plan 0053: Catalog paginado por identidade + combobox público acessível; valor semântico persistido é somente `VehicleId` | só extensão com hipótese própria |
-| Discovery | Ordenação por recência | BLOQUEADO | busca só ordena por preço; default é `Id` e Listing não possui instante canônico observado para “recente” | definir/persistir semântica de primeira publicação/republicação |
+| Discovery | Ordenação por recência | JÁ EXISTE | Plan 0055 / PR #98: `FirstPublishedAtUtc?` nasce só na primeira publicação; `recent-desc` ordena conhecidos newest-first; pause/re-publish não cria bump e legado sem timestamp permanece `null` | só extensão com hipótese própria |
 | Discovery | Fuzzy/autocomplete/facets/relevance | BLOQUEADO | sem corpus, baseline e métrica suficientes; o seletor canônico entregue não autoriza fuzzy/relevance | corpus fixo + métrica reproduzível |
 | Discovery | Geo/radius/proximidade | BLOQUEADO | City/StateCode atuais não implicam autoridade geográfica | autoridade geográfica + comportamento de distância |
 | Public Detail | Detalhe, galeria e WhatsApp CTA | JÁ EXISTE | fluxo público real | só novo gap de produto |
@@ -103,15 +103,13 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 ## Gaps atualmente elegíveis para investigação sem reabrir trabalho entregue
 
-Color e seleção guiada canônica deixaram esta lista porque foram entregues pelos PRs #89 e #92. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
+Color, seleção guiada canônica e ordenação por recência deixaram esta lista porque foram entregues pelos PRs #89, #92 e #98. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
 
 Nenhum item abaixo deve ser tratado automaticamente como próximo feature. Os candidatos só podem ser investigados quando houver pergunta concreta ou o gatilho documentado mudar:
 
 - instrumentação mínima embutida em uma hipótese de produto específica;
 - workflow adicional de Leads somente se o Won/Lost atual se mostrar insuficiente;
 - Compra Assistida somente se discovery/comparator não cobrirem o problema observado.
-
-Ordenação por recência não é elegível enquanto não existir semântica temporal canônica verificável para Listing/publicação.
 
 Os candidatos de maior porte continuam bloqueados por pré-condições explícitas: enrichment/Comparator, discovery avançado/recomendações, runner de alertas, trust externo e inteligência de mercado.
 
