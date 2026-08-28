@@ -88,6 +88,25 @@ public class FavoriteAppService : IFavoriteAppService, ITransientDependency
         return await _publicListings.GetManyAsync(listingIds, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<FavoritePriceDropMatchDto>> GetPriceDropMatchesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var userId = CurrentUserId();
+        return await _dbContext.FavoritePriceDropMatches
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.DetectedAtUtc)
+            .ThenBy(x => x.Id)
+            .Select(x => new FavoritePriceDropMatchDto(
+                x.Id,
+                x.ListingId,
+                x.ListingPriceChangeId,
+                x.PreviousPrice,
+                x.NewPrice,
+                x.DetectedAtUtc))
+            .ToListAsync(cancellationToken);
+    }
+
     private Guid CurrentUserId() =>
         _currentUser.Id ?? throw new UnauthorizedAccessException("An authenticated Buyer is required.");
 }
