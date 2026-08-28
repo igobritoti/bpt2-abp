@@ -190,6 +190,34 @@ def check_http_smoke_wiring(errors: list[str]) -> None:
             )
 
 
+def ephemeral_migration_output_paths(paths: list[str]) -> list[str]:
+    return sorted(
+        path
+        for path in paths
+        if "/Data/Migrations/Gate/" in f"/{path}"
+    )
+
+
+def check_ephemeral_migration_outputs(errors: list[str]) -> None:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        detail = (result.stdout + result.stderr).strip()
+        fail(errors, f"tracked-file inventory failed: {detail}")
+        return
+
+    tracked = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    for path in ephemeral_migration_output_paths(tracked):
+        fail(
+            errors,
+            f"ephemeral Fresh Migration Gate output must not be versioned: {path}",
+        )
+
+
 def check_generated(errors: list[str]) -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts/generate-repo-facts.py"), "--check"],
@@ -211,6 +239,7 @@ def main() -> int:
     check_current_work(errors)
     check_plans(errors)
     check_http_smoke_wiring(errors)
+    check_ephemeral_migration_outputs(errors)
     check_generated(errors)
 
     if errors:
