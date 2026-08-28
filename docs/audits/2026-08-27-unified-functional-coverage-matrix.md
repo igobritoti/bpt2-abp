@@ -56,9 +56,10 @@ Fontes principais:
 | Leads | Analytics/dashboard amplo | ADIADO | plataforma ampla sem pergunta operacional é premature | pergunta mensurável + consumidor operacional |
 | Saved Search | Salvar/listar/excluir/reabrir critérios | JÁ EXISTE | semântica pública reutilizada; ownership e dedup | só novo gap de produto |
 | Saved Search | Detecção de nova oferta | JÁ EXISTE | opt-in + ledger + matching apenas público | delivery permanece separado |
+| Saved Search | Visualização in-app de ofertas detectadas | JÁ EXISTE | Plan 0056 / PR #100: ledger ownership-safe exposto sob demanda em `/buscas-salvas`, com zero-state, instante de detecção e link; match é histórico e disponibilidade atual pertence ao detalhe público | só extensão com hipótese própria |
 | Saved Search | Trigger durável na primeira publicação | JÁ EXISTE | request durável único por Listing no mesmo UoW | runner seguro |
 | Saved Search | Runner automático | BLOQUEADO | falta contrato deployment/claim/concurrency/retry/restart/locking | decisão operacional de deployment + distributed lock real se cluster |
-| Saved Search | Delivery externo de alertas | PARCIAL | detecção existe; provider/canal/template não escolhidos | canal/provider + política de frequência/idempotência |
+| Saved Search | Delivery externo de alertas | PARCIAL | detecção e visualização in-app existem; provider/canal/template não escolhidos | canal/provider + política de frequência/idempotência |
 | Price | Histórico de preço publicado | JÁ EXISTE | Draft e preço inalterado não geram histórico | só novo gap de produto |
 | Favorites | Detector de price-drop | JÁ EXISTE | temporal eligibility + replay/idempotência entregues | delivery se houver hipótese real |
 | Favorites | Delivery de price-drop | PARCIAL | detector existe; notificação externa não | preferência/canal + política de frequência |
@@ -103,7 +104,7 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 ## Gaps atualmente elegíveis para investigação sem reabrir trabalho entregue
 
-Color, seleção guiada canônica e ordenação por recência deixaram esta lista porque foram entregues pelos PRs #89, #92 e #98. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
+Color, seleção guiada canônica, ordenação por recência e visualização in-app de ofertas detectadas deixaram esta lista porque foram entregues pelos PRs #89, #92, #98 e #100. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
 
 Nenhum item abaixo deve ser tratado automaticamente como próximo feature. Os candidatos só podem ser investigados quando houver pergunta concreta ou o gatilho documentado mudar:
 

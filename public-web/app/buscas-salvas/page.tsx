@@ -6,8 +6,10 @@ import type { User } from "oidc-client-ts";
 import {
   deleteSavedSearch,
   getMySavedSearches,
+  getSavedSearchMatches,
   setSavedSearchMonitoring,
   type SavedSearch,
+  type SavedSearchAlertMatch,
 } from "../../lib/buyer-api";
 import { getCurrentBuyerUser, getBuyerUserManager, signInBuyer } from "../../lib/buyer-auth";
 
@@ -60,6 +62,9 @@ function searchLabel(search: SavedSearch): string {
 export default function SavedSearchesPage() {
   const [user, setUser] = useState<User | null>(null);
   const [items, setItems] = useState<SavedSearch[]>([]);
+  const [matchesBySearch, setMatchesBySearch] = useState<Record<string, SavedSearchAlertMatch[]>>({});
+  const [openMatchesId, setOpenMatchesId] = useState<string | null>(null);
+  const [loadingMatchesId, setLoadingMatchesId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -93,12 +98,41 @@ export default function SavedSearchesPage() {
     }
   }
 
+  async function toggleMatches(item: SavedSearch) {
+    if (!user) return;
+    if (openMatchesId === item.id) {
+      setOpenMatchesId(null);
+      return;
+    }
+
+    setError(null);
+    setOpenMatchesId(item.id);
+    if (Object.hasOwn(matchesBySearch, item.id)) return;
+
+    setLoadingMatchesId(item.id);
+    try {
+      const matches = await getSavedSearchMatches(user.access_token, item.id);
+      setMatchesBySearch((current) => ({ ...current, [item.id]: matches }));
+    } catch (reason: unknown) {
+      setOpenMatchesId(null);
+      setError(reason instanceof Error ? reason.message : "Não foi possível carregar as ofertas detectadas.");
+    } finally {
+      setLoadingMatchesId(null);
+    }
+  }
+
   async function remove(id: string) {
     if (!user) return;
     setError(null);
     try {
       await deleteSavedSearch(user.access_token, id);
       setItems((current) => current.filter((item) => item.id !== id));
+      setMatchesBySearch((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      if (openMatchesId === id) setOpenMatchesId(null);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "Não foi possível remover a busca salva.");
     }
@@ -148,37 +182,76 @@ export default function SavedSearchesPage() {
             </div>
           ) : (
             <div className="listing-grid">
-              {items.map((item) => (
-                <article className="listing-card" key={item.id}>
-                  <div className="listing-body">
-                    <h3>{searchLabel(item)}</h3>
-                    <p>Salva em {new Date(item.createdAtUtc).toLocaleString("pt-BR")}</p>
-                    <p>
-                      <Link href={searchHref(item)}>Ver resultados</Link>
-                    </p>
-                    <p aria-live="polite">
-                      {item.alertEnabled
-                        ? "Monitoramento ativo para novas ofertas compatíveis."
-                        : "Monitoramento de novas ofertas desligado."}
-                    </p>
-                    <button
-                      className="secondary-action"
-                      disabled={updatingId === item.id}
-                      type="button"
-                      onClick={() => void toggleMonitoring(item)}
-                    >
-                      {updatingId === item.id
-                        ? "Atualizando…"
-                        : item.alertEnabled
-                          ? "Desativar monitoramento"
-                          : "Monitorar novas ofertas"}
-                    </button>
-                    <button className="secondary-action" type="button" onClick={() => void remove(item.id)}>
-                      Remover busca
-                    </button>
-                  </div>
-                </article>
-              ))}
+              {items.map((item) => {
+                const matchesOpen = openMatchesId === item.id;
+                const matchesLoading = loadingMatchesId === item.id;
+                const matches = matchesBySearch[item.id];
+
+                return (
+                  <article className="listing-card" key={item.id}>
+                    <div className="listing-body">
+                      <h3>{searchLabel(item)}</h3>
+                      <p>Salva em {new Date(item.createdAtUtc).toLocaleString("pt-BR")}</p>
+                      <p>
+                        <Link href={searchHref(item)}>Ver resultados</Link>
+                      </p>
+                      <p aria-live="polite">
+                        {item.alertEnabled
+                          ? "Monitoramento ativo para novas ofertas compatíveis."
+                          : "Monitoramento de novas ofertas desligado."}
+                      </p>
+                      <button
+                        className="secondary-action"
+                        disabled={updatingId === item.id}
+                        type="button"
+                        onClick={() => void toggleMonitoring(item)}
+                      >
+                        {updatingId === item.id
+                          ? "Atualizando…"
+                          : item.alertEnabled
+                            ? "Desativar monitoramento"
+                            : "Monitorar novas ofertas"}
+                      </button>
+                      <button
+                        aria-expanded={matchesOpen}
+                        className="secondary-action"
+                        type="button"
+                        onClick={() => void toggleMatches(item)}
+                      >
+                        {matchesOpen ? "Ocultar ofertas detectadas" : "Ver ofertas detectadas"}
+                      </button>
+                      {matchesOpen ? (
+                        <div aria-live="polite">
+                          {matchesLoading ? <p>Carregando ofertas detectadas…</p> : null}
+                          {!matchesLoading && matches?.length === 0 ? (
+                            <p>Nenhuma nova oferta foi detectada para esta busca.</p>
+                          ) : null}
+                          {!matchesLoading && matches && matches.length > 0 ? (
+                            <>
+                              <ul>
+                                {matches.map((match) => (
+                                  <li key={match.id}>
+                                    <Link href={`/anuncios/${encodeURIComponent(match.listingId)}`}>
+                                      Abrir oferta detectada
+                                    </Link>{" "}
+                                    · detectada em {new Date(match.detectedAtUtc).toLocaleString("pt-BR")}
+                                  </li>
+                                ))}
+                              </ul>
+                              <p>
+                                O registro de detecção é histórico. A disponibilidade atual continua sendo decidida pelo anúncio público.
+                              </p>
+                            </>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      <button className="secondary-action" type="button" onClick={() => void remove(item.id)}>
+                        Remover busca
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

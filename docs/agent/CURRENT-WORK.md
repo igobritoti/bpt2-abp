@@ -1,6 +1,6 @@
 # Current work
 
-Last verified: **2026-08-27**
+Last verified: **2026-08-28**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
@@ -8,13 +8,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0055 fechou a ordenação pública por recência com semântica canônica de **primeira publicação**: `FirstPublishedAtUtc?` nasce somente na primeira transição para `Published`, `recent-desc` ordena timestamps conhecidos do mais novo para o mais antigo e pause/re-publish não cria bump artificial. Registros legados sem instante permanecem `null`, sem backfill inventado.
+O Plan 0056 fechou o gap entre o ledger de novas ofertas já detectado no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite abrir, sob demanda, os matches de uma busca própria com instante de detecção e link para o anúncio.
+
+O match continua histórico e a disponibilidade atual continua sendo decidida pelo detalhe público. Delivery externo, provider/canal e estado read/unread permanecem boundaries separados.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0055-public-recency-sort.md`](../exec-plans/completed/0055-public-recency-sort.md).
+Último concluído: [`../exec-plans/completed/0056-saved-search-match-view.md`](../exec-plans/completed/0056-saved-search-match-view.md).
 
 ## Próximos gatilhos independentes
 
