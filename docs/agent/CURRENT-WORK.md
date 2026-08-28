@@ -8,13 +8,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0060 transformou a auditoria de smokes HTTP em uma invariante automática do Harness: todo `scripts/*-http-smoke.sh` deve ter execução real em algum workflow root; path trigger ou `bash -n` isolado não contam.
+O Plan 0061 transformou a authority de migrations auditada em uma invariante automática do Harness: qualquer arquivo rastreado sob `Data/Migrations/Gate/` é proibido, enquanto output local não rastreado continua permitido e a migration versionada do host permanece autoridade para infraestrutura ABP/Identity/OpenIddict.
+
+O Plan 0060 já garante que todo `scripts/*-http-smoke.sh` tenha execução real em algum workflow root.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md`](../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md).
+Último concluído: [`../exec-plans/completed/0061-enforce-ephemeral-migration-authority.md`](../exec-plans/completed/0061-enforce-ephemeral-migration-authority.md).
 
 ## Próximos gatilhos independentes
 
