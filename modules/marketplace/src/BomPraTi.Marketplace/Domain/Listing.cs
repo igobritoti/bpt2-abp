@@ -17,6 +17,7 @@ public sealed class Listing : AggregateRoot<Guid>
     public string City { get; private set; } = string.Empty;
     public string StateCode { get; private set; } = string.Empty;
     public ListingStatus Status { get; private set; }
+    public DateTime? FirstPublishedAtUtc { get; private set; }
 
     private Listing() { }
 
@@ -129,9 +130,10 @@ public sealed class Listing : AggregateRoot<Guid>
         StateCode = normalizedState;
     }
 
-    public void Publish()
+    public void Publish(DateTime publishedAtUtc)
     {
         EnsureMutable();
+        FirstPublishedAtUtc ??= DateTime.SpecifyKind(publishedAtUtc, DateTimeKind.Utc);
         Status = ListingStatus.Published;
     }
 
