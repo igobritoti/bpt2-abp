@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Plan 0055 está ativo para fechar a ordenação pública por recência com semântica canônica de **primeira publicação**.
+Nenhum execution plan funcional está ativo.
 
-O objetivo é persistir `FirstPublishedAtUtc?` somente na primeira transição para `Published`, ordenar `recent-desc` sem permitir bump por pause/re-publish e preservar `null` para registros legados sem inventar backfill.
+O Plan 0055 fechou a ordenação pública por recência com semântica canônica de **primeira publicação**: `FirstPublishedAtUtc?` nasce somente na primeira transição para `Published`, `recent-desc` ordena timestamps conhecidos do mais novo para o mais antigo e pause/re-publish não cria bump artificial. Registros legados sem instante permanecem `null`, sem backfill inventado.
 
 ## Active plan
 
-[`../exec-plans/active/0055-public-recency-sort.md`](../exec-plans/active/0055-public-recency-sort.md)
+Nenhum.
 
-Último concluído: [`../exec-plans/completed/0054-saved-search-monitoring-opt-in.md`](../exec-plans/completed/0054-saved-search-monitoring-opt-in.md).
+Último concluído: [`../exec-plans/completed/0055-public-recency-sort.md`](../exec-plans/completed/0055-public-recency-sort.md).
 
 ## Próximos gatilhos independentes
 
@@ -22,7 +22,7 @@ O objetivo é persistir `FirstPublishedAtUtc?` somente na primeira transição p
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
 - medição executável de `powertrain`/`transmission`/`body_style` no Podium para decidir projeção BPT2;
 - enrichment técnico publicado suficiente para Comparator;
-- corpus + baseline + métrica para discovery avançado;
+- corpus + baseline + métrica para fuzzy/facets/relevance/recommendations;
 - dataset/licença/metodologia/provenance para inteligência de mercado;
 - evidência operacional suficiente para trust/moderação avançada;
 - tese comercial/parceria concreta para complementares.
@@ -41,7 +41,7 @@ O objetivo é persistir `FirstPublishedAtUtc?` somente na primeira transição p
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
 - Saved Search external delivery: sem consentimento de canal comprovado + destinatário verificável + durable delivery/recovery contract.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
-- Discovery avançado além da recência: sem corpus/baseline/métrica.
+- Discovery avançado além da ordenação canônica já entregue: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
 
