@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Aposentar o workflow histórico `migration-import.yml` que ainda apontava para `bpt2/` e `bpt2-vertical-slice.yml` já removidos, e fechar a auditoria de smokes HTTP/migration authority.
+Nenhum execution plan funcional está ativo.
 
-A auditoria confirmou que todos os `scripts/*-http-smoke.sh` da raiz são executados por gates ativos. Também confirmou que a migration versionada do host pertence à infraestrutura ABP/Identity/OpenIddict, enquanto os cinco módulos de negócio usam migrations efêmeras geradas pelo Fresh Migration Gate.
+O Plan 0059 aposentou `migration-import.yml`, fechou a auditoria de smokes HTTP sem encontrar órfãos e consolidou a autoridade de migrations: host ABP/Identity/OpenIddict versionado; cinco módulos de negócio com migrations efêmeras geradas pelo Fresh Migration Gate.
 
 ## Active plan
 
-[`../exec-plans/active/0059-retire-legacy-migration-import.md`](../exec-plans/active/0059-retire-legacy-migration-import.md)
+Nenhum.
 
-Acceptance: workflow legado removido, fatos em 19 workflows, audit durável, Harness verde e review/base refresh limpos.
+Último concluído: [`../exec-plans/completed/0059-retire-legacy-migration-import.md`](../exec-plans/completed/0059-retire-legacy-migration-import.md).
 
 ## Próximos gatilhos independentes
 
@@ -36,6 +36,7 @@ Acceptance: workflow legado removido, fatos em 19 workflows, audit durável, Har
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md).
 - Consumer contract técnico: [`../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md`](../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md).
+- CI/migration authority: [`../audits/2026-08-28-ci-smoke-and-migration-authority.md`](../audits/2026-08-28-ci-smoke-and-migration-authority.md).
 
 ## Open blockers
 
