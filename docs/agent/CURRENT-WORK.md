@@ -1,18 +1,18 @@
 # Current work
 
-Last verified: **2026-08-27**
+Last verified: **2026-08-28**
 
 Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, changelog nem inventário de CI.
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Plan 0056 está ativo para fechar o gap entre o ledger de novas ofertas já detectado no backend de Saved Search e a experiência Buyer.
 
-O Plan 0055 fechou a ordenação pública por recência com semântica canônica de **primeira publicação**: `FirstPublishedAtUtc?` nasce somente na primeira transição para `Published`, `recent-desc` ordena timestamps conhecidos do mais novo para o mais antigo e pause/re-publish não cria bump artificial. Registros legados sem instante permanecem `null`, sem backfill inventado.
+O boundary é somente in-app e sob demanda: o Buyer abre os matches de uma busca própria, vê instante de detecção e link para o anúncio. O match permanece histórico; disponibilidade atual continua autoridade do detalhe público. Nenhum provider/canal externo é escolhido neste slice.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0056-saved-search-match-view.md`](../exec-plans/active/0056-saved-search-match-view.md)
 
 Último concluído: [`../exec-plans/completed/0055-public-recency-sort.md`](../exec-plans/completed/0055-public-recency-sort.md).
 
