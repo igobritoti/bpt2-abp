@@ -11,4 +11,7 @@ public interface IFavoriteAppService : IApplicationService
     Task<bool> GetIsFavoriteAsync(Guid listingId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<PublicListingDto>> GetMineAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<FavoritePriceDropMatchDto>> GetPriceDropMatchesAsync(
+        CancellationToken cancellationToken = default);
 }
