@@ -9,6 +9,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/test-http-smoke-wiring.py'
+      - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
       - 'scripts/podium7-contract-projection-experiment.py'
       - 'scripts/fixtures/podium7-catalog-contract-v2-projection.json'
@@ -23,6 +24,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/test-http-smoke-wiring.py'
+      - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
       - 'scripts/podium7-contract-projection-experiment.py'
       - 'scripts/fixtures/podium7-catalog-contract-v2-projection.json'
@@ -37,9 +39,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Syntax check harness tooling
-        run: python3 -m py_compile scripts/check-harness.py scripts/test-http-smoke-wiring.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
+        run: python3 -m py_compile scripts/check-harness.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
       - name: Prove HTTP smoke wiring guard
         run: python3 scripts/test-http-smoke-wiring.py
+      - name: Prove ephemeral migration authority guard
+        run: python3 scripts/test-ephemeral-migration-authority.py
       - name: Validate knowledge base and generated facts
         run: python3 scripts/check-harness.py
       - name: Validate Podium 7 catalog projection boundary
