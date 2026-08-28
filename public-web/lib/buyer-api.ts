@@ -27,9 +27,25 @@ async function buyerRequest(path: string, accessToken: string, init?: RequestIni
   return response;
 }
 
+export type FavoritePriceDropMatch = {
+  id: string;
+  listingId: string;
+  listingPriceChangeId: string;
+  previousPrice: number;
+  newPrice: number;
+  detectedAtUtc: string;
+};
+
 export async function getMyFavorites(accessToken: string): Promise<PublicListing[]> {
   const response = await buyerRequest("/api/app/favorite/mine", accessToken);
   return (await response.json()) as PublicListing[];
+}
+
+export async function getMyFavoritePriceDropMatches(
+  accessToken: string,
+): Promise<FavoritePriceDropMatch[]> {
+  const response = await buyerRequest("/api/app/favorite/price-drop-matches", accessToken);
+  return (await response.json()) as FavoritePriceDropMatch[];
 }
 
 export async function isFavorite(accessToken: string, listingId: string): Promise<boolean> {
