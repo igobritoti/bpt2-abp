@@ -6,15 +6,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Plan 0055 está ativo para fechar a ordenação pública por recência com semântica canônica de **primeira publicação**.
 
-O Plan 0054 fechou o gap de produto entre o estado `AlertEnabled` já existente no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite habilitar/desabilitar explicitamente **monitoramento de novas ofertas** por busca própria.
-
-`AlertEnabled` continua significando monitoramento/detecção. Ele não foi reinterpretado como consentimento de e-mail; delivery externo, canal, destinatário verificável, retry e scheduler permanecem boundaries separados.
+O objetivo é persistir `FirstPublishedAtUtc?` somente na primeira transição para `Published`, ordenar `recent-desc` sem permitir bump por pause/re-publish e preservar `null` para registros legados sem inventar backfill.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0055-public-recency-sort.md`](../exec-plans/active/0055-public-recency-sort.md)
 
 Último concluído: [`../exec-plans/completed/0054-saved-search-monitoring-opt-in.md`](../exec-plans/completed/0054-saved-search-monitoring-opt-in.md).
 
@@ -43,7 +41,7 @@ Nenhum.
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
 - Saved Search external delivery: sem consentimento de canal comprovado + destinatário verificável + durable delivery/recovery contract.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
-- Discovery avançado: sem corpus/baseline/métrica.
+- Discovery avançado além da recência: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
 
