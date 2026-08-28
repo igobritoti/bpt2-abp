@@ -8,13 +8,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0059 aposentou `migration-import.yml`, fechou a auditoria de smokes HTTP sem encontrar órfãos e consolidou a autoridade de migrations: host ABP/Identity/OpenIddict versionado; cinco módulos de negócio com migrations efêmeras geradas pelo Fresh Migration Gate.
+O Plan 0060 transformou a auditoria de smokes HTTP em uma invariante automática do Harness: todo `scripts/*-http-smoke.sh` deve ter execução real em algum workflow root; path trigger ou `bash -n` isolado não contam.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0059-retire-legacy-migration-import.md`](../exec-plans/completed/0059-retire-legacy-migration-import.md).
+Último concluído: [`../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md`](../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md).
 
 ## Próximos gatilhos independentes
 

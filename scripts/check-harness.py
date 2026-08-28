@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -165,6 +165,31 @@ def check_plans(errors: list[str]) -> None:
             fail(errors, f"active plan missing sections {missing}: {path.relative_to(ROOT)}")
 
 
+def check_http_smoke_wiring(errors: list[str]) -> None:
+    scripts_dir = ROOT / "scripts"
+    workflows_dir = ROOT / ".github/workflows"
+    if not scripts_dir.exists() or not workflows_dir.exists():
+        return
+
+    workflow_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(workflows_dir.glob("*.yml"))
+        if path.is_file()
+    )
+
+    for smoke in sorted(scripts_dir.glob("*-http-smoke.sh")):
+        relative = smoke.relative_to(ROOT).as_posix()
+        executed = (
+            f"bash {relative}" in workflow_text
+            or f"./{relative}" in workflow_text
+        )
+        if not executed:
+            fail(
+                errors,
+                f"HTTP smoke is not executed by any root workflow: {relative}",
+            )
+
+
 def check_generated(errors: list[str]) -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts/generate-repo-facts.py"), "--check"],
@@ -185,6 +210,7 @@ def main() -> int:
     check_freshness(errors)
     check_current_work(errors)
     check_plans(errors)
+    check_http_smoke_wiring(errors)
     check_generated(errors)
 
     if errors:
