@@ -62,7 +62,8 @@ Fontes principais:
 | Saved Search | Delivery externo de alertas | PARCIAL | detecção e visualização in-app existem; provider/canal/template não escolhidos | canal/provider + política de frequência/idempotência |
 | Price | Histórico de preço publicado | JÁ EXISTE | Draft e preço inalterado não geram histórico | só novo gap de produto |
 | Favorites | Detector de price-drop | JÁ EXISTE | temporal eligibility + replay/idempotência entregues | delivery se houver hipótese real |
-| Favorites | Delivery de price-drop | PARCIAL | detector existe; notificação externa não | preferência/canal + política de frequência |
+| Favorites | Visualização in-app de price-drop | JÁ EXISTE | Plan 0057 / PR #101: ledger ownership-safe do Buyer exposto em `/favoritos`, com preço anterior/novo, instante e link; histórico persiste após unfavorite e disponibilidade atual pertence ao detalhe público | só extensão com hipótese própria |
+| Favorites | Delivery de price-drop | PARCIAL | detector e histórico in-app existem; provider/canal externo ainda não | canal/consentimento/destinatário verificável + política de frequência/idempotência |
 | Moderação | Buyer report | JÁ EXISTE | idempotência Buyer+Listing e histórico | só novo gap operacional |
 | Moderação | Fila admin + retirar/restaurar | JÁ EXISTE | autoridade humana mínima server-side | só novo gap operacional |
 | Moderação | Taxonomia/SLA/evidence/scoring/notificações | ADIADO | nenhum déficit operacional/provider/legal suficiente | evidência operacional ou contrato externo |
@@ -104,7 +105,7 @@ Esta matriz deve ser consultada antes de abrir qualquer execution plan funcional
 
 ## Gaps atualmente elegíveis para investigação sem reabrir trabalho entregue
 
-Color, seleção guiada canônica, ordenação por recência e visualização in-app de ofertas detectadas deixaram esta lista porque foram entregues pelos PRs #89, #92, #98 e #100. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
+Color, seleção guiada canônica, ordenação por recência, visualização in-app de ofertas detectadas e visualização in-app de price-drop deixaram esta lista porque foram entregues pelos PRs #89, #92, #98, #100 e #101. A attribution de marketing também deixa de ser candidata imediata após o audit de prontidão de 2026-08-27: sem pergunta concreta de aquisição + consumidor + privacy/retention contract, permanece **ADIADO**.
 
 Nenhum item abaixo deve ser tratado automaticamente como próximo feature. Os candidatos só podem ser investigados quando houver pergunta concreta ou o gatilho documentado mudar:
 

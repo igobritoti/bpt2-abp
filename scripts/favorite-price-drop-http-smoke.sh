@@ -7,6 +7,7 @@ BASE="http://127.0.0.1:${PORT}"
 TMP="${TMPDIR:-/tmp}/bpt2-favorite-price-drop"
 LOG="$TMP/api.log"
 RESPONSE="$TMP/response.json"
+SWAGGER="$TMP/swagger.json"
 
 : "${BPT_DB_CONNECTION:?BPT_DB_CONNECTION is required}"
 : "${BPT_FIXTURE_VEHICLE_ID:?BPT_FIXTURE_VEHICLE_ID is required}"
@@ -94,11 +95,20 @@ dotnet build "$ROOT/main/BomPraTi/BomPraTi.csproj" --configuration Release --nol
 dotnet "$ROOT/main/BomPraTi/bin/Release/net10.0/BomPraTi.dll" >"$LOG" 2>&1 &
 API_PID=$!
 for _ in $(seq 1 60); do
-  curl --fail --silent --show-error "$BASE/swagger/v1/swagger.json" >/dev/null && break
+  curl --fail --silent --show-error "$BASE/swagger/v1/swagger.json" -o "$SWAGGER" && break
   kill -0 "$API_PID" >/dev/null 2>&1 || { cat "$LOG" >&2; exit 1; }
   sleep 1
 done
-curl --fail --silent --show-error "$BASE/swagger/v1/swagger.json" >/dev/null
+[[ -s "$SWAGGER" ]] || { cat "$LOG" >&2; exit 1; }
+python3 - "$SWAGGER" <<'PY'
+import json,sys
+paths=json.load(open(sys.argv[1], encoding='utf-8'))['paths']
+path='/api/app/favorite/price-drop-matches'
+if path not in paths or 'get' not in paths[path]:
+    actual={p:list(v) for p,v in paths.items() if 'favorite' in p}
+    raise SystemExit(f'Missing Favorite price-drop read route GET {path}; actual={actual}')
+print('FAVORITE_PRICE_DROP_READ_ROUTE: PASS')
+PY
 
 ADMIN_TOKEN="$(get_token admin '1q2w3E*')"
 status="$(request_json POST '/api/app/seller-profile/upsert' "$ADMIN_TOKEN" '{"displayName":"Price Drop Seller","whatsAppNumber":"5511999992222"}')"
@@ -117,6 +127,9 @@ BUYER1_ID="$(create_buyer "$BUYER1_USER" "$BUYER_PASSWORD")"
 BUYER2_ID="$(create_buyer "$BUYER2_USER" "$BUYER_PASSWORD")"
 BUYER1_TOKEN="$(get_token "$BUYER1_USER" "$BUYER_PASSWORD")"
 BUYER2_TOKEN="$(get_token "$BUYER2_USER" "$BUYER_PASSWORD")"
+
+status="$(request_json GET '/api/app/favorite/price-drop-matches')"
+[[ "$status" == "401" ]] || { echo "Anonymous price-drop history expected 401 got $status" >&2; exit 1; }
 
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" <<'PY'
 import json,sys
@@ -151,6 +164,18 @@ STATE="$(price_drop_state "$LISTING_ID")"
 [[ "$STATE" == "$EXPECTED1" ]] || { echo "First price-drop match mismatch: $STATE" >&2; exit 1; }
 echo "FAVORITE_PRICE_DROP_EXISTING_FAVORITE: PASS"
 
+status="$(request_json GET '/api/app/favorite/price-drop-matches' "$BUYER1_TOKEN")"; [[ "$status" == "200" ]] || exit 1
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1], encoding='utf-8')); assert len(x)==1,x
+m=x[0]; assert m['listingId']==sys.argv[2],m
+assert float(m['previousPrice'])==195000 and float(m['newPrice'])==180000,m
+assert m['detectedAtUtc'],m
+PY
+status="$(request_json GET '/api/app/favorite/price-drop-matches' "$BUYER2_TOKEN")"
+[[ "$status" == "200" && "$(cat "$RESPONSE")" == '[]' ]] || { echo "Buyer2 saw Buyer1 price-drop ledger" >&2; cat "$RESPONSE"; exit 1; }
+echo "FAVORITE_PRICE_DROP_READ_OWNERSHIP: PASS"
+
 status="$(request_json POST "$FAVORITE_PATH" "$BUYER2_TOKEN")"
 [[ "$status" == "200" || "$status" == "204" ]] || { echo "Buyer2 favorite failed: $status $(cat "$RESPONSE")" >&2; exit 1; }
 [[ "$(price_drop_state "$LISTING_ID")" == "$EXPECTED1" ]] || { echo "Late favorite received retroactive price drop" >&2; exit 1; }
@@ -176,4 +201,18 @@ if set(rows) != expected or len(rows) != 2:
     raise SystemExit(f'Unexpected price-drop ledger after unfavorite: {rows}')
 PY
 echo "FAVORITE_PRICE_DROP_UNFAVORITE_STOPS_FUTURE_MATCH: PASS"
+
+status="$(request_json GET '/api/app/favorite/price-drop-matches' "$BUYER1_TOKEN")"; [[ "$status" == "200" ]] || exit 1
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1], encoding='utf-8')); assert len(x)==1,x
+assert x[0]['listingId']==sys.argv[2] and float(x[0]['newPrice'])==180000,x
+PY
+status="$(request_json GET '/api/app/favorite/price-drop-matches' "$BUYER2_TOKEN")"; [[ "$status" == "200" ]] || exit 1
+python3 - "$RESPONSE" "$LISTING_ID" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1], encoding='utf-8')); assert len(x)==1,x
+assert x[0]['listingId']==sys.argv[2] and float(x[0]['previousPrice'])==190000 and float(x[0]['newPrice'])==170000,x
+PY
+echo "FAVORITE_PRICE_DROP_READ_HISTORY: PASS"
 echo "FAVORITE PRICE DROP HTTP: PASSED"
