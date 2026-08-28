@@ -256,6 +256,10 @@ public sealed class PublicListingQuery : IPublicListingQuery, ITransientDependen
             null or "" => listings.OrderBy(x => x.Id),
             "price-asc" => listings.OrderBy(x => x.Price).ThenBy(x => x.Id),
             "price-desc" => listings.OrderByDescending(x => x.Price).ThenBy(x => x.Id),
+            "recent-desc" => listings
+                .OrderBy(x => x.FirstPublishedAtUtc == null)
+                .ThenByDescending(x => x.FirstPublishedAtUtc)
+                .ThenBy(x => x.Id),
             _ => throw new ArgumentException("Unsupported public listing sort.", nameof(sort))
         };
     }
