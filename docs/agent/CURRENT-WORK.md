@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Transformar a regra já auditada de que todo `scripts/*-http-smoke.sh` deve ser realmente executado por algum workflow root em uma invariante automática do Harness.
+Nenhum execution plan funcional está ativo.
 
-O checker diferencia referência/syntax check de execução real: `bash -n` sozinho não satisfaz o gate. Um teste focal do próprio Harness prova o caso negativo e o caso positivo.
+O Plan 0060 transformou a auditoria de smokes HTTP em uma invariante automática do Harness: todo `scripts/*-http-smoke.sh` deve ter execução real em algum workflow root; path trigger ou `bash -n` isolado não contam.
 
 ## Active plan
 
-[`../exec-plans/active/0060-enforce-http-smoke-ci-wiring.md`](../exec-plans/active/0060-enforce-http-smoke-ci-wiring.md)
+Nenhum.
 
-Acceptance: checker fail-closed para smoke órfão, teste focal verde, Harness verde no head exato e review/base refresh limpos.
+Último concluído: [`../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md`](../exec-plans/completed/0060-enforce-http-smoke-ci-wiring.md).
 
 ## Próximos gatilhos independentes
 
