@@ -6,15 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Remover o subtree histórico `bpt2/` e aposentar o workflow transitório `bpt2-vertical-slice.yml`, consolidando a árvore canônica do BPT2 exclusivamente na raiz atual.
+Nenhum execution plan funcional está ativo.
 
-O primeiro attempt (#105) encontrou um acoplamento residual do CI ao subtree. O PR #106 desacoplou esse gate e passou bootstrap root, build e Fresh Migration antes desta remoção definitiva.
+O Plan 0058 removeu o subtree histórico `bpt2/` e aposentou o workflow transitório `bpt2-vertical-slice.yml`. A árvore canônica executável ficou concentrada na raiz atual (`main/`, `modules/`, `public-web/`, `scripts/` e `.github/workflows/`).
+
+O attempt #105 detectou o acoplamento residual do CI; o PR #106 o removeu e provou bootstrap/build/Fresh Migration na raiz antes da remoção definitiva.
 
 ## Active plan
 
-[`../exec-plans/active/0058-remove-legacy-bpt2-subtree.md`](../exec-plans/active/0058-remove-legacy-bpt2-subtree.md)
+Nenhum.
 
-Acceptance: subtree/workflow legado ausentes, fatos gerados coerentes, Harness e gate transitório verdes no head exato, review/base refresh limpos.
+Último concluído: [`../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md`](../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md).
 
 ## Próximos gatilhos independentes
 
