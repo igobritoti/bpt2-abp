@@ -6,15 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Plan 0057 está ativo para fechar o gap entre o ledger `FavoritePriceDropMatch` já detectado no backend e a experiência Buyer.
+Nenhum execution plan funcional está ativo.
 
-O boundary é somente in-app: o Buyer consulta seu próprio histórico de quedas detectadas com preço anterior, novo preço, instante e link ao anúncio. O histórico permanece mesmo após unfavorite; a disponibilidade atual continua sendo decidida pelo detalhe público. Nenhum provider/canal externo ou read/unread entra neste slice.
+O Plan 0057 fechou o gap entre o ledger `FavoritePriceDropMatch` e a experiência Buyer: `/favoritos` agora mostra o histórico ownership-safe de quedas detectadas, com preço anterior, novo preço, instante e link para o anúncio.
+
+O histórico permanece após unfavorite e a disponibilidade atual continua sendo decidida pelo detalhe público. Delivery externo, provider/canal e estado read/unread permanecem boundaries separados.
 
 ## Active plan
 
-[`../exec-plans/active/0057-favorite-price-drop-match-view.md`](../exec-plans/active/0057-favorite-price-drop-match-view.md)
+Nenhum.
 
-Último concluído: [`../exec-plans/completed/0056-saved-search-match-view.md`](../exec-plans/completed/0056-saved-search-match-view.md).
+Último concluído: [`../exec-plans/completed/0057-favorite-price-drop-match-view.md`](../exec-plans/completed/0057-favorite-price-drop-match-view.md).
 
 ## Próximos gatilhos independentes
 
