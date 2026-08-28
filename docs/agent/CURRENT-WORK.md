@@ -6,15 +6,17 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Plan 0056 está ativo para fechar o gap entre o ledger de novas ofertas já detectado no backend de Saved Search e a experiência Buyer.
+Nenhum execution plan funcional está ativo.
 
-O boundary é somente in-app e sob demanda: o Buyer abre os matches de uma busca própria, vê instante de detecção e link para o anúncio. O match permanece histórico; disponibilidade atual continua autoridade do detalhe público. Nenhum provider/canal externo é escolhido neste slice.
+O Plan 0056 fechou o gap entre o ledger de novas ofertas já detectado no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite abrir, sob demanda, os matches de uma busca própria com instante de detecção e link para o anúncio.
+
+O match continua histórico e a disponibilidade atual continua sendo decidida pelo detalhe público. Delivery externo, provider/canal e estado read/unread permanecem boundaries separados.
 
 ## Active plan
 
-[`../exec-plans/active/0056-saved-search-match-view.md`](../exec-plans/active/0056-saved-search-match-view.md)
+Nenhum.
 
-Último concluído: [`../exec-plans/completed/0055-public-recency-sort.md`](../exec-plans/completed/0055-public-recency-sort.md).
+Último concluído: [`../exec-plans/completed/0056-saved-search-match-view.md`](../exec-plans/completed/0056-saved-search-match-view.md).
 
 ## Próximos gatilhos independentes
 
