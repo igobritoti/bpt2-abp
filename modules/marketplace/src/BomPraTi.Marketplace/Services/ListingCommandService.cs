@@ -119,7 +119,7 @@ public class ListingCommandService : IListingCommandService, ITransientDependenc
     {
         var listing = await GetOwnedAsync(listingId, cancellationToken);
         await RequireCanonicalVehicleAsync(listing.VehicleId, cancellationToken);
-        listing.Publish();
+        listing.Publish(DateTime.UtcNow);
         await _listings.UpdateAsync(listing, autoSave: true, cancellationToken: cancellationToken);
         await _savedSearchAlertTrigger.EnsureEnqueuedAsync(listing.Id, cancellationToken);
         return ToDto(listing);

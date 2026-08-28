@@ -8,15 +8,13 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0054 fechou o gap de produto entre o estado `AlertEnabled` já existente no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite habilitar/desabilitar explicitamente **monitoramento de novas ofertas** por busca própria.
-
-`AlertEnabled` continua significando monitoramento/detecção. Ele não foi reinterpretado como consentimento de e-mail; delivery externo, canal, destinatário verificável, retry e scheduler permanecem boundaries separados.
+O Plan 0055 fechou a ordenação pública por recência com semântica canônica de **primeira publicação**: `FirstPublishedAtUtc?` nasce somente na primeira transição para `Published`, `recent-desc` ordena timestamps conhecidos do mais novo para o mais antigo e pause/re-publish não cria bump artificial. Registros legados sem instante permanecem `null`, sem backfill inventado.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0054-saved-search-monitoring-opt-in.md`](../exec-plans/completed/0054-saved-search-monitoring-opt-in.md).
+Último concluído: [`../exec-plans/completed/0055-public-recency-sort.md`](../exec-plans/completed/0055-public-recency-sort.md).
 
 ## Próximos gatilhos independentes
 
@@ -24,7 +22,7 @@ Nenhum.
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
 - medição executável de `powertrain`/`transmission`/`body_style` no Podium para decidir projeção BPT2;
 - enrichment técnico publicado suficiente para Comparator;
-- corpus + baseline + métrica para discovery avançado;
+- corpus + baseline + métrica para fuzzy/facets/relevance/recommendations;
 - dataset/licença/metodologia/provenance para inteligência de mercado;
 - evidência operacional suficiente para trust/moderação avançada;
 - tese comercial/parceria concreta para complementares.
@@ -43,7 +41,7 @@ Nenhum.
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
 - Saved Search external delivery: sem consentimento de canal comprovado + destinatário verificável + durable delivery/recovery contract.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
-- Discovery avançado: sem corpus/baseline/métrica.
+- Discovery avançado além da ordenação canônica já entregue: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
 - Carros na Web: inventário público atual ainda não reproduzível; acesso direto continua falhando.
 

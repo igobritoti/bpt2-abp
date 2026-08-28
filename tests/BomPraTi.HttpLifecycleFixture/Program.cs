@@ -120,7 +120,7 @@ try
 
         var listingRepository = scope.ServiceProvider.GetRequiredService<IRepository<Listing, Guid>>();
         var listing = await listingRepository.GetAsync(listingId, includeDetails: false);
-        listing.Publish();
+        listing.Publish(DateTime.UtcNow);
         await listingRepository.UpdateAsync(listing, autoSave: true);
         await scope.ServiceProvider.GetRequiredService<SavedSearchAlertTrigger>().EnsureEnqueuedAsync(listingId);
 
