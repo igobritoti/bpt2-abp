@@ -8,20 +8,16 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0058 removeu o subtree histórico `bpt2/` e aposentou o workflow transitório `bpt2-vertical-slice.yml`. A árvore canônica executável ficou concentrada na raiz atual (`main/`, `modules/`, `public-web/`, `scripts/` e `.github/workflows/`).
-
-O attempt #105 detectou o acoplamento residual do CI; o PR #106 o removeu e provou bootstrap/build/Fresh Migration na raiz antes da remoção definitiva.
+O Plan 0059 aposentou `migration-import.yml`, fechou a auditoria de smokes HTTP sem encontrar órfãos e consolidou a autoridade de migrations: host ABP/Identity/OpenIddict versionado; cinco módulos de negócio com migrations efêmeras geradas pelo Fresh Migration Gate.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md`](../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md).
+Último concluído: [`../exec-plans/completed/0059-retire-legacy-migration-import.md`](../exec-plans/completed/0059-retire-legacy-migration-import.md).
 
 ## Próximos gatilhos independentes
 
-- auditar todos os `scripts/*-http-smoke.sh` contra os workflows ativos para localizar provas órfãs de CI;
-- auditar a autoridade das migrations versionadas do host/módulos versus o Fresh Migration Gate;
 - delivery externo de Saved Search somente após consentimento por canal, destinatário verificável e estado durável/recovery do side effect;
 - delivery externo de Favorite price-drop somente após canal/consentimento/destinatário verificável e durable delivery contract;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
@@ -40,6 +36,7 @@ Nenhum.
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
 - Cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md).
 - Consumer contract técnico: [`../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md`](../audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md).
+- CI/migration authority: [`../audits/2026-08-28-ci-smoke-and-migration-authority.md`](../audits/2026-08-28-ci-smoke-and-migration-authority.md).
 
 ## Open blockers
 
