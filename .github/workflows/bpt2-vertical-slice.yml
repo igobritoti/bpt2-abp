@@ -1,19 +1,18 @@
-name: BPT2 Gate 01 Bootstrap
+name: BPT2 Legacy Bootstrap Compatibility
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - 'bpt2/main/**'
-      - 'bpt2/modules/**'
-      - 'bpt2/scripts/**'
-      - 'bpt2/global.json'
-      - 'bpt2/.config/**'
+      - 'bpt2/**'
       - '.github/workflows/bpt2-vertical-slice.yml'
 
+permissions:
+  contents: read
+
 jobs:
-  bootstrap:
+  compatibility:
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -38,11 +37,13 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: '10.0.x'
 
-      - name: Build ABP host and modules
-        run: dotnet build bpt2/main/BomPraTi.slnx --configuration Release --nologo
+      - name: Validate canonical root host
+        run: bash scripts/bootstrap-host.sh
 
-      - name: Fresh PostgreSQL migrations
-        working-directory: bpt2
-        run: scripts/migrate.sh
+      - name: Build canonical root solution
+        run: dotnet build main/BomPraTi.slnx --configuration Release --nologo
+
+      - name: Apply canonical fresh migrations
+        run: bash scripts/fresh-migration-gate.sh
