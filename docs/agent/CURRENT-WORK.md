@@ -6,21 +6,20 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Plan 0057 está ativo para fechar o gap entre o ledger `FavoritePriceDropMatch` já detectado no backend e a experiência Buyer.
 
-O Plan 0056 fechou o gap entre o ledger de novas ofertas já detectado no backend de Saved Search e a experiência Buyer: `/buscas-salvas` agora permite abrir, sob demanda, os matches de uma busca própria com instante de detecção e link para o anúncio.
-
-O match continua histórico e a disponibilidade atual continua sendo decidida pelo detalhe público. Delivery externo, provider/canal e estado read/unread permanecem boundaries separados.
+O boundary é somente in-app: o Buyer consulta seu próprio histórico de quedas detectadas com preço anterior, novo preço, instante e link ao anúncio. O histórico permanece mesmo após unfavorite; a disponibilidade atual continua sendo decidida pelo detalhe público. Nenhum provider/canal externo ou read/unread entra neste slice.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0057-favorite-price-drop-match-view.md`](../exec-plans/active/0057-favorite-price-drop-match-view.md)
 
 Último concluído: [`../exec-plans/completed/0056-saved-search-match-view.md`](../exec-plans/completed/0056-saved-search-match-view.md).
 
 ## Próximos gatilhos independentes
 
 - delivery externo de Saved Search somente após consentimento por canal, destinatário verificável e estado durável/recovery do side effect;
+- delivery externo de Favorite price-drop somente após canal/consentimento/destinatário verificável e durable delivery contract;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
 - medição executável de `powertrain`/`transmission`/`body_style` no Podium para decidir projeção BPT2;
 - enrichment técnico publicado suficiente para Comparator;
@@ -42,6 +41,7 @@ Nenhum.
 
 - Saved Search runner: sem distributed-lock provider/configuração e sem deployment contract cross-instance.
 - Saved Search external delivery: sem consentimento de canal comprovado + destinatário verificável + durable delivery/recovery contract.
+- Favorite price-drop external delivery: sem provider/canal/consentimento + durable delivery/recovery contract.
 - Comparator/ficha técnica ampla: enrichment técnico publicado suficiente do Podium ainda não existe como consumer contract estável.
 - Discovery avançado além da ordenação canônica já entregue: sem corpus/baseline/métrica.
 - Inteligência de mercado: sem dataset/licença/metodologia/provenance.
