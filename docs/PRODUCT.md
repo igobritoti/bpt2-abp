@@ -88,9 +88,12 @@ Regras consolidadas:
 - Saved Search possui opt-in explícito de alerta, timestamp de habilitação e ledger idempotente `(SavedSearchId, ListingId)` para detecção;
 - matching de nova oferta reutiliza a mesma semântica da busca pública e considera apenas Listing pública;
 - primeira publicação persiste uma `SavedSearchAlertDetectionRequest` durável e única por Listing no mesmo UoW, sem varrer todas as buscas no request de publicação;
-- runner automático e delivery de alertas permanecem não entregues; nenhum provider/canal foi escolhido;
+- o Buyer pode consultar, sob demanda, o histórico ownership-safe de novas ofertas detectadas em `/buscas-salvas`, com instante e link para o anúncio; o match é histórico e não afirma que a oferta continua pública;
+- runner automático e delivery externo de alertas permanecem não entregues; nenhum provider/canal foi escolhido;
 - histórico seguro de preço de Listing publicada é persistido; Draft e preço sem alteração não criam histórico;
 - detector de price-drop de Favorite está entregue: queda de preço em Listing publicada cria ledger apenas para Buyers que já tinham favoritado antes da queda; replay é idempotente, Favorite posterior não recebe retroativo, aumento é ignorado e unfavorite impede match futuro;
+- o Buyer pode consultar em `/favoritos` seu histórico ownership-safe de price-drops detectados, com preço anterior, novo preço, instante e link; o histórico persiste após unfavorite e não substitui a autoridade de visibilidade do detalhe público;
+- delivery externo de price-drop permanece não entregue; provider/canal e política de entrega não foram escolhidos;
 - contato WhatsApp pode ser anônimo; se já existir sessão Buyer válida, o Lead preserva o `UserId` autenticado sem tornar login obrigatório;
 - token Buyer permanece restrito ao boundary same-origin/public-web → API BPT e nunca é enviado ao WhatsApp;
 - novo Lead ou ListingReport só nasce para Listing atualmente público;
@@ -223,7 +226,7 @@ A role `admin` continua suficiente para o baseline atual. Permissões granulares
 - Favorite, SavedSearch, ListingReport e ownership Seller derivam identidade do servidor; o browser não escolhe owner.
 - A busca pública preserva query string como estado compartilhável e não expõe Draft/private.
 - Saved Search não persiste paginação/ordenação como identidade semântica.
-- Alert opt-in é explícito; detecção e delivery são boundaries separados.
+- Alert opt-in é explícito; detecção, visualização in-app e delivery externo são boundaries separados.
 - City/StateCode são filtros textuais canônicos atuais; isso não implica geocoding, radius ou autoridade geográfica nova.
 - WhatsApp canônico pertence a Sellers e o Lead é persistido antes do redirect externo.
 - Lead já ocorrido é histórico e não desaparece quando o Listing deixa de ser público.
@@ -237,7 +240,7 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 **Nenhum execution plan funcional está ativo.**
 
-O último slice funcional concluído é o Plan 0055, que entregou ordenação pública por recência baseada em primeira publicação sem bump por republicação. A seleção guiada de Vehicle canônico (Plan 0053), o filtro público por Color e o feed estrutural `Podium 7 -> BPT2 Catalog` também estão entregues e comprovados em seus respectivos plans/PRs.
+O último slice funcional concluído é o Plan 0057, que entregou a visualização ownership-safe do histórico de price-drop de Favorites. O Plan 0056 entregou a visualização in-app de novas ofertas detectadas por Saved Search; ordenação pública por recência (Plan 0055), seleção guiada de Vehicle canônico (Plan 0053), filtro público por Color e o feed estrutural `Podium 7 -> BPT2 Catalog` também estão entregues e comprovados em seus respectivos plans/PRs.
 
 O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inventários e checkpoints específicos ficam em `audits/`.
 
@@ -246,6 +249,7 @@ O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inv
 Só resolver quando houver necessidade de produto e evidência suficiente:
 
 - deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; ABP Background Jobs não elimina a necessidade de distributed lock real em cluster;
+- delivery externo de Saved Search ou Favorite price-drop somente com canal/consentimento/destinatário verificável e contrato durável de idempotência/recovery do side effect;
 - medição de cobertura/normalização de `powertrain`, `transmission` e `body_style` no catálogo Podium consumível antes de projetar esses campos ou abrir filtros públicos no BPT2;
 - enrichment técnico publicado do Podium para Comparator e Vehicle Hub enriquecido;
 - analytics agregados, scoring, atribuição de marketing, notas/etapas adicionais e exportação de Leads somente se houver pergunta operacional concreta;
