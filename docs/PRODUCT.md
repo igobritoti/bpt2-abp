@@ -103,11 +103,14 @@ A experiência pública permanece um cliente desacoplado do host ABP, em Next.js
 Capacidades comprovadas:
 
 - busca textual por título e identidade canônica Brand/Model/Generation/Version;
+- seleção guiada de Vehicle canônico por combobox acessível; o valor semântico selecionado é somente `VehicleId`;
 - filtros Brand, Model, Color, ano, preço, quilometragem, City e StateCode;
 - Color usa igualdade textual com trim + case-insensitive, sem taxonomia ou inferência de sinônimos;
 - Color compõe com os filtros existentes e integra Saved Search/deduplicação/matching de alertas pela mesma semântica pública;
 - filtros combinados, paginação e preservação de estado pela query string;
-- ordenação pública por preço;
+- ordenação pública por preço e por recência de primeira publicação;
+- `recent-desc` usa `FirstPublishedAtUtc?`: timestamps conhecidos mais novos primeiro, `null` legado depois e `Id` como desempate determinístico;
+- pause/re-publish não renova `FirstPublishedAtUtc` nem promove artificialmente o anúncio;
 - zero-results explícito;
 - salvar a intenção semântica da busca para Buyer autenticado e reabrir resultados;
 - detalhe público, galeria e CTA de WhatsApp;
@@ -133,7 +136,7 @@ O Vehicle Hub:
 - lista somente ofertas públicas daquele Vehicle;
 - possui sitemap e structured data comprovados.
 
-Enrichment técnico amplo continua separado da Structure. O contrato consumer de identidade do Podium é insuficiente, por si só, para uma ficha comparável de potência/torque/consumo/dimensões/equipamentos; Comparator 2–4 permanece bloqueado até existir enrichment publicado com unidade, null/unknown, revision e provenance suficientes.
+Enrichment técnico amplo continua separado da Structure. O consumer contract de ficha técnica já está definido em `audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md`, mas o producer ainda não publicou enrichment suficiente com unidade, ausência semântica, revision e provenance. Comparator 2–4 permanece bloqueado até esse contrato produtor existir e sua cobertura ser comprovada.
 
 ### Moderação
 
@@ -159,7 +162,7 @@ Existe baseline patrocinado separado do ranking orgânico:
 - futura/expirada não projeta patrocínio ativo;
 - Draft/private permanece invisível mesmo com promoção;
 - UI pública identifica visualmente `Patrocinado`;
-- ordenação orgânica padrão, `price-asc` e `price-desc` não é alterada pela promoção;
+- ordenação orgânica padrão, `price-asc`, `price-desc` e `recent-desc` não é alterada pela promoção;
 - não foi portado `HighlightScore` do BPT1.
 
 Planos comerciais, eligibility avançada, prioridade entre campanhas e instrumentação dedicada de impressão/click/Lead continuam dependentes de tese comercial e hipótese mensurável.
@@ -211,6 +214,7 @@ A role `admin` continua suficiente para o baseline atual. Permissões granulares
 - Seller só altera anúncio de sua propriedade.
 - Público nunca recebe Draft/private.
 - Listing usa optimistic concurrency com `ConcurrencyStamp` no caminho da application service.
+- A primeira publicação define `FirstPublishedAtUtc`; pause/re-publish não renova esse instante e registros legados sem evidência permanecem `null`.
 - Catálogo automotivo publicado é autoridade do BPT2; Marketplace consome contratos do Catalog.
 - Podium é knowledge producer/feed e não entra no request path público.
 - Fotos referenciam `MediaAssetId`; storage key/provider não é identidade de domínio do Marketplace.
@@ -233,7 +237,7 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 **Nenhum execution plan funcional está ativo.**
 
-O último slice estrutural concluído é o Plan 0052, que entregou o primeiro feed `Podium 7 -> BPT2 Catalog`. O filtro público por Color também está entregue e comprovado, incluindo Saved Search e matching de alertas pela mesma semântica.
+O último slice funcional concluído é o Plan 0055, que entregou ordenação pública por recência baseada em primeira publicação sem bump por republicação. A seleção guiada de Vehicle canônico (Plan 0053), o filtro público por Color e o feed estrutural `Podium 7 -> BPT2 Catalog` também estão entregues e comprovados em seus respectivos plans/PRs.
 
 O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inventários e checkpoints específicos ficam em `audits/`.
 
