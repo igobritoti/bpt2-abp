@@ -6,15 +6,15 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Nenhum execution plan funcional está ativo.
+Transformar a regra já auditada de que todo `scripts/*-http-smoke.sh` deve ser realmente executado por algum workflow root em uma invariante automática do Harness.
 
-O Plan 0059 aposentou `migration-import.yml`, fechou a auditoria de smokes HTTP sem encontrar órfãos e consolidou a autoridade de migrations: host ABP/Identity/OpenIddict versionado; cinco módulos de negócio com migrations efêmeras geradas pelo Fresh Migration Gate.
+O checker diferencia referência/syntax check de execução real: `bash -n` sozinho não satisfaz o gate. Um teste focal do próprio Harness prova o caso negativo e o caso positivo.
 
 ## Active plan
 
-Nenhum.
+[`../exec-plans/active/0060-enforce-http-smoke-ci-wiring.md`](../exec-plans/active/0060-enforce-http-smoke-ci-wiring.md)
 
-Último concluído: [`../exec-plans/completed/0059-retire-legacy-migration-import.md`](../exec-plans/completed/0059-retire-legacy-migration-import.md).
+Acceptance: checker fail-closed para smoke órfão, teste focal verde, Harness verde no head exato e review/base refresh limpos.
 
 ## Próximos gatilhos independentes
 
