@@ -12,6 +12,7 @@ on:
       - 'scripts/public-discovery-http-smoke.sh'
       - 'scripts/public-canonical-vehicle-search-http-smoke.sh'
       - 'scripts/public-price-sort-http-smoke.sh'
+      - 'scripts/public-recency-sort-http-smoke.sh'
       - 'scripts/public-color-filter-http-smoke.sh'
       - 'scripts/buyer-saved-search-color-http-smoke.sh'
       - 'scripts/sponsored-listing-http-smoke.sh'
@@ -53,6 +54,7 @@ jobs:
           bash -n scripts/public-discovery-http-smoke.sh
           bash -n scripts/public-canonical-vehicle-search-http-smoke.sh
           bash -n scripts/public-price-sort-http-smoke.sh
+          bash -n scripts/public-recency-sort-http-smoke.sh
           bash -n scripts/public-color-filter-http-smoke.sh
           bash -n scripts/buyer-saved-search-color-http-smoke.sh
           bash -n scripts/sponsored-listing-http-smoke.sh
@@ -85,3 +87,5 @@ jobs:
         run: bash scripts/buyer-saved-search-color-http-smoke.sh
       - name: Exercise sponsored Listing contract over HTTP
         run: bash scripts/sponsored-listing-http-smoke.sh
+      - name: Exercise public recency sort over HTTP
+        run: bash scripts/public-recency-sort-http-smoke.sh
