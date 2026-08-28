@@ -8,18 +8,20 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Nenhum execution plan funcional está ativo.
 
-O Plan 0057 fechou o gap entre o ledger `FavoritePriceDropMatch` e a experiência Buyer: `/favoritos` agora mostra o histórico ownership-safe de quedas detectadas, com preço anterior, novo preço, instante e link para o anúncio.
+O Plan 0058 removeu o subtree histórico `bpt2/` e aposentou o workflow transitório `bpt2-vertical-slice.yml`. A árvore canônica executável ficou concentrada na raiz atual (`main/`, `modules/`, `public-web/`, `scripts/` e `.github/workflows/`).
 
-O histórico permanece após unfavorite e a disponibilidade atual continua sendo decidida pelo detalhe público. Delivery externo, provider/canal e estado read/unread permanecem boundaries separados.
+O attempt #105 detectou o acoplamento residual do CI; o PR #106 o removeu e provou bootstrap/build/Fresh Migration na raiz antes da remoção definitiva.
 
 ## Active plan
 
 Nenhum.
 
-Último concluído: [`../exec-plans/completed/0057-favorite-price-drop-match-view.md`](../exec-plans/completed/0057-favorite-price-drop-match-view.md).
+Último concluído: [`../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md`](../exec-plans/completed/0058-remove-legacy-bpt2-subtree.md).
 
 ## Próximos gatilhos independentes
 
+- auditar todos os `scripts/*-http-smoke.sh` contra os workflows ativos para localizar provas órfãs de CI;
+- auditar a autoridade das migrations versionadas do host/módulos versus o Fresh Migration Gate;
 - delivery externo de Saved Search somente após consentimento por canal, destinatário verificável e estado durável/recovery do side effect;
 - delivery externo de Favorite price-drop somente após canal/consentimento/destinatário verificável e durable delivery contract;
 - deployment/locking reproduzível para claim/retry/restart do runner de Saved Search;
