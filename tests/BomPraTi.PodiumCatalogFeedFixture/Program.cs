@@ -56,8 +56,8 @@ try
         Require(imported.Length == 2, "Canonical + redirect Podium identities were not persisted.");
         Require(imported.All(x => x.ReconciledVehicleId == first.VehicleId), "Podium redirects did not converge to one BPT2 Vehicle.");
 
-        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
-        Require(vehicle is not null, "Imported Vehicle could not be read.");
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId)
+            ?? throw new InvalidOperationException("Imported Vehicle could not be read.");
         Require(vehicle.Powertrain == "combustion", "Initial powertrain was not projected.");
         Require(vehicle.Transmission == "automatic", "Initial transmission was not projected.");
         Require(vehicle.BodyStyle == "hatchback", "Initial body style was not projected.");
@@ -82,8 +82,8 @@ try
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
-        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
-        Require(vehicle is not null, "Replayed Vehicle could not be read.");
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId)
+            ?? throw new InvalidOperationException("Replayed Vehicle could not be read.");
         Require(vehicle.Powertrain == "hybrid", "Replay did not trim/synchronize powertrain.");
         Require(vehicle.Transmission == "CVT", "Replay did not synchronize transmission.");
         Require(vehicle.BodyStyle == "SUV", "Replay did not synchronize body style.");
@@ -105,8 +105,8 @@ try
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
-        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
-        Require(vehicle is not null, "Cleared Vehicle could not be read.");
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId)
+            ?? throw new InvalidOperationException("Cleared Vehicle could not be read.");
         Require(vehicle.Powertrain is null, "Explicit null did not clear powertrain.");
         Require(vehicle.Transmission is null, "Blank producer value did not normalize to null.");
         Require(vehicle.BodyStyle is null, "Explicit null did not clear body style.");
