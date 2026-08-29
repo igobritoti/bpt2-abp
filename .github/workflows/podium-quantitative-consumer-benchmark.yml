@@ -5,6 +5,9 @@ on:
     paths:
       - 'benchmarks/podium_quantitative_consumer_v1.json'
       - 'tests/BomPraTi.PodiumQuantitativeConsumerBenchmarkFixture/**'
+      - 'docs/audits/2026-08-29-podium-quantitative-consumer-benchmark.md'
+      - 'docs/agent/CURRENT-WORK.md'
+      - 'docs/generated/repository-facts.md'
       - '.github/workflows/podium-quantitative-consumer-benchmark.yml'
   workflow_dispatch:
 
