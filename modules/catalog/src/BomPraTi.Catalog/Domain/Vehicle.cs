@@ -9,6 +9,9 @@ public sealed class Vehicle : AggregateRoot<Guid>
     public Guid? GenerationId { get; private set; }
     public Guid VersionId { get; private set; }
     public int? ModelYear { get; private set; }
+    public string? Powertrain { get; private set; }
+    public string? Transmission { get; private set; }
+    public string? BodyStyle { get; private set; }
 
     private Vehicle() { }
 
@@ -19,5 +22,12 @@ public sealed class Vehicle : AggregateRoot<Guid>
         GenerationId = generationId;
         VersionId = versionId;
         ModelYear = modelYear;
+    }
+
+    public void SynchronizeTechnicalIdentity(string? powertrain, string? transmission, string? bodyStyle)
+    {
+        Powertrain = powertrain;
+        Transmission = transmission;
+        BodyStyle = bodyStyle;
     }
 }

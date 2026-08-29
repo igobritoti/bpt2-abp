@@ -43,6 +43,9 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             {
                 vehicle.Id,
                 vehicle.ModelYear,
+                vehicle.Powertrain,
+                vehicle.Transmission,
+                vehicle.BodyStyle,
                 Brand = brand.Name,
                 Model = model.Name,
                 Generation = generation == null ? null : generation.Name,
@@ -57,7 +60,10 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 x.Model,
                 x.Generation,
                 x.Version,
-                x.ModelYear))
+                x.ModelYear,
+                x.Powertrain,
+                x.Transmission,
+                x.BodyStyle))
             .ToList();
     }
 
@@ -153,6 +159,9 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             {
                 vehicle.Id,
                 vehicle.ModelYear,
+                vehicle.Powertrain,
+                vehicle.Transmission,
+                vehicle.BodyStyle,
                 Brand = brand.Name,
                 Model = model.Name,
                 Generation = generation == null ? null : generation.Name,
@@ -208,7 +217,10 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 x.Model,
                 x.Generation,
                 x.Version,
-                x.ModelYear))
+                x.ModelYear,
+                x.Powertrain,
+                x.Transmission,
+                x.BodyStyle))
             .ToList();
     }
 }

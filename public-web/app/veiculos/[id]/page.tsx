@@ -134,6 +134,9 @@ export default async function VehicleHubPage({ params, searchParams }: PageProps
             {vehicle.generation ? <div><dt>Geração</dt><dd>{vehicle.generation}</dd></div> : null}
             <div><dt>Versão</dt><dd>{vehicle.version}</dd></div>
             {vehicle.modelYear ? <div><dt>Ano do modelo</dt><dd>{vehicle.modelYear}</dd></div> : null}
+            {vehicle.powertrain ? <div><dt>Motorização</dt><dd>{vehicle.powertrain}</dd></div> : null}
+            {vehicle.transmission ? <div><dt>Transmissão</dt><dd>{vehicle.transmission}</dd></div> : null}
+            {vehicle.bodyStyle ? <div><dt>Carroceria</dt><dd>{vehicle.bodyStyle}</dd></div> : null}
           </dl>
         </section>
 

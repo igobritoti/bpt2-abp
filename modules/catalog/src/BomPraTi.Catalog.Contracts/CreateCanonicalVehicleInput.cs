@@ -9,4 +9,7 @@ public sealed class CreateCanonicalVehicleInput
     public int? GenerationEndYear { get; set; }
     public string VersionName { get; set; } = string.Empty;
     public int? ModelYear { get; set; }
+    public string? Powertrain { get; set; }
+    public string? Transmission { get; set; }
+    public string? BodyStyle { get; set; }
 }

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BomPraTi.Catalog;
+using BomPraTi.Catalog.Contracts;
 using BomPraTi.Ingestion;
 using BomPraTi.Ingestion.Contracts;
 using BomPraTi.Ingestion.Domain;
@@ -54,6 +55,12 @@ try
         var imported = records.Where(x => x.Source == "podium7" && (x.ExternalId == canonicalId || x.ExternalId == redirectId)).ToArray();
         Require(imported.Length == 2, "Canonical + redirect Podium identities were not persisted.");
         Require(imported.All(x => x.ReconciledVehicleId == first.VehicleId), "Podium redirects did not converge to one BPT2 Vehicle.");
+
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
+        Require(vehicle is not null, "Imported Vehicle could not be read.");
+        Require(vehicle.Powertrain == "combustion", "Initial powertrain was not projected.");
+        Require(vehicle.Transmission == "automatic", "Initial transmission was not projected.");
+        Require(vehicle.BodyStyle == "hatchback", "Initial body style was not projected.");
     });
 
     PodiumCatalogImportResultDto replay = null!;
@@ -61,11 +68,50 @@ try
     {
         using var principal = ChangeAdmin(services);
         replay = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
-            .ImportAsync(CreateInput(canonicalId, redirectId, suffix));
+            .ImportAsync(CreateInput(
+                canonicalId,
+                redirectId,
+                suffix,
+                powertrain: "  hybrid  ",
+                transmission: "CVT",
+                bodyStyle: "SUV"));
     });
 
     Require(replay.Replayed, "Replay was not detected.");
     Require(replay.VehicleId == first.VehicleId, "Replay created or selected a different Vehicle.");
+
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
+        Require(vehicle is not null, "Replayed Vehicle could not be read.");
+        Require(vehicle.Powertrain == "hybrid", "Replay did not trim/synchronize powertrain.");
+        Require(vehicle.Transmission == "CVT", "Replay did not synchronize transmission.");
+        Require(vehicle.BodyStyle == "SUV", "Replay did not synchronize body style.");
+    });
+
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        using var principal = ChangeAdmin(services);
+        var cleared = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
+            .ImportAsync(CreateInput(
+                canonicalId,
+                redirectId,
+                suffix,
+                powertrain: null,
+                transmission: "   ",
+                bodyStyle: null));
+        Require(cleared.Replayed && cleared.VehicleId == first.VehicleId, "Null-clearing replay changed Vehicle identity.");
+    });
+
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(first.VehicleId);
+        Require(vehicle is not null, "Cleared Vehicle could not be read.");
+        Require(vehicle.Powertrain is null, "Explicit null did not clear powertrain.");
+        Require(vehicle.Transmission is null, "Blank producer value did not normalize to null.");
+        Require(vehicle.BodyStyle is null, "Explicit null did not clear body style.");
+    });
+    Console.WriteLine("PODIUM_TECHNICAL_IDENTITY_SYNC_AND_CLEAR: PASS");
     Console.WriteLine("PODIUM_REPLAY_AND_REDIRECT: PASS");
 
     var oldCanonical = $"veh_{Guid.NewGuid():N}";
@@ -84,11 +130,16 @@ try
     {
         using var principal = ChangeAdmin(services);
         redirected = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
-            .ImportAsync(CreateInput(newCanonical, oldCanonical, suffix + "changed-labels"));
+            .ImportAsync(CreateInput(newCanonical, oldCanonical, suffix + "changed-labels", bodyStyle: "sedan"));
     });
 
     Require(redirected.VehicleId == historical.VehicleId, "Historical Podium redirect was rematched instead of preserving the existing Vehicle link.");
     Require(redirected.Replayed, "Historical redirect convergence should reuse the existing mapped Vehicle.");
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(historical.VehicleId);
+        Require(vehicle?.BodyStyle == "sedan", "Historical redirect did not synchronize technical identity on the existing Vehicle.");
+    });
     Console.WriteLine("PODIUM_HISTORICAL_ID_CONTINUITY: PASS");
 
     await ExpectNotSupportedAsync(
@@ -121,7 +172,10 @@ static PodiumCatalogVehicleInput CreateInput(
     string suffix,
     string? variant = "LTZ",
     int? modelYearFrom = 2025,
-    int? modelYearTo = 2025)
+    int? modelYearTo = 2025,
+    string? powertrain = "combustion",
+    string? transmission = "automatic",
+    string? bodyStyle = "hatchback")
 {
     return new PodiumCatalogVehicleInput
     {
@@ -133,6 +187,9 @@ static PodiumCatalogVehicleInput CreateInput(
             Model = $"PodiumModel-{suffix}",
             Generation = "G1",
             Variant = variant,
+            Powertrain = powertrain,
+            Transmission = transmission,
+            BodyStyle = bodyStyle,
             ModelYearFrom = modelYearFrom,
             ModelYearTo = modelYearTo
         },
