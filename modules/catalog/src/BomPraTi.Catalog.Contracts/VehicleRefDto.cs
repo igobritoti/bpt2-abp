@@ -6,4 +6,7 @@ public sealed record VehicleRefDto(
     string Model,
     string? Generation,
     string Version,
-    int? ModelYear);
+    int? ModelYear,
+    string? Powertrain,
+    string? Transmission,
+    string? BodyStyle);

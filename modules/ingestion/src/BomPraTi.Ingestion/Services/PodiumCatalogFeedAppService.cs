@@ -48,6 +48,9 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
         var model = RequireText(entity.Model, 128, "entity.model");
         var generation = OptionalText(entity.Generation, 128, "entity.generation");
         var variant = RequireText(entity.Variant, 180, "entity.variant");
+        var powertrain = OptionalOpaqueText(entity.Powertrain);
+        var transmission = OptionalOpaqueText(entity.Transmission);
+        var bodyStyle = OptionalOpaqueText(entity.BodyStyle);
         var modelYear = ResolveModelYear(entity.ModelYearFrom, entity.ModelYearTo);
         var redirects = NormalizeRedirects(input.RedirectsFrom, canonicalExternalId);
 
@@ -99,13 +102,36 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
                     GenerationStartYear = null,
                     GenerationEndYear = null,
                     VersionName = variant,
-                    ModelYear = modelYear
+                    ModelYear = modelYear,
+                    Powertrain = powertrain,
+                    Transmission = transmission,
+                    BodyStyle = bodyStyle
                 },
                 cancellationToken);
             vehicleId = created.Id;
         }
 
-        var rawIdentity = BuildRawIdentity(input, canonicalExternalId, make, model, generation, variant, modelYear);
+        await _catalogAdmin.SynchronizeTechnicalIdentityAsync(
+            vehicleId,
+            new SynchronizeCanonicalVehicleTechnicalIdentityInput
+            {
+                Powertrain = powertrain,
+                Transmission = transmission,
+                BodyStyle = bodyStyle
+            },
+            cancellationToken);
+
+        var rawIdentity = BuildRawIdentity(
+            input,
+            canonicalExternalId,
+            make,
+            model,
+            generation,
+            variant,
+            modelYear,
+            powertrain,
+            transmission,
+            bodyStyle);
         const string provenance = "Podium 7 Catalog JSON Contract 2.0 canonical projection";
 
         foreach (var externalId in requestedExternalIds)
@@ -188,7 +214,10 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
         string model,
         string? generation,
         string variant,
-        int? modelYear)
+        int? modelYear,
+        string? powertrain,
+        string? transmission,
+        string? bodyStyle)
     {
         var summary = JsonSerializer.Serialize(new
         {
@@ -198,7 +227,10 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
             model,
             generation,
             variant,
-            modelYear
+            modelYear,
+            powertrain,
+            transmission,
+            bodyStyle
         });
 
         return summary.Length <= 1024 ? summary : summary[..1024];
@@ -234,5 +266,10 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
         }
 
         return trimmed;
+    }
+
+    private static string? OptionalOpaqueText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

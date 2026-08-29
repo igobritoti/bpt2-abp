@@ -4,6 +4,7 @@ using BomPraTi.Catalog.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 
 namespace BomPraTi.Catalog.Services;
 
@@ -29,6 +30,9 @@ public class CanonicalVehicleAdminAppService : ICanonicalVehicleAdminAppService,
         var modelName = RequireName(input.ModelName, 128, nameof(input.ModelName));
         var versionName = RequireName(input.VersionName, 180, nameof(input.VersionName));
         var generationName = OptionalName(input.GenerationName, 128, nameof(input.GenerationName));
+        var powertrain = NormalizeOpaque(input.Powertrain);
+        var transmission = NormalizeOpaque(input.Transmission);
+        var bodyStyle = NormalizeOpaque(input.BodyStyle);
 
         if (generationName is null && (input.GenerationStartYear.HasValue || input.GenerationEndYear.HasValue))
         {
@@ -117,10 +121,34 @@ public class CanonicalVehicleAdminAppService : ICanonicalVehicleAdminAppService,
             _dbContext.Vehicles.Add(vehicle);
         }
 
+        vehicle.SynchronizeTechnicalIdentity(powertrain, transmission, bodyStyle);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return await _reader.GetAsync(vehicle.Id, cancellationToken)
             ?? throw new InvalidOperationException("Canonical Vehicle was saved but could not be read back.");
+    }
+
+    public async Task<VehicleRefDto> SynchronizeTechnicalIdentityAsync(
+        Guid vehicleId,
+        SynchronizeCanonicalVehicleTechnicalIdentityInput input,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var vehicle = await _dbContext.Vehicles
+            .SingleOrDefaultAsync(x => x.Id == vehicleId, cancellationToken)
+            ?? throw new EntityNotFoundException(typeof(Vehicle), vehicleId);
+
+        vehicle.SynchronizeTechnicalIdentity(
+            NormalizeOpaque(input.Powertrain),
+            NormalizeOpaque(input.Transmission),
+            NormalizeOpaque(input.BodyStyle));
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await _reader.GetAsync(vehicle.Id, cancellationToken)
+            ?? throw new InvalidOperationException("Canonical Vehicle was synchronized but could not be read back.");
     }
 
     private static string RequireName(string? value, int maxLength, string parameterName)
@@ -153,5 +181,10 @@ public class CanonicalVehicleAdminAppService : ICanonicalVehicleAdminAppService,
         }
 
         return trimmed;
+    }
+
+    private static string? NormalizeOpaque(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

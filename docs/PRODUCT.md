@@ -137,9 +137,10 @@ O Vehicle Hub:
 - lê identidade exclusivamente do Catalog;
 - existe independentemente de oferta ativa;
 - lista somente ofertas públicas daquele Vehicle;
-- possui sitemap e structured data comprovados.
+- possui sitemap e structured data comprovados;
+- projeta `powertrain`, `transmission` e `body_style` do Catalog quando conhecidos, sem taxonomia local, sinônimos ou mapeamento schema.org inventado.
 
-Enrichment técnico amplo continua separado da Structure. O consumer contract de ficha técnica já está definido em `audits/2026-08-27-vehicle-technical-sheet-consumer-contract.md`, mas o producer ainda não publicou enrichment suficiente com unidade, ausência semântica, revision e provenance. Comparator 2–4 permanece bloqueado até esse contrato produtor existir e sua cobertura ser comprovada.
+Enrichment técnico amplo continua separado da Structure. A medição producer-side necessária para os três identity facts acima foi concluída no Podium e não é mais blocker dessa projeção. Separadamente, o Podium já publica o contrato `podium7.quantitative-enrichment.v1`; o Comparator continua bloqueado até o consumer/comparability benchmark BPT2 #122 ser executado, com cobertura utilizável, estados, shapes, unidades, contexto, revision, provenance e conflitos preservados. Isso não autoriza filtros quantitativos ou ficha técnica ampla por consequência.
 
 ### Moderação
 
@@ -184,6 +185,7 @@ Capacidades comprovadas:
 - labels são dados projetados e não chave persistida do vínculo Podium → BPT2;
 - `variant = null` falha explicitamente no V1 porque o domínio BPT2 exige `Vehicle.VersionId`;
 - model-year range real falha explicitamente porque `Vehicle.ModelYear?` é escalar; nenhum limite é escolhido arbitrariamente;
+- `powertrain`, `transmission` e `body_style` são tratados como strings opacas nullable do estado corrente do Contract `2.0`; trim/blank→`null` é a única normalização local, e replay/redirect atualiza o mesmo `VehicleId`, inclusive limpando valor antigo quando o produtor envia `null`;
 - BPT2 continua independente da disponibilidade online do Podium no public marketplace read path.
 
 Regras consolidadas:
@@ -192,7 +194,7 @@ Regras consolidadas:
 - integração consome contrato, não persistence/shared DB;
 - correções preservam identidade externa estável e redirects/historical IDs não devem ser resolvidos por labels;
 - connector/source, polling/scraping e matching automático dentro do BPT2 não são promovidos sem novo requisito;
-- `powertrain`, `transmission` e `body_style` permanecem candidatos de projeção, não capacidades BPT2 entregues, até existir medição de cobertura/normalização suficiente no catálogo Podium consumível.
+- os três identity facts projetados não viram automaticamente filtros públicos, critérios de Saved Search, taxonomia local ou autorização para Comparator.
 
 ### Administração
 
@@ -238,9 +240,9 @@ O estado formal das decisões e a força da evidência ficam em `MDV.md` e `adr/
 
 ## Slice ativo
 
-**Nenhum execution plan funcional está ativo.**
+Issue #111 / PR #126 projeta os três identity facts do Podium para o Vehicle Hub. O slice permanece em validação até todos os gates focais do head final ficarem verdes e o PR ser integrado.
 
-O último slice funcional concluído é o Plan 0057, que entregou a visualização ownership-safe do histórico de price-drop de Favorites. O Plan 0056 entregou a visualização in-app de novas ofertas detectadas por Saved Search; ordenação pública por recência (Plan 0055), seleção guiada de Vehicle canônico (Plan 0053), filtro público por Color e o feed estrutural `Podium 7 -> BPT2 Catalog` também estão entregues e comprovados em seus respectivos plans/PRs.
+O último execution plan formal concluído antes deste slice é o Plan 0061, que transformou a authority de migrations auditada em invariante automática do Harness. O Plan 0057 entregou a visualização ownership-safe do histórico de price-drop de Favorites; o Plan 0056 entregou a visualização in-app de novas ofertas detectadas por Saved Search.
 
 O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inventários e checkpoints específicos ficam em `audits/`.
 
@@ -248,10 +250,10 @@ O snapshot corrente de trabalho e blockers está em `agent/CURRENT-WORK.md`; inv
 
 Só resolver quando houver necessidade de produto e evidência suficiente:
 
-- deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; ABP Background Jobs não elimina a necessidade de distributed lock real em cluster;
+- deployment/locking + claim/concurrency/retry/restart para runner de Saved Search; PostgreSQL-coordinated claim é o primeiro baseline experimental definido em #117 e ABP Background Jobs permanece comparador;
 - delivery externo de Saved Search ou Favorite price-drop somente com canal/consentimento/destinatário verificável e contrato durável de idempotência/recovery do side effect;
-- medição de cobertura/normalização de `powertrain`, `transmission` e `body_style` no catálogo Podium consumível antes de projetar esses campos ou abrir filtros públicos no BPT2;
-- enrichment técnico publicado do Podium para Comparator e Vehicle Hub enriquecido;
+- filtros públicos ou Saved Search por `powertrain`, `transmission` e `body_style` somente com hipótese de produto e benchmark próprios; a projeção #111 não os autoriza;
+- consumer/comparability benchmark #122 antes de Comparator ou ficha técnica quantitativa ampla, apesar de o contrato quantitativo Podium já existir;
 - analytics agregados, scoring, atribuição de marketing, notas/etapas adicionais e exportação de Leads somente se houver pergunta operacional concreta;
 - taxonomia/motivo de denúncia, workflow multiestado, SLA, anexos/evidence, scoring e notificações de moderação;
 - permissões administrativas granulares e eventual frontend admin separado;

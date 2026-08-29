@@ -7,4 +7,9 @@ public interface ICanonicalVehicleAdminAppService : IApplicationService
     Task<VehicleRefDto> CreateAsync(
         CreateCanonicalVehicleInput input,
         CancellationToken cancellationToken = default);
+
+    Task<VehicleRefDto> SynchronizeTechnicalIdentityAsync(
+        Guid vehicleId,
+        SynchronizeCanonicalVehicleTechnicalIdentityInput input,
+        CancellationToken cancellationToken = default);
 }

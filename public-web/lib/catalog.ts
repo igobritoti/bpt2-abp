@@ -5,6 +5,9 @@ export type VehicleRef = {
   generation: string | null;
   version: string;
   modelYear: number | null;
+  powertrain: string | null;
+  transmission: string | null;
+  bodyStyle: string | null;
 };
 
 function trimTrailingSlash(value: string): string {

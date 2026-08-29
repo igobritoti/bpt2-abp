@@ -60,6 +60,18 @@ ADMIN_TOKEN="$(token)"
 status="$(request_json POST "$API_BASE/api/app/seller-profile/upsert" "$ADMIN_TOKEN" '{"displayName":"Vehicle Hub Seller","whatsAppNumber":"+55 (11) 98888-7766"}')"
 [[ "$status" == 200 || "$status" == 201 ]] || { echo "Seller upsert failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
 
+TECHNICAL_IDENTITY_ROUTE="$API_BASE/api/app/canonical-vehicle-admin/synchronize-technical-identity/$BPT_FIXTURE_VEHICLE_ID"
+status="$(request_json POST "$TECHNICAL_IDENTITY_ROUTE" "$ADMIN_TOKEN" '{"powertrain":"  hybrid  ","transmission":"CVT","bodyStyle":"SUV"}')"
+[[ "$status" == 200 || "$status" == 201 ]] || { echo "Technical identity sync failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+python3 - "$RESPONSE" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1], encoding='utf-8'))
+assert x['powertrain'] == 'hybrid', x
+assert x['transmission'] == 'CVT', x
+assert x['bodyStyle'] == 'SUV', x
+PY
+echo 'VEHICLE_HUB_TECHNICAL_IDENTITY_API_SYNC: PASS'
+
 LISTING_TITLE="Vehicle Hub HTTP Listing"
 CREATE_BODY="$(python3 - "$BPT_FIXTURE_VEHICLE_ID" "$LISTING_TITLE" <<'PY'
 import json,sys
@@ -110,6 +122,13 @@ grep -Fq 'HTTP Lifecycle Model' "$HUB_HTML" || { echo 'Canonical model missing f
 grep -Fq 'HTTP-G1' "$HUB_HTML" || { echo 'Canonical generation missing from Hub' >&2; exit 1; }
 grep -Fq 'HTTP Lifecycle Version' "$HUB_HTML" || { echo 'Canonical version missing from Hub' >&2; exit 1; }
 grep -Fq '>2025<' "$HUB_HTML" || { echo 'Canonical model year missing from Hub' >&2; exit 1; }
+grep -Fq '>Motorização<' "$HUB_HTML" || { echo 'Known powertrain label missing from Hub' >&2; exit 1; }
+grep -Fq '>hybrid<' "$HUB_HTML" || { echo 'Known powertrain missing from Hub' >&2; exit 1; }
+grep -Fq '>Transmissão<' "$HUB_HTML" || { echo 'Known transmission label missing from Hub' >&2; exit 1; }
+grep -Fq '>CVT<' "$HUB_HTML" || { echo 'Known transmission missing from Hub' >&2; exit 1; }
+grep -Fq '>Carroceria<' "$HUB_HTML" || { echo 'Known body style label missing from Hub' >&2; exit 1; }
+grep -Fq '>SUV<' "$HUB_HTML" || { echo 'Known body style missing from Hub' >&2; exit 1; }
+echo 'VEHICLE_HUB_TECHNICAL_IDENTITY_KNOWN_RENDERED: PASS'
 grep -Fq 'HTTP Lifecycle Model HTTP Lifecycle Version 2025 | Bom Pra Ti</title>' "$HUB_HTML" || { echo 'Vehicle Hub metadata title missing' >&2; exit 1; }
 grep -Fq "rel=\"canonical\" href=\"$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID\"" "$HUB_HTML" || { echo 'Vehicle Hub canonical missing' >&2; exit 1; }
 status="$(request_json GET "$API_BASE/api/app/vehicle-catalog/$BPT_FIXTURE_VEHICLE_ID")"
@@ -213,10 +232,30 @@ for key, value in expected.items():
 for key in (
     "offers", "itemCondition", "vehicleIdentificationNumber", "aggregateRating", "review",
     "sku", "mpn", "image", "modelDate", "vehicleModelDate", "productionDate", "releaseDate",
+    "powertrain", "transmission", "bodyStyle",
 ):
     if key in data:
         raise SystemExit(f"Vehicle Hub JSON-LD invented unsupported field: {key}")
 PY
+
+echo 'VEHICLE_HUB_STRUCTURED_DATA_TECHNICAL_FIELDS_EXCLUDED: PASS'
+status="$(request_json POST "$TECHNICAL_IDENTITY_ROUTE" "$ADMIN_TOKEN" '{"powertrain":null,"transmission":"   ","bodyStyle":null}')"
+[[ "$status" == 200 || "$status" == 201 ]] || { echo "Technical identity clear failed $status: $(cat "$RESPONSE")" >&2; exit 1; }
+python3 - "$RESPONSE" <<'PY'
+import json,sys
+x=json.load(open(sys.argv[1], encoding='utf-8'))
+assert x['powertrain'] is None, x
+assert x['transmission'] is None, x
+assert x['bodyStyle'] is None, x
+PY
+status="$(curl --silent --show-error --output "$HUB_HTML" --write-out '%{http_code}' "$WEB_BASE/veiculos/$BPT_FIXTURE_VEHICLE_ID")"
+[[ "$status" == 200 ]] || { echo "Vehicle Hub after technical clear expected 200 got $status" >&2; exit 1; }
+if grep -Fq '>Motorização<' "$HUB_HTML" || grep -Fq '>Transmissão<' "$HUB_HTML" || grep -Fq '>Carroceria<' "$HUB_HTML"; then
+  echo 'Null technical identity remained visible in Vehicle Hub' >&2
+  exit 1
+fi
+echo 'VEHICLE_HUB_TECHNICAL_IDENTITY_NULL_HIDDEN: PASS'
+
 if grep -Fq "$LISTING_TITLE" "$HUB_HTML"; then echo 'Draft Listing leaked into Vehicle Hub' >&2; exit 1; fi
 echo 'VEHICLE_HUB_CANONICAL_IDENTITY: PASS'
 echo 'VEHICLE_HUB_METADATA: PASS'
