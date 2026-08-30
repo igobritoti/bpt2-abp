@@ -37,6 +37,14 @@ Issue #118 já possui, desde o PR #137, o ledger provider-neutral durável de de
 - `POSTGRES_TRANSACTIONAL_CLAIM_PRIMITIVE = PROVED_BOUNDED` (#117);
 - `AUTOMATIC_SAVED_SEARCH_DETECTION_RUNNER = PROVISIONED_AND_GREEN` (#117).
 
+## Validação local
+
+Compilações focadas verdes com `RestoreIgnoreFailedSources=true`:
+
+- `modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj`;
+- `tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj`;
+- `tests/BomPraTi.ResendSavedSearchEmailProbeFixture/BomPraTi.ResendSavedSearchEmailProbeFixture.csproj`.
+
 ## Source of runtime truth
 
 - Estado de branch/PR/checks: Git e GitHub Actions do commit corrente.
