@@ -29,9 +29,9 @@ async Task<SavedSearchAlertDeliveryIntent?> EnsureIntentAsync(Guid matchId, Guid
     var intent = new SavedSearchAlertDeliveryIntent(Guid.NewGuid(), matchId, userId, "email", now);
     await db.Database.ExecuteSqlInterpolatedAsync($"""
         INSERT INTO "MarketplaceSavedSearchAlertDeliveryIntents"
-            ("Id", "SavedSearchAlertMatchId", "UserId", "Channel", "IdempotencyKey", "Status", "CreatedAtUtc", "LastAttemptAtUtc")
+            ("Id", "SavedSearchAlertMatchId", "UserId", "Channel", "IdempotencyKey", "Status", "CreatedAtUtc", "AttemptCount", "LastAttemptAtUtc")
         VALUES
-            ({intent.Id}, {intent.SavedSearchAlertMatchId}, {intent.UserId}, {intent.Channel}, {intent.IdempotencyKey}, {intent.Status.ToString()}, {intent.CreatedAtUtc}, NULL)
+            ({intent.Id}, {intent.SavedSearchAlertMatchId}, {intent.UserId}, {intent.Channel}, {intent.IdempotencyKey}, {intent.Status.ToString()}, {intent.CreatedAtUtc}, 0, NULL)
         ON CONFLICT ("SavedSearchAlertMatchId", "Channel") DO NOTHING
         """);
     return await db.SavedSearchAlertDeliveryIntents.AsNoTracking()
@@ -72,7 +72,7 @@ async Task DispatchAsync(Guid intentId, RecipientSnapshot recipient, FakeOutcome
         FakeOutcome.Accepted => SavedSearchAlertDeliveryStatus.Accepted,
         FakeOutcome.TimeoutUnknown => SavedSearchAlertDeliveryStatus.OutcomeUnknown,
         FakeOutcome.PermanentRejected => SavedSearchAlertDeliveryStatus.PermanentFailed,
-        FakeOutcome.TransientFailed => SavedSearchAlertDeliveryStatus.Pending,
+        FakeOutcome.TransientFailed => SavedSearchAlertDeliveryStatus.RetryScheduled,
         _ => throw new ArgumentOutOfRangeException(nameof(outcome))
     };
     await SetStatusAsync(intent.Id, status, now.AddMinutes(1));
@@ -99,7 +99,8 @@ await using (var db = NewContext(options))
     Require(await db.SavedSearchAlertDeliveryIntents.AsNoTracking().CountAsync(x => x.SavedSearchAlertMatchId == replayMatch && x.Channel == "email") == 1,
         "Source replay must leave exactly one intent.");
 }
-Require(!typeof(SavedSearchAlertDeliveryIntent).GetProperties().Any(x => x.Name.Contains("Email", StringComparison.OrdinalIgnoreCase)),
+Require(!typeof(SavedSearchAlertDeliveryIntent).GetProperties().Any(x => x.Name.Equals("Email", StringComparison.OrdinalIgnoreCase)
+    || x.Name.Equals("RecipientEmail", StringComparison.OrdinalIgnoreCase)),
     "Durable Marketplace intent must not persist recipient email address.");
 scenarios.Add(new { id = "durable-intent-and-source-replay", passed = true, intentId = first.Id, first.IdempotencyKey });
 
@@ -145,8 +146,8 @@ await DispatchAsync(permanent.Id, eligible, FakeOutcome.PermanentRejected);
 await DispatchAsync(transient.Id, eligible, FakeOutcome.TransientFailed);
 Require((await LoadAsync(permanent.Id)).Status == SavedSearchAlertDeliveryStatus.PermanentFailed,
     "Permanent rejection must be terminal/distinct.");
-Require((await LoadAsync(transient.Id)).Status == SavedSearchAlertDeliveryStatus.Pending,
-    "Transient failure must remain recoverable.");
+Require((await LoadAsync(transient.Id)).Status == SavedSearchAlertDeliveryStatus.RetryScheduled,
+    "Transient failure must remain recoverable with an explicit retry state.");
 scenarios.Add(new { id = "permanent-vs-transient", passed = true });
 
 await SetStatusAsync(changedIntent.Id, SavedSearchAlertDeliveryStatus.Delivered, (await LoadAsync(changedIntent.Id)).LastAttemptAtUtc);
@@ -166,7 +167,7 @@ scenarios.Add(new { id = "failure-isolation", passed = true });
 
 var artifact = new
 {
-    schema = "bpt2.saved-search-email-delivery-baseline.v1",
+    schema = "bpt2.saved-search-email-delivery-baseline.v2",
     sourceBoundary = "SavedSearchAlertMatch + UserId + email channel; recipient resolved at dispatch",
     durableIntentStoresRecipientAddress = false,
     productMonitoringOptInIsExternalEmailOptIn = false,
@@ -181,10 +182,10 @@ var artifact = new
         sourceReplayIdempotency = "PROVED_BOUNDED",
         recipientRevalidation = "PROVED_BOUNDED",
         providerOutcomeUnknown = "PRESERVED_EXPLICITLY",
-        productionProvider = "NOT_SELECTED",
-        productionCadence = "UNSET",
-        productionConsentSource = "STILL_REQUIRED",
-        realEmailSending = "NOT_AUTHORIZED_BY_THIS_BENCHMARK"
+        productionProvider = "RESEND_FOR_BOUNDED_PROBE",
+        productionCadence = "EMAIL_EACH_NEW_MATCH_EXPLICIT_PER_SAVED_SEARCH",
+        productionConsentSource = "EXPLICIT_SAVED_SEARCH_AUTHORIZATION",
+        realEmailSending = "CONDITIONAL_ON_EXTERNAL_CREDENTIALS"
     }
 };
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
