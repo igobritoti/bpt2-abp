@@ -6,7 +6,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Issue #116 / PR #134 executa o subproblema independente de autoridade municipal: mapear `City + StateCode` para identidade oficial IBGE sem implementar raio, coordenadas, geocoding ou PostGIS.
+Issue #118 / PR #136 executa o primeiro boundary durável provider-neutral para futura entrega externa de alertas de Saved Search por email, sem selecionar provedor real nem enviar email real.
+
+Issue #116 teve a baseline de identidade municipal IBGE integrada no `main` pelo PR #135; true physical radius continua bloqueado por autoridade do ponto físico da Listing e privacy/minimization.
 
 Issue #117 teve o benchmark PostgreSQL de claim/recovery integrado no `main` pelo PR #133. A issue permanece aberta porque deployment topology, cadence, retry/backoff e full-detection transaction boundary ainda não estão estabelecidos.
 
@@ -18,49 +20,59 @@ Issue #111 foi concluída pelo PR #127 e reconciliada como `completed`: `powertr
 
 ## Active plan
 
-Fechar o benchmark IBGE de #116 com source-bound artifact, documentação, Harness/CI fresco, review e merge. A issue #116 permanece aberta após esse slice porque true physical radius continua sem autoridade para o ponto da Listing e sem privacy semantics.
+Fechar #118 com o durable delivery-intent boundary, documentação, Harness/CI fresco, review e merge. A issue #118 permanece aberta após esse slice porque product email-consent authority, real-provider sandbox, cadence/retry policy e operação de produção continuam não estabelecidos.
 
-## Evidência município #116
+## Evidência delivery externo #118
 
-Green benchmark run: `33283814034`, artifact `9723774369`, artifact ZIP SHA-256 `37ef0a846369a376c27e56d5abfecc57f3110499744ec9a76398eeddcc1922e0`.
+Green provider-neutral benchmark run: `33285470611`.
 
-Fonte presa:
+Artifact:
 
-- IBGE DTB 2025, data-base `31/12/2025`;
-- `DTB_2025.zip`: `1,635,600` bytes, SHA-256 `d077a0e48c36cf18bcc96268b4a436200c014c6b8522c1a62d894acaf39dad27`;
-- `RELATORIO_DTB_BRASIL_2025_MUNICIPIOS.ods`: SHA-256 `a0606b9706c248138131511287e582a9293ba786096e0395192be36108d029fa`.
+- ID `9724291877`;
+- size `951` bytes;
+- ZIP SHA-256 `026c6a87251492c90c315206887890655d38f7ae511f23ce6eb8f47364be4b7b`.
 
 Medições:
 
-- `5,571` linhas city-level codificadas;
-- `5,569` municípios ordinários;
-- `2` unidades city-level especiais preservadas explicitamente: Brasília/DF e Fernando de Noronha/PE;
-- `5,571` códigos completos únicos;
-- `0` colisões por `City + UF` exato;
-- `232` nomes de cidade reutilizados entre UFs, portanto `City` isolado não é identidade suficiente;
-- fixture BPT2: `6` exact, `4` unmatched fail-closed, `0` ambiguous;
-- sem accent/case folding, fuzzy match, synonyms ou centroid fallback.
+- Fresh Migration Gate: verde;
+- `11` scenario records cobrindo `12` acceptance conditions lógicas, pois criação + exact replay são verificadas juntas;
+- `9` fake-provider calls;
+- `4` logical acceptances após deduplicação por idempotency key;
+- durable intent único por `(SavedSearchAlertMatchId, Channel)`;
+- nenhum endereço de email persistido no intent de Marketplace;
+- recipient verification + external-email authorization revalidados no dispatch;
+- timeout com outcome desconhecido preservado explicitamente;
+- accepted-then-crash converge com a mesma idempotency key no fake provider;
+- opt-out antes da chamada suprime sem provider call;
+- mudança de endereço antes da chamada usa somente o endereço atual;
+- permanent vs transient permanecem estados distintos;
+- callback `Delivered` replay converge idempotentemente;
+- falha de uma intent não bloqueia progresso independente.
 
-Auditoria: [`../audits/2026-08-29-ibge-municipality-identity-baseline.md`](../audits/2026-08-29-ibge-municipality-identity-baseline.md).
+Auditoria: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md`](../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md).
 
 ## Decisões atuais
 
-- `MUNICIPALITY_IDENTITY_AUTHORITY = IBGE_DTB_2025_PINNED`;
-- `EXACT_CITY_UF_PROJECTION = PROVED_BOUNDED`;
-- `CITY_ALONE_AS_STABLE_IDENTITY = REJECTED`;
-- `SPECIAL_CITY_LEVEL_UNITS = PRESERVE_EXPLICITLY`;
-- `HEURISTIC_LOCATION_NORMALIZATION = NOT_AUTHORIZED`;
-- `TRUE_LISTING_RADIUS = STILL_BLOCKED_ON_LOCATION_POINT_AUTHORITY_AND_PRIVACY`;
-- `CENTROID_RADIUS = NOT_PROVED`;
-- `POSTGIS = NOT_SELECTED`;
+- `DURABLE_EMAIL_DELIVERY_INTENT = PROVED_BOUNDED`;
+- `RECIPIENT_ADDRESS_STORED_IN_MARKETPLACE = NO`;
+- `DISPATCH_TIME_RECIPIENT_REVALIDATION = PROVED_BOUNDED`;
+- `MONITORING_OPT_IN_AS_EXTERNAL_EMAIL_CONSENT = REJECTED`;
+- `OUTCOME_UNKNOWN_AS_EXPLICIT_STATE = PROVED_BOUNDED`;
+- `PROVIDER_NEUTRAL_IDEMPOTENCY_RECOVERY = PROVED_BOUNDED_WITH_FAKE_PROVIDER`;
+- `REAL_EMAIL_PROVIDER = NOT_SELECTED`;
+- `PRODUCTION_EMAIL_CONSENT_AUTHORITY = STILL_REQUIRED`;
+- `PRODUCTION_CADENCE = UNSET`;
+- `REAL_EMAIL_SENDING = NOT_AUTHORIZED_BY_THIS_BENCHMARK`;
+- `MUNICIPALITY_IDENTITY_AUTHORITY = IBGE_DTB_2025_PINNED` (#116);
+- `TRUE_LISTING_RADIUS = STILL_BLOCKED_ON_LOCATION_POINT_AUTHORITY_AND_PRIVACY` (#116);
 - `POSTGRES_TRANSACTIONAL_CLAIM_PRIMITIVE = PROVED_BOUNDED` (#117);
 - `AUTOMATIC_RUNNER = NOT_YET_AUTHORIZED` (#117).
 
 ## Próximos gatilhos independentes
 
-- #116: após integrar esta baseline, persistência de código IBGE exige contrato explícito de storage/update/rename; true radius continua separado e bloqueado em point authority/privacy;
+- #118: depois deste fake-provider boundary, definir uma autoridade real de consentimento externo e só então executar sandbox de provedor preservando recipient revalidation/idempotency semantics; Resend/SES continuam candidatos, não decisão de produção;
 - #117: obter fatos concretos de deployment/process lifetime antes de autorizar runner automático;
-- #118: delivery externo somente após canal, consentimento, destinatário verificável e durable side-effect/recovery contract;
+- #116: true radius continua separado e bloqueado em point authority/privacy;
 - #113: recomendações dependem de ground truth/exposure protocol válido;
 - #114: inteligência de mercado depende de provider/licença/metodologia/provenance concretos;
 - #115: trust/histórico depende de autorização/contrato/purpose/privacy específicos;
@@ -77,13 +89,14 @@ Auditoria: [`../audits/2026-08-29-ibge-municipality-identity-baseline.md`](../au
 - Benchmark quantitative consumer: [`../audits/2026-08-29-podium-quantitative-consumer-benchmark.md`](../audits/2026-08-29-podium-quantitative-consumer-benchmark.md).
 - Saved Search claim baseline: [`../audits/2026-08-29-saved-search-postgres-claim-baseline.md`](../audits/2026-08-29-saved-search-postgres-claim-baseline.md).
 - Município IBGE: [`../audits/2026-08-29-ibge-municipality-identity-baseline.md`](../audits/2026-08-29-ibge-municipality-identity-baseline.md).
+- Saved Search external email delivery: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md`](../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md).
 
 ## Open blockers
 
-- True radius: falta autoridade para ponto físico da Listing + privacy/minimization; município/centroide não é veículo (#116).
+- Saved Search external delivery: durable provider-neutral recovery boundary provado; product email-consent authority, real-provider sandbox, cadence/retry policy e production operation continuam pendentes (#118).
 - Saved Search runner: deployment topology/cadence/retry/full-detection transaction boundary ainda não fixados (#117).
-- Saved Search external delivery: canal/consentimento/destinatário/cadence/provider e durable delivery/recovery continuam pendentes (#118).
-- Comparator/ficha técnica ampla: cobertura Brasil/produção insuficiente; PBEV/coverage continuam upstream-gated.
+- True radius: falta autoridade para ponto físico da Listing + privacy/minimization; município/centroide não é veículo (#116).
+- Comparator/ficha técnica ampla: cobertura Brasil/produção insuficiente.
 - Discovery avançado: baseline mede gaps reais, mas nenhuma implementação candidata foi comparada sob o mesmo corpus.
 - Recomendações, market intelligence e trust permanecem bloqueados pelos respectivos contracts/evidence gates.
 
