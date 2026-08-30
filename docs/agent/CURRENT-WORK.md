@@ -8,9 +8,9 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 Issue #118 / PR #136 executa o primeiro boundary durável provider-neutral para futura entrega externa de alertas de Saved Search por email, sem selecionar provedor real nem enviar email real.
 
-Issue #116 teve a baseline de identidade municipal IBGE integrada no `main` pelo PR #135; true physical radius continua bloqueado por autoridade do ponto físico da Listing e privacy/minimization.
+Issue #117 teve o benchmark PostgreSQL de claim/recovery integrado no `main` pelo PR #133 e agora também possui runner automático provider-neutral com retry diferido por `NextAttemptAtUtc`. O slice corrente fecha retry/cancellation correctness para failure genérico, poison-request non-starvation e tentativa real em `LastAttemptAtUtc`. A validação local do build ainda está bloqueada por restore NuGet externo.
 
-Issue #117 teve o benchmark PostgreSQL de claim/recovery integrado no `main` pelo PR #133 e agora também possui runner automático provider-neutral com retry diferido por `NextAttemptAtUtc`. A validação local do build ficou bloqueada por restore NuGet externo; a operação de produção ainda precisa da decisão de rollout, mas a topologia de execução não está mais ausente.
+Issue #116 teve a baseline de identidade municipal IBGE integrada no `main` pelo PR #135; true physical radius continua bloqueado por autoridade do ponto físico da Listing e privacy/minimization.
 
 Issue #122 foi concluída e integrada pelo PR #131; o consumer quantitativo lossless/comparability boundary foi provado no fixture delimitado, enquanto Comparator continua bloqueado por cobertura Brasil/produção.
 
@@ -20,7 +20,7 @@ Issue #111 foi concluída pelo PR #127 e reconciliada como `completed`: `powertr
 
 ## Active plan
 
-Fechar #118 com o durable delivery-intent boundary, documentação, Harness/CI fresco, review e merge. A issue #118 permanece aberta após esse slice porque product email-consent authority, real-provider sandbox, cadence/retry policy e operação de produção continuam não estabelecidos.
+Fechar #117 com o correctness slice de retry/cancellation, Harness/CI fresco e reconciliar o estado operacional. Depois, fechar #118 com o durable delivery-intent boundary, documentação, Harness/CI fresco, review e merge. A issue #118 permanece aberta após esse slice porque product email-consent authority, real-provider sandbox, cadence/retry policy e operação de produção continuam não estabelecidos.
 
 ## Evidência delivery externo #118
 
@@ -70,8 +70,8 @@ Auditoria: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.
 
 ## Próximos gatilhos independentes
 
+- #117: correctness slice de retry/cancellation está em andamento; falta validar com build/CI quando o restore NuGet estiver disponível e reconciliar o estado operacional;
 - #118: depois deste fake-provider boundary, definir uma autoridade real de consentimento externo e só então executar sandbox de provedor preservando recipient revalidation/idempotency semantics; Resend/SES continuam candidatos, não decisão de produção;
-- #117: runner automático já está provisionado no código; falta apenas validar em build/CI com restore disponível e decidir rollout operacional;
 - #116: true radius continua separado e bloqueado em point authority/privacy;
 - #113: recomendações dependem de ground truth/exposure protocol válido;
 - #114: inteligência de mercado depende de provider/licença/metodologia/provenance concretos;
@@ -94,7 +94,7 @@ Auditoria: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.
 ## Open blockers
 
 - Saved Search external delivery: durable provider-neutral recovery boundary provado; product email-consent authority, real-provider sandbox, cadence/retry policy e production operation continuam pendentes (#118).
-- Saved Search runner: boundary transacional e runner automático provisionados; resta validar build/CI e rollout operacional (#117).
+- Saved Search runner: boundary transacional e runner automático provisionados; resta validar build/CI e o correctness slice de retry/cancellation (#117).
 - True radius: falta autoridade para ponto físico da Listing + privacy/minimization; município/centroide não é veículo (#116).
 - Comparator/ficha técnica ampla: cobertura Brasil/produção insuficiente.
 - Discovery avançado: baseline mede gaps reais, mas nenhuma implementação candidata foi comparada sob o mesmo corpus.

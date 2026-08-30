@@ -27,7 +27,12 @@ var service = new SavedSearchAlertDetectionProcessor(
     publicQuery,
     Options.Create(new SavedSearchAlertRunnerOptions()));
 var evaluation = service.EvaluateAsync(listingId);
-await enteredPublicQuery.Task.WaitAsync(TimeSpan.FromSeconds(10));
+var firstCompletion = await Task.WhenAny(enteredPublicQuery.Task, evaluation).WaitAsync(TimeSpan.FromSeconds(10));
+if (firstCompletion == evaluation)
+{
+    await evaluation;
+    throw new InvalidOperationException("production EvaluateAsync returned before entering the public Listing query");
+}
 
 var lockHeld = await ExactRequestLockIsHeldAsync(options, listingId);
 Require(lockHeld, "production EvaluateAsync must hold the exact request row lock while Listing evaluation is in progress");
@@ -67,6 +72,128 @@ await using (var transaction = await afterReturnDb.Database.BeginTransactionAsyn
 Console.WriteLine("SAVED_SEARCH_EXPLICIT_PRODUCTION_LOCK_HELD: PASS");
 Console.WriteLine("SAVED_SEARCH_EXPLICIT_LOCK_RELEASED_ON_RETURN: PASS");
 Console.WriteLine("SAVED_SEARCH_MISSING_LISTING_REMAINS_PENDING: PASS");
+
+var retryDelay = TimeSpan.FromMilliseconds(200);
+var failingListingId = Guid.Parse("43000000-0000-0000-0000-000000000002");
+var healthyListingId = Guid.Parse("43000000-0000-0000-0000-000000000003");
+var cancelledListingId = Guid.Parse("43000000-0000-0000-0000-000000000004");
+var failingRequestId = Guid.Parse("44000000-0000-0000-0000-000000000002");
+var healthyRequestId = Guid.Parse("44000000-0000-0000-0000-000000000003");
+var cancelledRequestId = Guid.Parse("44000000-0000-0000-0000-000000000004");
+var retryBaseUtc = enqueuedAtUtc.AddMinutes(5);
+var scenarioListingIds = new[] { failingListingId, healthyListingId, cancelledListingId };
+
+await SeedRequestAsync(options, failingRequestId, failingListingId, retryBaseUtc);
+await SeedRequestAsync(options, healthyRequestId, healthyListingId, retryBaseUtc.AddSeconds(1));
+await SeedRequestAsync(options, cancelledRequestId, cancelledListingId, retryBaseUtc.AddSeconds(2));
+
+var retryingQuery = new RetryingPublicListingQuery(
+    failingListingId,
+    healthyListingId,
+    cancelledListingId);
+var retryingOptions = Options.Create(new SavedSearchAlertRunnerOptions
+{
+    Enabled = true,
+    IdleDelay = TimeSpan.FromMilliseconds(10),
+    MissingListingRetryDelay = retryDelay
+});
+
+await using (var retryDb = new MarketplaceDbContext(options))
+{
+    var processor = new SavedSearchAlertDetectionProcessor(retryDb, retryingQuery, retryingOptions);
+    var failingAttempt = await processor.EvaluateAsync(failingListingId);
+    Require(failingAttempt == 0, "generic processing failure must remain a zero-match result");
+}
+
+DateTime firstFailureAttemptUtc;
+await using (var afterFailureDb = new MarketplaceDbContext(options))
+{
+    var failingRequest = await afterFailureDb.SavedSearchAlertDetectionRequests
+        .AsNoTracking()
+        .SingleAsync(x => x.ListingId == failingListingId);
+    Require(failingRequest.LastAttemptAtUtc.HasValue, "generic failure must record the real attempt time");
+    Require(failingRequest.NextAttemptAtUtc.HasValue, "generic failure must schedule a retry");
+    firstFailureAttemptUtc = failingRequest.LastAttemptAtUtc.GetValueOrDefault();
+    Require(
+        failingRequest.NextAttemptAtUtc.GetValueOrDefault() > firstFailureAttemptUtc,
+        "retry must be deferred after the actual attempt");
+    var healthyEligible = await SelectNextDueListingIdAsync(options, retryBaseUtc, scenarioListingIds);
+    Require(healthyEligible == healthyListingId, "a problematic request must not starve another due request");
+}
+
+await using (var healthyDb = new MarketplaceDbContext(options))
+{
+    var processor = new SavedSearchAlertDetectionProcessor(healthyDb, retryingQuery, retryingOptions);
+    var healthyAttempt = await processor.EvaluateAsync(healthyListingId);
+    Require(healthyAttempt == 0, "healthy missing Listing request must remain a zero-match result");
+}
+
+await using (var verifyHealthyDb = new MarketplaceDbContext(options))
+{
+    var healthyRequest = await verifyHealthyDb.SavedSearchAlertDetectionRequests
+        .AsNoTracking()
+        .SingleAsync(x => x.ListingId == healthyListingId);
+    Require(healthyRequest.LastAttemptAtUtc.HasValue, "unrelated due work must record progress after a poison request");
+    Require(healthyRequest.NextAttemptAtUtc.HasValue, "unrelated due work must be durably deferred when its Listing is still missing");
+}
+
+await Task.Delay(retryDelay + TimeSpan.FromMilliseconds(150));
+
+var retryEligibleListing = await SelectNextDueListingIdAsync(options, DateTime.UtcNow, scenarioListingIds);
+Require(retryEligibleListing == failingListingId, "problematic request must become eligible again after the retry delay");
+
+await using (var retryAttemptDb = new MarketplaceDbContext(options))
+{
+    var processor = new SavedSearchAlertDetectionProcessor(retryAttemptDb, retryingQuery, retryingOptions);
+    var retriedAttempt = await processor.EvaluateAsync(failingListingId);
+    Require(retriedAttempt == 0, "retried missing Listing request must remain a zero-match result");
+}
+
+await using (var verifyRetryDb = new MarketplaceDbContext(options))
+{
+    var failingRequest = await verifyRetryDb.SavedSearchAlertDetectionRequests
+        .AsNoTracking()
+        .SingleAsync(x => x.ListingId == failingListingId);
+    Require(!failingRequest.ProcessedAtUtc.HasValue, "missing Listing retry must remain pending");
+    Require(failingRequest.LastAttemptAtUtc.HasValue, "retry must record a new attempt time");
+    Require(failingRequest.LastAttemptAtUtc.GetValueOrDefault() > firstFailureAttemptUtc, "retry must occur after the original generic failure");
+    Require(failingRequest.NextAttemptAtUtc.HasValue, "retried missing Listing must remain deferred");
+    Require(
+        failingRequest.NextAttemptAtUtc.GetValueOrDefault() > failingRequest.LastAttemptAtUtc.GetValueOrDefault(),
+        "retried missing Listing must schedule its next attempt after the retry attempt");
+}
+
+var cancellationQuery = new CancelledPublicListingQuery(cancelledListingId);
+await using (var cancellationDb = new MarketplaceDbContext(options))
+{
+    var processor = new SavedSearchAlertDetectionProcessor(cancellationDb, cancellationQuery, retryingOptions);
+    using var cancellationTokenSource = new CancellationTokenSource();
+    cancellationTokenSource.Cancel();
+
+    try
+    {
+        await processor.EvaluateAsync(cancelledListingId, cancellationTokenSource.Token);
+        throw new InvalidOperationException("cancellation must not be swallowed");
+    }
+    catch (OperationCanceledException)
+    {
+    }
+}
+
+await using (var verifyCancellationDb = new MarketplaceDbContext(options))
+{
+    var cancelledRequest = await verifyCancellationDb.SavedSearchAlertDetectionRequests
+        .AsNoTracking()
+        .SingleAsync(x => x.ListingId == cancelledListingId);
+    Require(!cancelledRequest.LastAttemptAtUtc.HasValue, "cancellation must not record a failure attempt");
+    Require(!cancelledRequest.NextAttemptAtUtc.HasValue, "cancellation must not schedule a retry");
+    Require(!cancelledRequest.ProcessedAtUtc.HasValue, "cancellation must not mark the request processed");
+}
+
+Console.WriteLine("SAVED_SEARCH_GENERIC_FAILURE_RETRY: PASS");
+Console.WriteLine("SAVED_SEARCH_POISON_REQUEST_NON_STARVATION: PASS");
+Console.WriteLine("SAVED_SEARCH_RETRY_ELIGIBILITY_AFTER_DELAY: PASS");
+Console.WriteLine("SAVED_SEARCH_CANCELLATION_DOES_NOT_RETRY: PASS");
 
 static async Task SeedRequestAsync(
     DbContextOptions<MarketplaceDbContext> options,
@@ -138,6 +265,40 @@ static void Require(bool condition, string message)
     }
 }
 
+static async Task<Guid?> SelectNextDueListingIdAsync(
+    DbContextOptions<MarketplaceDbContext> options,
+    DateTime nowUtc,
+    IReadOnlyCollection<Guid> scenarioListingIds)
+{
+    await using var db = new MarketplaceDbContext(options);
+    await using var transaction = await db.Database.BeginTransactionAsync();
+    try
+    {
+        var scenarioIds = scenarioListingIds.ToArray();
+        var request = await db.SavedSearchAlertDetectionRequests
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM "MarketplaceSavedSearchAlertDetectionRequests"
+                WHERE "ProcessedAtUtc" IS NULL
+                  AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {nowUtc})
+                  AND "ListingId" = ANY({scenarioIds})
+                ORDER BY "EnqueuedAtUtc", "Id"
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+                """)
+            .AsNoTracking()
+            .SingleOrDefaultAsync();
+
+        await transaction.RollbackAsync();
+        return request?.ListingId;
+    }
+    catch
+    {
+        await transaction.RollbackAsync();
+        throw;
+    }
+}
+
 sealed class BlockingMissingPublicListingQuery : IPublicListingQuery
 {
     private readonly Guid _listingId;
@@ -145,10 +306,7 @@ sealed class BlockingMissingPublicListingQuery : IPublicListingQuery
     private readonly TaskCompletionSource _release;
     private int _getCalls;
 
-    public BlockingMissingPublicListingQuery(
-        Guid listingId,
-        TaskCompletionSource entered,
-        TaskCompletionSource release)
+    public BlockingMissingPublicListingQuery(Guid listingId, TaskCompletionSource entered, TaskCompletionSource release)
     {
         _listingId = listingId;
         _entered = entered;
@@ -170,27 +328,70 @@ sealed class BlockingMissingPublicListingQuery : IPublicListingQuery
         return null;
     }
 
-    public Task<IReadOnlyList<PublicListingDto>> GetManyAsync(
-        IReadOnlyCollection<Guid> listingIds,
-        CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> GetManyAsync(IReadOnlyCollection<Guid> listingIds, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(Guid? vehicleId = null, string? query = null, int skip = 0, int take = 20, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<PagedResultDto<PublicListingDto>> SearchPageAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<bool> MatchesAsync(Guid listingId, PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
 
-    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(
-        Guid? vehicleId = null,
-        string? query = null,
-        int skip = 0,
-        int take = 20,
-        CancellationToken cancellationToken = default) => throw new NotSupportedException();
+sealed class RetryingPublicListingQuery : IPublicListingQuery
+{
+    private readonly Guid _failingListingId;
+    private readonly HashSet<Guid> _knownListingIds;
+    private int _failingGetCalls;
 
-    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(
-        PublicListingSearchInput input,
-        CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public RetryingPublicListingQuery(Guid failingListingId, Guid healthyListingId, Guid cancelledListingId)
+    {
+        _failingListingId = failingListingId;
+        _knownListingIds = [failingListingId, healthyListingId, cancelledListingId];
+    }
 
-    public Task<PagedResultDto<PublicListingDto>> SearchPageAsync(
-        PublicListingSearchInput input,
-        CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<PublicListingDto?> GetAsync(Guid listingId, CancellationToken cancellationToken = default)
+    {
+        if (!_knownListingIds.Contains(listingId))
+        {
+            throw new InvalidOperationException("unexpected Listing id");
+        }
 
-    public Task<bool> MatchesAsync(
-        Guid listingId,
-        PublicListingSearchInput input,
-        CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        if (listingId == _failingListingId && Interlocked.Increment(ref _failingGetCalls) == 1)
+        {
+            throw new InvalidOperationException("synthetic generic processing failure");
+        }
+
+        return Task.FromResult<PublicListingDto?>(null);
+    }
+
+    public Task<IReadOnlyList<PublicListingDto>> GetManyAsync(IReadOnlyCollection<Guid> listingIds, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(Guid? vehicleId = null, string? query = null, int skip = 0, int take = 20, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<PagedResultDto<PublicListingDto>> SearchPageAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<bool> MatchesAsync(Guid listingId, PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
+
+sealed class CancelledPublicListingQuery : IPublicListingQuery
+{
+    private readonly Guid _listingId;
+
+    public CancelledPublicListingQuery(Guid listingId)
+    {
+        _listingId = listingId;
+    }
+
+    public async Task<PublicListingDto?> GetAsync(Guid listingId, CancellationToken cancellationToken = default)
+    {
+        if (listingId != _listingId)
+        {
+            throw new InvalidOperationException("unexpected Listing id");
+        }
+
+        await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+        return null;
+    }
+
+    public Task<IReadOnlyList<PublicListingDto>> GetManyAsync(IReadOnlyCollection<Guid> listingIds, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(Guid? vehicleId = null, string? query = null, int skip = 0, int take = 20, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyList<PublicListingDto>> SearchAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<PagedResultDto<PublicListingDto>> SearchPageAsync(PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<bool> MatchesAsync(Guid listingId, PublicListingSearchInput input, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 }

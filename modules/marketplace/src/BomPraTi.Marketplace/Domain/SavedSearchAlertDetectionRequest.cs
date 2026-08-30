@@ -18,16 +18,19 @@ public sealed class SavedSearchAlertDetectionRequest : AggregateRoot<Guid>
         EnqueuedAtUtc = DateTime.SpecifyKind(enqueuedAtUtc, DateTimeKind.Utc);
     }
 
+    public void MarkAttempted(DateTime attemptedAtUtc)
+        => LastAttemptAtUtc = DateTime.SpecifyKind(attemptedAtUtc, DateTimeKind.Utc);
+
     public void MarkProcessed(DateTime processedAtUtc)
     {
         ProcessedAtUtc ??= DateTime.SpecifyKind(processedAtUtc, DateTimeKind.Utc);
         NextAttemptAtUtc = null;
     }
 
-    public void ScheduleRetry(DateTime nextAttemptAtUtc)
+    public void ScheduleRetry(DateTime attemptedAtUtc, DateTime nextAttemptAtUtc)
     {
+        LastAttemptAtUtc = DateTime.SpecifyKind(attemptedAtUtc, DateTimeKind.Utc);
         var scheduledAtUtc = DateTime.SpecifyKind(nextAttemptAtUtc, DateTimeKind.Utc);
-        LastAttemptAtUtc = scheduledAtUtc;
         NextAttemptAtUtc = scheduledAtUtc;
     }
 }
