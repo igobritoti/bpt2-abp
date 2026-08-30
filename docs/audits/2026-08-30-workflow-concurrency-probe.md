@@ -17,7 +17,7 @@ This file drives the predeclared rapid-synchronize experiment for workflow-scope
 ## Probe sequence
 
 - synchronize 1: emitted by `5345765501b2562b54cadaebf02dc61a20a18d4e`;
-- synchronize 2: emitted by this commit;
-- synchronize 3: pending.
+- synchronize 2: emitted by `966be61e8fcc8ec4418c8ee939733e88687a193f`;
+- synchronize 3: emitted by this commit.
 
-Final observations will replace the pending markers after run evidence is inspected.
+Final observations will replace this sentence after run evidence is inspected.
