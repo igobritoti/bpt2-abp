@@ -12,4 +12,9 @@ public interface ICanonicalVehicleAdminAppService : IApplicationService
         Guid vehicleId,
         SynchronizeCanonicalVehicleTechnicalIdentityInput input,
         CancellationToken cancellationToken = default);
+
+    Task SynchronizeExternalIdentifiersAsync(
+        Guid vehicleId,
+        SynchronizeCanonicalVehicleExternalIdentifiersInput input,
+        CancellationToken cancellationToken = default);
 }

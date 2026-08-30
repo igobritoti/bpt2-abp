@@ -51,6 +51,7 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
         var powertrain = OptionalOpaqueText(entity.Powertrain);
         var transmission = OptionalOpaqueText(entity.Transmission);
         var bodyStyle = OptionalOpaqueText(entity.BodyStyle);
+        var externalIdentifiers = NormalizeExternalIdentifiers(entity.ExternalIdentifiers);
         var modelYear = ResolveModelYear(entity.ModelYearFrom, entity.ModelYearTo);
         var redirects = NormalizeRedirects(input.RedirectsFrom, canonicalExternalId);
 
@@ -121,6 +122,21 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
             },
             cancellationToken);
 
+        await _catalogAdmin.SynchronizeExternalIdentifiersAsync(
+            vehicleId,
+            new SynchronizeCanonicalVehicleExternalIdentifiersInput
+            {
+                Authority = Source,
+                Identifiers = externalIdentifiers
+                    .Select(x => new CanonicalVehicleExternalIdentifierInput
+                    {
+                        Namespace = x.Namespace,
+                        Value = x.Value
+                    })
+                    .ToArray()
+            },
+            cancellationToken);
+
         var rawIdentity = BuildRawIdentity(
             input,
             canonicalExternalId,
@@ -131,7 +147,8 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
             modelYear,
             powertrain,
             transmission,
-            bodyStyle);
+            bodyStyle,
+            externalIdentifiers);
         const string provenance = "Podium 7 Catalog JSON Contract 2.0 canonical projection";
 
         foreach (var externalId in requestedExternalIds)
@@ -197,14 +214,36 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
             return Array.Empty<string>();
         }
 
-        var normalized = redirects
+        return redirects
             .Select(x => RequireText(x, 256, "redirectsFrom"))
             .Where(x => !string.Equals(x, canonicalExternalId, StringComparison.Ordinal))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
+    }
 
-        return normalized;
+    private static IReadOnlyList<PodiumExternalIdentifierInput> NormalizeExternalIdentifiers(
+        IReadOnlyList<PodiumExternalIdentifierInput>? identifiers)
+    {
+        if (identifiers is null || identifiers.Count == 0)
+        {
+            return Array.Empty<PodiumExternalIdentifierInput>();
+        }
+
+        return identifiers
+            .Select(x =>
+            {
+                ArgumentNullException.ThrowIfNull(x);
+                return new PodiumExternalIdentifierInput
+                {
+                    Namespace = RequireOpaqueText(x.Namespace, "entity.external_identifiers.namespace"),
+                    Value = RequireOpaqueText(x.Value, "entity.external_identifiers.value")
+                };
+            })
+            .DistinctBy(x => (x.Namespace, x.Value))
+            .OrderBy(x => x.Namespace, StringComparer.Ordinal)
+            .ThenBy(x => x.Value, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static string BuildRawIdentity(
@@ -217,7 +256,8 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
         int? modelYear,
         string? powertrain,
         string? transmission,
-        string? bodyStyle)
+        string? bodyStyle,
+        IReadOnlyList<PodiumExternalIdentifierInput> externalIdentifiers)
     {
         var summary = JsonSerializer.Serialize(new
         {
@@ -230,7 +270,8 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
             modelYear,
             powertrain,
             transmission,
-            bodyStyle
+            bodyStyle,
+            externalIdentifiers = externalIdentifiers.Select(x => new { x.Namespace, x.Value })
         });
 
         return summary.Length <= 1024 ? summary : summary[..1024];
@@ -271,5 +312,15 @@ public class PodiumCatalogFeedAppService : IPodiumCatalogFeedAppService, ITransi
     private static string? OptionalOpaqueText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string RequireOpaqueText(string? value, string field)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"Podium field '{field}' is required.", field);
+        }
+
+        return value;
     }
 }

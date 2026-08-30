@@ -11,6 +11,7 @@ public sealed class CatalogDbContext : AbpDbContext<CatalogDbContext>
     public DbSet<Generation> Generations => Set<Generation>();
     public DbSet<VehicleVersion> Versions => Set<VehicleVersion>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<VehicleExternalIdentifier> VehicleExternalIdentifiers => Set<VehicleExternalIdentifier>();
 
     public CatalogDbContext(DbContextOptions<CatalogDbContext> options) : base(options) { }
 
@@ -53,6 +54,20 @@ public sealed class CatalogDbContext : AbpDbContext<CatalogDbContext>
         {
             b.ToTable("CatalogVehicles");
             b.HasIndex(x => new { x.BrandId, x.ModelId, x.GenerationId, x.VersionId, x.ModelYear }).IsUnique();
+        });
+
+        builder.Entity<VehicleExternalIdentifier>(b =>
+        {
+            b.ToTable("CatalogVehicleExternalIdentifiers");
+            b.Property(x => x.Authority).IsRequired();
+            b.Property(x => x.Namespace).IsRequired();
+            b.Property(x => x.Value).IsRequired();
+            b.HasOne<Vehicle>()
+                .WithMany()
+                .HasForeignKey(x => x.VehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.Authority, x.Namespace, x.Value }).IsUnique();
+            b.HasIndex(x => new { x.VehicleId, x.Authority });
         });
     }
 }
