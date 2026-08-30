@@ -13,7 +13,9 @@ SOURCE_URL = "https://geoftp.ibge.gov.br/organizacao_do_territorio/estrutura_ter
 EXPECTED_SOURCE_SHA256 = "d077a0e48c36cf18bcc96268b4a436200c014c6b8522c1a62d894acaf39dad27"
 MUNICIPALITY_MEMBER = "RELATORIO_DTB_BRASIL_2025_MUNICIPIOS.ods"
 EXPECTED_MEMBER_SHA256 = "a0606b9706c248138131511287e582a9293ba786096e0395192be36108d029fa"
+EXPECTED_CITY_LEVEL_ROW_COUNT = 5571
 EXPECTED_MUNICIPALITY_COUNT = 5569
+SPECIAL_CITY_LEVEL_CODES = {"2605459", "5300108"}
 CASES = Path("benchmarks/ibge-municipality-identity/cases-v1.json")
 OUTPUT = Path(os.environ.get("BPT_IBGE_MUNICIPALITY_OUTPUT", "artifacts/ibge-municipality-identity-baseline.json"))
 
@@ -67,7 +69,7 @@ def acquire():
     return payload
 
 
-def parse_municipalities(source_payload):
+def parse_city_level_rows(source_payload):
     with zipfile.ZipFile(BytesIO(source_payload)) as archive:
         member_payload = archive.read(MUNICIPALITY_MEMBER)
     member_sha = hashlib.sha256(member_payload).hexdigest()
@@ -77,7 +79,7 @@ def parse_municipalities(source_payload):
     header_index = next((i for i, row in enumerate(rows) if row[:9] == EXPECTED_HEADERS), None)
     require(header_index is not None, "Municipality headers not found")
 
-    municipalities = []
+    city_level_rows = []
     for row in rows[header_index + 1:]:
         if len(row) < 9:
             continue
@@ -86,20 +88,33 @@ def parse_municipalities(source_payload):
             continue
         state = UF_CODE_TO_ABBR.get(uf_numeric)
         require(state is not None, f"Unknown UF numeric code {uf_numeric}")
-        require(code.startswith(uf_numeric), f"Municipality code {code} does not start with UF {uf_numeric}")
-        municipalities.append({"city": city, "stateCode": state, "municipalityCode": code})
+        require(code.startswith(uf_numeric), f"City-level code {code} does not start with UF {uf_numeric}")
+        entity_kind = "SPECIAL_CITY_LEVEL_UNIT" if code in SPECIAL_CITY_LEVEL_CODES else "MUNICIPALITY"
+        city_level_rows.append({
+            "city": city,
+            "stateCode": state,
+            "municipalityCode": code,
+            "entityKind": entity_kind,
+        })
 
-    require(len(municipalities) == EXPECTED_MUNICIPALITY_COUNT,
-            f"Expected {EXPECTED_MUNICIPALITY_COUNT} municipalities, got {len(municipalities)}")
-    require(len({item['municipalityCode'] for item in municipalities}) == EXPECTED_MUNICIPALITY_COUNT,
-            "Municipality codes are not unique")
-    return municipalities, member_sha
+    require(len(city_level_rows) == EXPECTED_CITY_LEVEL_ROW_COUNT,
+            f"Expected {EXPECTED_CITY_LEVEL_ROW_COUNT} coded city-level rows, got {len(city_level_rows)}")
+    require(len({item['municipalityCode'] for item in city_level_rows}) == EXPECTED_CITY_LEVEL_ROW_COUNT,
+            "City-level codes are not unique")
+    municipality_count = sum(1 for item in city_level_rows if item["entityKind"] == "MUNICIPALITY")
+    special_count = sum(1 for item in city_level_rows if item["entityKind"] == "SPECIAL_CITY_LEVEL_UNIT")
+    require(municipality_count == EXPECTED_MUNICIPALITY_COUNT,
+            f"Expected {EXPECTED_MUNICIPALITY_COUNT} municipalities after special-unit separation, got {municipality_count}")
+    require(special_count == 2, f"Expected 2 special city-level units, got {special_count}")
+    require({item['municipalityCode'] for item in city_level_rows if item['entityKind'] == 'SPECIAL_CITY_LEVEL_UNIT'} == SPECIAL_CITY_LEVEL_CODES,
+            "Special city-level code set changed")
+    return city_level_rows, member_sha
 
 
-def evaluate(municipalities):
+def evaluate(city_level_rows):
     by_exact_key = defaultdict(list)
     by_city = defaultdict(list)
-    for item in municipalities:
+    for item in city_level_rows:
         by_exact_key[(item["city"], item["stateCode"])].append(item)
         by_city[item["city"]].append(item)
 
@@ -115,11 +130,14 @@ def evaluate(municipalities):
         candidates = by_exact_key.get((case["city"], case["stateCode"]), [])
         status = "UNMATCHED" if not candidates else ("EXACT" if len(candidates) == 1 else "AMBIGUOUS")
         code = candidates[0]["municipalityCode"] if len(candidates) == 1 else None
+        entity_kind = candidates[0]["entityKind"] if len(candidates) == 1 else None
         require(status == case["expectedStatus"], f"{case['id']}: expected {case['expectedStatus']}, got {status}")
         require(code == case["expectedMunicipalityCode"], f"{case['id']}: expected code {case['expectedMunicipalityCode']}, got {code}")
+        require(entity_kind == case["expectedEntityKind"], f"{case['id']}: expected kind {case['expectedEntityKind']}, got {entity_kind}")
         results.append({
             "id": case["id"], "city": case["city"], "stateCode": case["stateCode"],
-            "status": status, "municipalityCode": code, "candidateCount": len(candidates),
+            "status": status, "municipalityCode": code, "entityKind": entity_kind,
+            "candidateCount": len(candidates),
         })
 
     cross_uf_reused_names = sum(1 for items in by_city.values() if len({x["stateCode"] for x in items}) > 1)
@@ -128,12 +146,14 @@ def evaluate(municipalities):
 
 def main():
     source_payload = acquire()
-    municipalities, member_sha = parse_municipalities(source_payload)
-    fixture, results, duplicate_exact_keys, cross_uf_reused_names = evaluate(municipalities)
+    city_level_rows, member_sha = parse_city_level_rows(source_payload)
+    fixture, results, duplicate_exact_keys, cross_uf_reused_names = evaluate(city_level_rows)
 
     exact = sum(1 for result in results if result["status"] == "EXACT")
     unmatched = sum(1 for result in results if result["status"] == "UNMATCHED")
     ambiguous = sum(1 for result in results if result["status"] == "AMBIGUOUS")
+    municipality_count = sum(1 for item in city_level_rows if item["entityKind"] == "MUNICIPALITY")
+    special_rows = [item for item in city_level_rows if item["entityKind"] == "SPECIAL_CITY_LEVEL_UNIT"]
     output = {
         "schema": "bpt2.ibge-municipality-identity-baseline.v1",
         "source": {
@@ -142,8 +162,10 @@ def main():
             "municipalityMember": MUNICIPALITY_MEMBER, "municipalityMemberSha256": member_sha,
         },
         "authority": {
-            "municipalityCount": len(municipalities),
-            "uniqueMunicipalityCodeCount": len({x["municipalityCode"] for x in municipalities}),
+            "codedCityLevelRowCount": len(city_level_rows),
+            "municipalityCount": municipality_count,
+            "specialCityLevelUnits": special_rows,
+            "uniqueCodeCount": len({x["municipalityCode"] for x in city_level_rows}),
             "duplicateExactCityUfKeys": duplicate_exact_keys,
             "cityNamesReusedAcrossMultipleUfs": cross_uf_reused_names,
         },
@@ -153,6 +175,7 @@ def main():
         "decision": {
             "municipalityIdentityAuthority": "IBGE_DTB_2025_PINNED",
             "exactCityUfProjection": "PROVED_BOUNDED",
+            "specialCityLevelUnits": "PRESERVE_EXPLICITLY_DO_NOT_MISCLASSIFY_AS_ORDINARY_MUNICIPALITY",
             "heuristicNormalization": "NOT_AUTHORIZED",
             "trueListingRadius": "STILL_BLOCKED_ON_LOCATION_POINT_AUTHORITY_AND_PRIVACY",
             "centroidRadius": "NOT_PROVED_BY_THIS_BENCHMARK",
@@ -161,7 +184,9 @@ def main():
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"IBGE_MUNICIPALITIES={len(municipalities)}")
+    print(f"IBGE_CODED_CITY_LEVEL_ROWS={len(city_level_rows)}")
+    print(f"IBGE_MUNICIPALITIES={municipality_count}")
+    print(f"IBGE_SPECIAL_CITY_LEVEL_UNITS={len(special_rows)}")
     print(f"IBGE_CROSS_UF_REUSED_NAMES={cross_uf_reused_names}")
     print(f"BPT_FIXTURE_EXACT={exact}")
     print(f"BPT_FIXTURE_UNMATCHED={unmatched}")
