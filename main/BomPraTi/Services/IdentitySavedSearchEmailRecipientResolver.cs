@@ -23,7 +23,10 @@ public sealed class IdentitySavedSearchEmailRecipientResolver : ISavedSearchEmai
             .AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
 
-        if (user is null || !user.EmailConfirmed || string.IsNullOrWhiteSpace(user.Email))
+        if (user is null
+            || !user.IsActive
+            || !user.EmailConfirmed
+            || string.IsNullOrWhiteSpace(user.Email))
         {
             return null;
         }
