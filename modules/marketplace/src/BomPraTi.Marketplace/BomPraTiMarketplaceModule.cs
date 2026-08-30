@@ -3,7 +3,9 @@ using BomPraTi.Media.Contracts;
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Sellers.Contracts;
+using BomPraTi.Marketplace.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Volo.Abp.Application;
 using Volo.Abp.Domain;
 using Volo.Abp.EntityFrameworkCore;
@@ -30,5 +32,12 @@ public sealed class BomPraTiMarketplaceModule : AbpModule
         });
 
         Configure<AbpDbContextOptions>(options => options.UseNpgsql());
+        context.Services.Configure<SavedSearchAlertRunnerOptions>(options =>
+        {
+            options.Enabled = true;
+            options.IdleDelay = TimeSpan.FromSeconds(15);
+            options.MissingListingRetryDelay = TimeSpan.FromMinutes(5);
+        });
+        context.Services.AddHostedService<SavedSearchAlertRunnerBackgroundService>();
     }
 }

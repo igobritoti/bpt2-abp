@@ -6,6 +6,8 @@ public sealed class SavedSearchAlertDetectionRequest : AggregateRoot<Guid>
 {
     public Guid ListingId { get; private set; }
     public DateTime EnqueuedAtUtc { get; private set; }
+    public DateTime? LastAttemptAtUtc { get; private set; }
+    public DateTime? NextAttemptAtUtc { get; private set; }
     public DateTime? ProcessedAtUtc { get; private set; }
 
     private SavedSearchAlertDetectionRequest() { }
@@ -19,5 +21,13 @@ public sealed class SavedSearchAlertDetectionRequest : AggregateRoot<Guid>
     public void MarkProcessed(DateTime processedAtUtc)
     {
         ProcessedAtUtc ??= DateTime.SpecifyKind(processedAtUtc, DateTimeKind.Utc);
+        NextAttemptAtUtc = null;
+    }
+
+    public void ScheduleRetry(DateTime nextAttemptAtUtc)
+    {
+        var scheduledAtUtc = DateTime.SpecifyKind(nextAttemptAtUtc, DateTimeKind.Utc);
+        LastAttemptAtUtc = scheduledAtUtc;
+        NextAttemptAtUtc = scheduledAtUtc;
     }
 }

@@ -39,6 +39,8 @@ await using (var verify = new MarketplaceDbContext(options))
         .AsNoTracking()
         .SingleAsync(x => x.ListingId == listingId);
     Require(!request.ProcessedAtUtc.HasValue, "missing public Listing must preserve the current pending request behavior");
+    Require(request.NextAttemptAtUtc.HasValue, "missing public Listing must schedule the next retry");
+    Require(request.NextAttemptAtUtc.Value > enqueuedAtUtc, "retry must be deferred after the original enqueue time");
 }
 
 await using (var afterReturnDb = new MarketplaceDbContext(options))
