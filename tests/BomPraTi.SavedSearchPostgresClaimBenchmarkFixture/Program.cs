@@ -156,11 +156,13 @@ static async Task SeedRequestsAsync(
     IEnumerable<(Guid Id, Guid ListingId, DateTime EnqueuedAtUtc)> requests)
 {
     await using var db = NewContext(options);
+    var extraProperties = "{}";
     foreach (var request in requests)
     {
+        var concurrencyStamp = Guid.NewGuid().ToString("N");
         var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO "MarketplaceSavedSearchAlertDetectionRequests" ("Id", "ListingId", "EnqueuedAtUtc", "ProcessedAtUtc", "ExtraProperties", "ConcurrencyStamp")
-            VALUES ({request.Id}, {request.ListingId}, {request.EnqueuedAtUtc}, NULL, '{{}}', {Guid.NewGuid().ToString("N")})
+            VALUES ({request.Id}, {request.ListingId}, {request.EnqueuedAtUtc}, NULL, {extraProperties}, {concurrencyStamp})
             """);
         Require(affected == 1, "seed request insert failed");
     }
@@ -222,11 +224,13 @@ static async Task<string[]> RunConcurrentEnqueueRaceAsync(
     {
         await gate.Task;
         await using var db = NewContext(options);
+        var extraProperties = "{}";
+        var concurrencyStamp = Guid.NewGuid().ToString("N");
         try
         {
             var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
                 INSERT INTO "MarketplaceSavedSearchAlertDetectionRequests" ("Id", "ListingId", "EnqueuedAtUtc", "ProcessedAtUtc", "ExtraProperties", "ConcurrencyStamp")
-                VALUES ({id}, {listingId}, {enqueuedAtUtc}, NULL, '{{}}', {Guid.NewGuid().ToString("N")})
+                VALUES ({id}, {listingId}, {enqueuedAtUtc}, NULL, {extraProperties}, {concurrencyStamp})
                 """);
             return affected == 1 ? "INSERTED" : "UNEXPECTED";
         }
