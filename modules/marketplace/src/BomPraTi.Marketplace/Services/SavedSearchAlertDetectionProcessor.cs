@@ -11,6 +11,8 @@ namespace BomPraTi.Marketplace.Services;
 
 public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
 {
+    private const string DetectionSavepoint = "saved_search_detection_attempt";
+
     private readonly MarketplaceDbContext _dbContext;
     private readonly IPublicListingQuery _publicListings;
     private readonly SavedSearchAlertRunnerOptions _options;
@@ -31,6 +33,9 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
             ? await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
             : null;
 
+        var transaction = _dbContext.Database.CurrentTransaction
+            ?? throw new InvalidOperationException("Saved Search detection requires an active database transaction.");
+
         var request = await _dbContext.SavedSearchAlertDetectionRequests
             .FromSqlInterpolated($"""
                 SELECT *
@@ -46,6 +51,7 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
         }
 
         var attemptedAtUtc = DateTime.UtcNow;
+        await transaction.CreateSavepointAsync(DetectionSavepoint, cancellationToken);
         request.MarkAttempted(attemptedAtUtc);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -56,6 +62,7 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
             {
                 request.ScheduleRetry(attemptedAtUtc, attemptedAtUtc.Add(_options.MissingListingRetryDelay));
                 await _dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.ReleaseSavepointAsync(DetectionSavepoint, cancellationToken);
                 await CommitLocalTransactionAsync(localTransaction, cancellationToken);
                 return 0;
             }
@@ -98,6 +105,7 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
 
             request.MarkProcessed(processedAtUtc);
             await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.ReleaseSavepointAsync(DetectionSavepoint, cancellationToken);
             await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return added;
         }
@@ -105,14 +113,16 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
         {
             if (localTransaction is not null)
             {
-                await localTransaction.RollbackAsync(cancellationToken);
+                await localTransaction.RollbackAsync(CancellationToken.None);
             }
 
             throw;
         }
         catch (Exception)
         {
+            await transaction.RollbackToSavepointAsync(DetectionSavepoint, CancellationToken.None);
             _dbContext.ChangeTracker.Clear();
+
             var nextAttemptAtUtc = attemptedAtUtc.Add(_options.MissingListingRetryDelay);
             await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
                 UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
@@ -120,6 +130,8 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
                     "NextAttemptAtUtc" = {nextAttemptAtUtc}
                 WHERE "Id" = {request.Id}
                 """, cancellationToken);
+
+            await transaction.ReleaseSavepointAsync(DetectionSavepoint, cancellationToken);
             await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return 0;
         }
