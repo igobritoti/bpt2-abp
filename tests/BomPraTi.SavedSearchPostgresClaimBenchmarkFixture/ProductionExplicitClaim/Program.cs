@@ -2,6 +2,7 @@ using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Volo.Abp.Application.Dtos;
 
@@ -21,7 +22,10 @@ var releasePublicQuery = new TaskCompletionSource(TaskCreationOptions.RunContinu
 var publicQuery = new BlockingMissingPublicListingQuery(listingId, enteredPublicQuery, releasePublicQuery);
 
 await using var serviceDb = new MarketplaceDbContext(options);
-var service = new SavedSearchAlertDetectionAppService(serviceDb, publicQuery);
+var service = new SavedSearchAlertDetectionProcessor(
+    serviceDb,
+    publicQuery,
+    Options.Create(new SavedSearchAlertRunnerOptions()));
 var evaluation = service.EvaluateAsync(listingId);
 await enteredPublicQuery.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
@@ -40,7 +44,8 @@ await using (var verify = new MarketplaceDbContext(options))
         .SingleAsync(x => x.ListingId == listingId);
     Require(!request.ProcessedAtUtc.HasValue, "missing public Listing must preserve the current pending request behavior");
     Require(request.NextAttemptAtUtc.HasValue, "missing public Listing must schedule the next retry");
-    Require(request.NextAttemptAtUtc.Value > enqueuedAtUtc, "retry must be deferred after the original enqueue time");
+    var nextAttemptAtUtc = request.NextAttemptAtUtc.GetValueOrDefault();
+    Require(nextAttemptAtUtc > enqueuedAtUtc, "retry must be deferred after the original enqueue time");
 }
 
 await using (var afterReturnDb = new MarketplaceDbContext(options))
