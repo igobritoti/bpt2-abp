@@ -21,6 +21,7 @@ on:
       - 'public-web/app/buscas-salvas/page.tsx'
       - 'public-web/lib/buyer-api.ts'
       - 'tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/**'
+      - 'tests/BomPraTi.ResendSavedSearchEmailProbeFixture/**'
       - 'docs/audits/2026-08-29-saved-search-email-delivery-contract-baseline.md'
       - 'docs/agent/CURRENT-WORK.md'
       - 'docs/generated/repository-facts.md'
@@ -51,6 +52,10 @@ jobs:
     env:
       BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
       BPT_SAVED_SEARCH_EMAIL_DELIVERY_OUTPUT: artifacts/saved-search-email-delivery-baseline.json
+      BPT_RESEND_API_KEY: ${{ secrets.BPT_RESEND_API_KEY }}
+      BPT_RESEND_FROM: ${{ vars.BPT_RESEND_FROM }}
+      BPT_RESEND_SAFE_RECIPIENT: ${{ secrets.BPT_RESEND_SAFE_RECIPIENT }}
+      BPT_PUBLIC_WEB_BASE_URL: ${{ vars.BPT_PUBLIC_WEB_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -58,10 +63,14 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Build email delivery benchmark
         run: dotnet build tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj --configuration Release
+      - name: Build bounded Resend probe
+        run: dotnet build tests/BomPraTi.ResendSavedSearchEmailProbeFixture/BomPraTi.ResendSavedSearchEmailProbeFixture.csproj --configuration Release
       - name: Apply fresh database
         run: bash scripts/fresh-migration-gate.sh
       - name: Execute provider-neutral email delivery baseline
         run: dotnet run --project tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj --configuration Release --no-build
+      - name: Execute bounded Resend probe when configured
+        run: dotnet run --project tests/BomPraTi.ResendSavedSearchEmailProbeFixture/BomPraTi.ResendSavedSearchEmailProbeFixture.csproj --configuration Release --no-build
       - name: Upload delivery evidence
         if: always()
         uses: actions/upload-artifact@v4
