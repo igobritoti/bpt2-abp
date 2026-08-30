@@ -11,6 +11,8 @@ on:
       - 'scripts/fresh-migration-gate.sh'
       - '.github/workflows/discovery-typo-scoring-benchmark.yml'
       - 'docs/generated/repository-facts.md'
+      - 'docs/audits/2026-08-30-discovery-typo-scoring-comparison.md'
+      - 'docs/agent/CURRENT-WORK.md'
   workflow_dispatch:
 
 permissions:
