@@ -40,12 +40,13 @@ Require(w1.Request?.ListingId == listingA, "W1 must claim oldest request A");
 await using var w2 = await ClaimAsync(options, "W2");
 Require(w2.Request?.ListingId == listingB, "W2 must skip locked A and claim B");
 Require(w1.Request!.Id != w2.Request!.Id, "concurrent owners must have disjoint request ids");
-observations.Add(new { test = "overlapping-workers", w1 = w1.Request.Id, w2 = w2.Request.Id, disjoint = true, w1.ClaimMs, w2.ClaimMs });
+observations.Add(new { test = "overlapping-workers", w1 = w1.Request.Id, w2 = w2.Request.Id, disjoint = true, w1ClaimMs = w1.ClaimMs, w2ClaimMs = w2.ClaimMs });
 
 await w1.RollbackAsync();
 await using var recoveryA = await ClaimAsync(options, "W3-recovery-A");
-Require(recoveryA.Request?.ListingId == listingA, "rolled-back A must become eligible again");
-recoveryA.Request.MarkProcessed(baseTime.AddMinutes(1));
+var recoveryRequest = recoveryA.Request ?? throw new InvalidOperationException("rolled-back A was not eligible again");
+Require(recoveryRequest.ListingId == listingA, "rolled-back A must become eligible again");
+recoveryRequest.MarkProcessed(baseTime.AddMinutes(1));
 await recoveryA.Context.SaveChangesAsync();
 await recoveryA.CommitAsync();
 observations.Add(new { test = "rollback-recovery", listingId = listingA, recovered = true, recoveryA.ClaimMs, recoveryA.TransactionMs });
@@ -61,10 +62,11 @@ Require(insertedFirstMatch, "first durable match write must insert");
 await crashAfterLedger.RollbackAsync();
 
 await using var replayC = await ClaimAsync(options, "W5-replay-C");
-Require(replayC.Request?.ListingId == listingC, "C must be recoverable after owner rollback");
+var replayRequest = replayC.Request ?? throw new InvalidOperationException("C was not recoverable after owner rollback");
+Require(replayRequest.ListingId == listingC, "C must be recoverable after owner rollback");
 var insertedReplayMatch = await EnsureMatchAsync(options, savedSearchId, listingC, baseTime.AddMinutes(4));
 Require(!insertedReplayMatch, "replay must observe durable ledger outcome instead of inserting duplicate");
-replayC.Request.MarkProcessed(baseTime.AddMinutes(4));
+replayRequest.MarkProcessed(baseTime.AddMinutes(4));
 await replayC.Context.SaveChangesAsync();
 await replayC.CommitAsync();
 await using (var verify = NewContext(options))
@@ -77,15 +79,17 @@ observations.Add(new { test = "crash-after-ledger-replay", listingId = listingC,
 await using var slowD = await ClaimAsync(options, "W6-slow-D");
 Require(slowD.Request?.ListingId == listingD, "slow owner must claim D");
 await using var independentE = await ClaimAsync(options, "W7-independent-E");
-Require(independentE.Request?.ListingId == listingE, "locked/slow D must not prevent E from progressing");
-independentE.Request.MarkProcessed(baseTime.AddMinutes(5));
+var independentRequest = independentE.Request ?? throw new InvalidOperationException("E did not progress while D was locked");
+Require(independentRequest.ListingId == listingE, "locked/slow D must not prevent E from progressing");
+independentRequest.MarkProcessed(baseTime.AddMinutes(5));
 await independentE.Context.SaveChangesAsync();
 await independentE.CommitAsync();
 await slowD.RollbackAsync();
 
 await using var restartD = await ClaimAsync(options, "W8-restart-D");
-Require(restartD.Request?.ListingId == listingD, "cancelled D must become eligible after restart-equivalent rollback");
-restartD.Request.MarkProcessed(baseTime.AddMinutes(6));
+var restartRequest = restartD.Request ?? throw new InvalidOperationException("cancelled D was not eligible after restart-equivalent rollback");
+Require(restartRequest.ListingId == listingD, "cancelled D must become eligible after restart-equivalent rollback");
+restartRequest.MarkProcessed(baseTime.AddMinutes(6));
 await restartD.Context.SaveChangesAsync();
 await restartD.CommitAsync();
 observations.Add(new { test = "independent-progress-and-cancellation", slow = listingD, progressed = listingE, recovered = listingD });
