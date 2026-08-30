@@ -51,17 +51,14 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
         }
 
         var attemptedAtUtc = DateTime.UtcNow;
-        await transaction.CreateSavepointAsync(DetectionSavepoint, cancellationToken);
-        request.MarkAttempted(attemptedAtUtc);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
         var enqueuedAtUtc = DateTime.SpecifyKind(request.EnqueuedAtUtc, DateTimeKind.Utc);
+        await transaction.CreateSavepointAsync(DetectionSavepoint, cancellationToken);
+
         try
         {
             if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
             {
-                request.ScheduleRetry(attemptedAtUtc, attemptedAtUtc.Add(_options.MissingListingRetryDelay));
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                await PersistRetryMetadataAsync(request.Id, attemptedAtUtc, cancellationToken);
                 await transaction.ReleaseSavepointAsync(DetectionSavepoint, cancellationToken);
                 await CommitLocalTransactionAsync(localTransaction, cancellationToken);
                 return 0;
@@ -122,19 +119,25 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
         {
             await transaction.RollbackToSavepointAsync(DetectionSavepoint, CancellationToken.None);
             _dbContext.ChangeTracker.Clear();
-
-            var nextAttemptAtUtc = attemptedAtUtc.Add(_options.MissingListingRetryDelay);
-            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
-                UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
-                SET "LastAttemptAtUtc" = {attemptedAtUtc},
-                    "NextAttemptAtUtc" = {nextAttemptAtUtc}
-                WHERE "Id" = {request.Id}
-                """, cancellationToken);
-
-            await transaction.ReleaseSavepointAsync(DetectionSavepoint, cancellationToken);
-            await CommitLocalTransactionAsync(localTransaction, cancellationToken);
+            await PersistRetryMetadataAsync(request.Id, attemptedAtUtc, CancellationToken.None);
+            await transaction.ReleaseSavepointAsync(DetectionSavepoint, CancellationToken.None);
+            await CommitLocalTransactionAsync(localTransaction, CancellationToken.None);
             return 0;
         }
+    }
+
+    private Task PersistRetryMetadataAsync(
+        Guid requestId,
+        DateTime attemptedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var nextAttemptAtUtc = attemptedAtUtc.Add(_options.MissingListingRetryDelay);
+        return _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
+            SET "LastAttemptAtUtc" = {attemptedAtUtc},
+                "NextAttemptAtUtc" = {nextAttemptAtUtc}
+            WHERE "Id" = {requestId}
+            """, cancellationToken);
     }
 
     private static Task CommitLocalTransactionAsync(
