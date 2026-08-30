@@ -1,0 +1,63 @@
+{
+  "schema": "bpt2.ibge-municipality-identity-cases.v1",
+  "authorityEdition": "IBGE DTB 2025",
+  "matchingRule": "exact Unicode City label + exact uppercase two-letter StateCode; no accent folding, case folding, synonym map, fuzzy match or centroid fallback",
+  "cases": [
+    {
+      "id": "control-ro-first-dtb-row",
+      "city": "Alta Floresta D'Oeste",
+      "stateCode": "RO",
+      "expectedStatus": "EXACT",
+      "expectedMunicipalityCode": "1100015"
+    },
+    {
+      "id": "control-rs-capital",
+      "city": "Porto Alegre",
+      "stateCode": "RS",
+      "expectedStatus": "EXACT",
+      "expectedMunicipalityCode": "4314902"
+    },
+    {
+      "id": "control-sp-capital-diacritic",
+      "city": "São Paulo",
+      "stateCode": "SP",
+      "expectedStatus": "EXACT",
+      "expectedMunicipalityCode": "3550308"
+    },
+    {
+      "id": "control-ba-capital",
+      "city": "Salvador",
+      "stateCode": "BA",
+      "expectedStatus": "EXACT",
+      "expectedMunicipalityCode": "2927408"
+    },
+    {
+      "id": "presentation-no-diacritic",
+      "city": "Sao Paulo",
+      "stateCode": "SP",
+      "expectedStatus": "UNMATCHED",
+      "expectedMunicipalityCode": null
+    },
+    {
+      "id": "presentation-case-variant",
+      "city": "porto alegre",
+      "stateCode": "RS",
+      "expectedStatus": "UNMATCHED",
+      "expectedMunicipalityCode": null
+    },
+    {
+      "id": "conflicting-uf",
+      "city": "Porto Alegre",
+      "stateCode": "SC",
+      "expectedStatus": "UNMATCHED",
+      "expectedMunicipalityCode": null
+    },
+    {
+      "id": "unknown-city",
+      "city": "Cidade Inexistente BPT2",
+      "stateCode": "RS",
+      "expectedStatus": "UNMATCHED",
+      "expectedMunicipalityCode": null
+    }
+  ]
+}
