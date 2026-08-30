@@ -1,0 +1,32 @@
+name: BPT2 IBGE Municipality Identity Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/observe-ibge-dtb-2025.py'
+      - '.github/workflows/ibge-municipality-identity-benchmark.yml'
+      - 'benchmarks/ibge-municipality-identity/**'
+      - 'docs/audits/**municipality**'
+      - 'docs/agent/CURRENT-WORK.md'
+
+permissions:
+  contents: read
+
+jobs:
+  ibge-municipality-identity:
+    runs-on: ubuntu-24.04
+    env:
+      BPT_IBGE_DTB_OBSERVATION: artifacts/ibge-dtb-2025-source-observation.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Observe exact official DTB 2025 bytes
+        run: python scripts/observe-ibge-dtb-2025.py
+      - name: Upload source-bound observation
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibge-dtb-2025-source-observation
+          path: artifacts/ibge-dtb-2025-source-observation.json
+          if-no-files-found: error
