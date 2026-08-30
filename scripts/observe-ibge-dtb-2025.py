@@ -19,14 +19,17 @@ RAW.write_bytes(payload)
 digest = hashlib.sha256(payload).hexdigest()
 with zipfile.ZipFile(RAW) as archive:
     members = sorted(
-        {
-            "name": info.filename,
-            "size": info.file_size,
-            "crc": f"{info.CRC:08x}",
-        }
-        for info in archive.infolist()
-        if not info.is_dir()
-    , key=lambda item: item["name"])
+        (
+            {
+                "name": info.filename,
+                "size": info.file_size,
+                "crc": f"{info.CRC:08x}",
+            }
+            for info in archive.infolist()
+            if not info.is_dir()
+        ),
+        key=lambda item: item["name"],
+    )
 
 observation = {
     "schema": "bpt2.ibge-dtb-source-observation.v1",
