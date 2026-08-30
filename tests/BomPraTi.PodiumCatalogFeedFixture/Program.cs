@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using BomPraTi.Catalog;
 using BomPraTi.Catalog.Contracts;
+using BomPraTi.Catalog.Data;
 using BomPraTi.Ingestion;
 using BomPraTi.Ingestion.Contracts;
 using BomPraTi.Ingestion.Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Autofac;
@@ -36,13 +38,24 @@ try
     var suffix = Guid.NewGuid().ToString("N")[..10];
     var canonicalId = $"veh_{Guid.NewGuid():N}";
     var redirectId = $"veh_{Guid.NewGuid():N}";
+    var fipeValueA = $"fipe-{suffix}-A";
+    var fipeValueB = $"fipe-{suffix}-B";
+    var supportingValue = $"supporting-{suffix}";
 
     PodiumCatalogImportResultDto first = null!;
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
         using var principal = ChangeAdmin(services);
         var feed = services.GetRequiredService<IPodiumCatalogFeedAppService>();
-        first = await feed.ImportAsync(CreateInput(canonicalId, redirectId, suffix));
+        first = await feed.ImportAsync(CreateInput(
+            canonicalId,
+            redirectId,
+            suffix,
+            externalIdentifiers:
+            [
+                ExternalIdentifier("fipe", fipeValueA),
+                ExternalIdentifier("supporting", supportingValue)
+            ]));
     });
 
     Require(!first.Replayed, "First Podium import was incorrectly marked as replay.");
@@ -61,6 +74,15 @@ try
         Require(vehicle.Powertrain == "combustion", "Initial powertrain was not projected.");
         Require(vehicle.Transmission == "automatic", "Initial transmission was not projected.");
         Require(vehicle.BodyStyle == "hatchback", "Initial body style was not projected.");
+
+        var identifiers = await services.GetRequiredService<CatalogDbContext>().VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == first.VehicleId && x.Authority == "podium7")
+            .OrderBy(x => x.Namespace)
+            .ThenBy(x => x.Value)
+            .ToListAsync();
+        Require(identifiers.Count == 2, "Initial Podium external identifier set was not persisted.");
+        Require(identifiers.Any(x => x.Namespace == "fipe" && x.Value == fipeValueA), "FIPE supporting identifier was not persisted.");
+        Require(identifiers.Any(x => x.Namespace == "supporting" && x.Value == supportingValue), "Second Podium external identifier was not persisted.");
     });
 
     PodiumCatalogImportResultDto replay = null!;
@@ -74,7 +96,13 @@ try
                 suffix,
                 powertrain: "  hybrid  ",
                 transmission: "CVT",
-                bodyStyle: "SUV"));
+                bodyStyle: "SUV",
+                externalIdentifiers:
+                [
+                    ExternalIdentifier("fipe", fipeValueB),
+                    ExternalIdentifier("supporting", supportingValue),
+                    ExternalIdentifier("supporting", supportingValue)
+                ]));
     });
 
     Require(replay.Replayed, "Replay was not detected.");
@@ -87,11 +115,35 @@ try
         Require(vehicle.Powertrain == "hybrid", "Replay did not trim/synchronize powertrain.");
         Require(vehicle.Transmission == "CVT", "Replay did not synchronize transmission.");
         Require(vehicle.BodyStyle == "SUV", "Replay did not synchronize body style.");
+
+        var identifiers = await services.GetRequiredService<CatalogDbContext>().VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == first.VehicleId && x.Authority == "podium7")
+            .ToListAsync();
+        Require(identifiers.Count == 2, "Replay did not deduplicate the current Podium identifier set.");
+        Require(identifiers.All(x => x.Value != fipeValueA), "A->B identifier correction left stale value A current.");
+        Require(identifiers.Any(x => x.Namespace == "fipe" && x.Value == fipeValueB), "A->B identifier correction did not persist value B.");
     });
+    Console.WriteLine("PODIUM_EXTERNAL_IDENTIFIER_REPLAY_AND_CORRECTION: PASS");
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
         using var principal = ChangeAdmin(services);
+        await services.GetRequiredService<ICanonicalVehicleAdminAppService>()
+            .SynchronizeExternalIdentifiersAsync(
+                first.VehicleId,
+                new SynchronizeCanonicalVehicleExternalIdentifiersInput
+                {
+                    Authority = "fixture-other-authority",
+                    Identifiers =
+                    [
+                        new CanonicalVehicleExternalIdentifierInput
+                        {
+                            Namespace = "fipe",
+                            Value = $"other-authority-{suffix}"
+                        }
+                    ]
+                });
+
         var cleared = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
             .ImportAsync(CreateInput(
                 canonicalId,
@@ -99,7 +151,8 @@ try
                 suffix,
                 powertrain: null,
                 transmission: "   ",
-                bodyStyle: null));
+                bodyStyle: null,
+                externalIdentifiers: Array.Empty<PodiumExternalIdentifierInput>()));
         Require(cleared.Replayed && cleared.VehicleId == first.VehicleId, "Null-clearing replay changed Vehicle identity.");
     });
 
@@ -110,19 +163,36 @@ try
         Require(vehicle.Powertrain is null, "Explicit null did not clear powertrain.");
         Require(vehicle.Transmission is null, "Blank producer value did not normalize to null.");
         Require(vehicle.BodyStyle is null, "Explicit null did not clear body style.");
+
+        var dbContext = services.GetRequiredService<CatalogDbContext>();
+        var podiumIdentifiers = await dbContext.VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == first.VehicleId && x.Authority == "podium7")
+            .ToListAsync();
+        Require(podiumIdentifiers.Count == 0, "Empty Podium current-state set did not clear Podium-owned identifiers.");
+        var otherAuthorityIdentifiers = await dbContext.VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == first.VehicleId && x.Authority == "fixture-other-authority")
+            .ToListAsync();
+        Require(otherAuthorityIdentifiers.Count == 1, "Podium clear deleted an identifier owned by another authority.");
     });
+    Console.WriteLine("PODIUM_EXTERNAL_IDENTIFIER_CLEAR_IS_AUTHORITY_SCOPED: PASS");
     Console.WriteLine("PODIUM_TECHNICAL_IDENTITY_SYNC_AND_CLEAR: PASS");
     Console.WriteLine("PODIUM_REPLAY_AND_REDIRECT: PASS");
 
     var oldCanonical = $"veh_{Guid.NewGuid():N}";
     var newCanonical = $"veh_{Guid.NewGuid():N}";
+    var historicalValueA = $"history-{suffix}-A";
+    var historicalValueB = $"history-{suffix}-B";
     PodiumCatalogImportResultDto historical = null!;
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {
         using var principal = ChangeAdmin(services);
         historical = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
-            .ImportAsync(CreateInput(oldCanonical, null, suffix + "h"));
+            .ImportAsync(CreateInput(
+                oldCanonical,
+                null,
+                suffix + "h",
+                externalIdentifiers: [ExternalIdentifier("fipe", historicalValueA)]));
     });
 
     PodiumCatalogImportResultDto redirected = null!;
@@ -130,7 +200,12 @@ try
     {
         using var principal = ChangeAdmin(services);
         redirected = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
-            .ImportAsync(CreateInput(newCanonical, oldCanonical, suffix + "changed-labels", bodyStyle: "sedan"));
+            .ImportAsync(CreateInput(
+                newCanonical,
+                oldCanonical,
+                suffix + "changed-labels",
+                bodyStyle: "sedan",
+                externalIdentifiers: [ExternalIdentifier("fipe", historicalValueB)]));
     });
 
     Require(redirected.VehicleId == historical.VehicleId, "Historical Podium redirect was rematched instead of preserving the existing Vehicle link.");
@@ -139,8 +214,63 @@ try
     {
         var vehicle = await services.GetRequiredService<IVehicleCatalogReader>().GetAsync(historical.VehicleId);
         Require(vehicle?.BodyStyle == "sedan", "Historical redirect did not synchronize technical identity on the existing Vehicle.");
+
+        var identifiers = await services.GetRequiredService<CatalogDbContext>().VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == historical.VehicleId && x.Authority == "podium7")
+            .ToListAsync();
+        Require(identifiers.Count == 1 && identifiers[0].Namespace == "fipe" && identifiers[0].Value == historicalValueB,
+            "Historical redirect did not synchronize external identifiers on the existing Vehicle.");
     });
     Console.WriteLine("PODIUM_HISTORICAL_ID_CONTINUITY: PASS");
+
+    var collisionValue = $"collision-{suffix}";
+    PodiumCatalogImportResultDto collisionOwner = null!;
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        using var principal = ChangeAdmin(services);
+        collisionOwner = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
+            .ImportAsync(CreateInput(
+                $"veh_{Guid.NewGuid():N}",
+                null,
+                suffix + "collision-owner",
+                externalIdentifiers: [ExternalIdentifier("fipe", collisionValue)]));
+    });
+
+    PodiumCatalogImportResultDto differentNamespace = null!;
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        using var principal = ChangeAdmin(services);
+        differentNamespace = await services.GetRequiredService<IPodiumCatalogFeedAppService>()
+            .ImportAsync(CreateInput(
+                $"veh_{Guid.NewGuid():N}",
+                null,
+                suffix + "other-namespace",
+                externalIdentifiers: [ExternalIdentifier("other-namespace", collisionValue)]));
+    });
+    Require(differentNamespace.VehicleId != collisionOwner.VehicleId, "Different namespace test unexpectedly reused Vehicle identity.");
+
+    await ExpectInvalidOperationAsync(
+        application.ServiceProvider,
+        CreateInput(
+            $"veh_{Guid.NewGuid():N}",
+            null,
+            suffix + "collision-rejected",
+            externalIdentifiers: [ExternalIdentifier("fipe", collisionValue)]),
+        "Same authority/namespace/value collision was accepted for a different Vehicle.");
+
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        var identifiers = await services.GetRequiredService<CatalogDbContext>().VehicleExternalIdentifiers
+            .Where(x => x.Authority == "podium7" && x.Value == collisionValue)
+            .ToListAsync();
+        Require(identifiers.Count == 2, "Namespace is not participating correctly in external identifier identity.");
+        Require(identifiers.Single(x => x.Namespace == "fipe").VehicleId == collisionOwner.VehicleId,
+            "Rejected collision changed the existing external identifier owner.");
+        Require(identifiers.Single(x => x.Namespace == "other-namespace").VehicleId == differentNamespace.VehicleId,
+            "Same value in a different namespace did not remain independently bindable.");
+    });
+    Console.WriteLine("PODIUM_EXTERNAL_IDENTIFIER_COLLISION_FAIL_CLOSED: PASS");
+    Console.WriteLine("PODIUM_EXTERNAL_IDENTIFIER_NAMESPACE_IS_PART_OF_KEY: PASS");
 
     await ExpectNotSupportedAsync(
         application.ServiceProvider,
@@ -175,7 +305,8 @@ static PodiumCatalogVehicleInput CreateInput(
     int? modelYearTo = 2025,
     string? powertrain = "combustion",
     string? transmission = "automatic",
-    string? bodyStyle = "hatchback")
+    string? bodyStyle = "hatchback",
+    IReadOnlyList<PodiumExternalIdentifierInput>? externalIdentifiers = null)
 {
     return new PodiumCatalogVehicleInput
     {
@@ -191,9 +322,22 @@ static PodiumCatalogVehicleInput CreateInput(
             Transmission = transmission,
             BodyStyle = bodyStyle,
             ModelYearFrom = modelYearFrom,
-            ModelYearTo = modelYearTo
+            ModelYearTo = modelYearTo,
+            ExternalIdentifiers = externalIdentifiers ??
+            [
+                ExternalIdentifier("fixture-default", $"default-{suffix}")
+            ]
         },
         RedirectsFrom = redirectId is null ? Array.Empty<string>() : new[] { redirectId }
+    };
+}
+
+static PodiumExternalIdentifierInput ExternalIdentifier(string @namespace, string value)
+{
+    return new PodiumExternalIdentifierInput
+    {
+        Namespace = @namespace,
+        Value = value
     };
 }
 
@@ -216,6 +360,28 @@ static async Task ExpectNotSupportedAsync(
         rejected = true;
     }
     catch (ArgumentException) when (input.Entity.Variant is null)
+    {
+        rejected = true;
+    }
+
+    Require(rejected, failureMessage);
+}
+
+static async Task ExpectInvalidOperationAsync(
+    IServiceProvider root,
+    PodiumCatalogVehicleInput input,
+    string failureMessage)
+{
+    var rejected = false;
+    try
+    {
+        await InNewUnitOfWorkAsync(root, async services =>
+        {
+            using var principal = ChangeAdmin(services);
+            await services.GetRequiredService<IPodiumCatalogFeedAppService>().ImportAsync(input);
+        });
+    }
+    catch (InvalidOperationException)
     {
         rejected = true;
     }
