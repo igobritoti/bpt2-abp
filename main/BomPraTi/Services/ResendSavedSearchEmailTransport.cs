@@ -3,21 +3,20 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BomPraTi.Marketplace.Services;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
+using Volo.Abp.DependencyInjection;
 
 namespace BomPraTi.Services;
 
-public sealed class ResendSavedSearchEmailTransport : ISavedSearchEmailTransport
+public sealed class ResendSavedSearchEmailTransport : ISavedSearchEmailTransport, ITransientDependency
 {
-    private readonly HttpClient _httpClient;
+    private static readonly HttpClient HttpClient = new();
     private readonly ResendSavedSearchEmailOptions _options;
 
-    public ResendSavedSearchEmailTransport(
-        HttpClient httpClient,
-        IOptions<ResendSavedSearchEmailOptions> options)
+    public ResendSavedSearchEmailTransport(IConfiguration configuration)
     {
-        _httpClient = httpClient;
-        _options = options.Value;
+        _options = new ResendSavedSearchEmailOptions();
+        configuration.GetSection("SavedSearchEmailDelivery:Resend").Bind(_options);
     }
 
     public async Task<SavedSearchEmailSendResult> SendAsync(
@@ -48,7 +47,7 @@ public sealed class ResendSavedSearchEmailTransport : ISavedSearchEmailTransport
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(_options.RequestTimeout);
-            using var response = await _httpClient.SendAsync(
+            using var response = await HttpClient.SendAsync(
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
                 timeout.Token);
