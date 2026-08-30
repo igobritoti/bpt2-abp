@@ -1,0 +1,139 @@
+name: BPT2 Concurrency Rewriter 166
+
+on:
+  push:
+    branches:
+      - "ci/scoped-concurrency-166"
+    paths:
+      - ".github/workflows/concurrency-rewriter-166.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  inventory-and-rewrite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "ci/scoped-concurrency-166"
+
+      - name: Inventory and rewrite validation workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.github/workflows')
+          self_name = 'concurrency-rewriter-166.yml'
+          files = sorted(
+              p for p in root.iterdir()
+              if p.is_file() and p.suffix in {'.yml', '.yaml'} and p.name != self_name
+          )
+          if len(files) != 26:
+              raise SystemExit(f'expected 26 retained workflows, found {len(files)}')
+
+          def trigger_inventory(lines):
+              for i, line in enumerate(lines):
+                  if line.startswith('on:'):
+                      inline = line[3:].strip()
+                      if inline:
+                          return inline
+                      events = []
+                      j = i + 1
+                      while j < len(lines):
+                          candidate = lines[j]
+                          if candidate and not candidate[0].isspace():
+                              break
+                          match = re.match(r'^  ([A-Za-z0-9_-]+):', candidate)
+                          if match:
+                              events.append(match.group(1))
+                          j += 1
+                      return ', '.join(events) if events else '(none parsed)'
+              return '(missing on)'
+
+          rows = []
+          protected = []
+          preexisting = []
+          missing_jobs = []
+          for path in files:
+              text = path.read_text(encoding='utf-8')
+              lines = text.splitlines()
+              existing = any(line.startswith('concurrency:') for line in lines)
+              has_environment = any(re.match(r'^\s+environment:', line) for line in lines)
+              has_deployment = any(re.match(r'^\s+deployment:', line) for line in lines)
+              has_jobs = any(line == 'jobs:' for line in lines)
+              rows.append((path.name, trigger_inventory(lines), existing, has_environment, has_deployment))
+              if existing:
+                  preexisting.append(path.name)
+              if has_environment or has_deployment:
+                  protected.append(path.name)
+              if not has_jobs:
+                  missing_jobs.append(path.name)
+
+          if preexisting:
+              raise SystemExit('pre-existing concurrency requires manual review: ' + ', '.join(preexisting))
+          if protected:
+              raise SystemExit('deployment/environment semantics require manual review: ' + ', '.join(protected))
+          if missing_jobs:
+              raise SystemExit('workflow missing top-level jobs: ' + ', '.join(missing_jobs))
+
+          audit = [
+              '# CI concurrency inventory — 2026-08-30',
+              '',
+              'Pre-rewrite inventory from BPT2 `main` `e120bdca2e4d759dee6878da9a65e4c7516ce713`.',
+              '',
+              '- retained workflow files: **26**',
+              '- pre-existing workflow-level concurrency blocks: **0**',
+              '- workflows with `environment:` or `deployment:` semantics: **0**',
+              '- policy: PR runs share a workflow-scoped head-ref group; non-PR events fall back to unique `github.run_id`.',
+              '',
+              '| Workflow | Trigger inventory | Existing concurrency | Environment | Deployment |',
+              '| --- | --- | --- | --- | --- |',
+          ]
+          for name, triggers, existing, env, dep in rows:
+              audit.append(f'| `{name}` | `{triggers}` | {str(existing).lower()} | {str(env).lower()} | {str(dep).lower()} |')
+          audit += [
+              '',
+              'Target block for every retained workflow:',
+              '',
+              '```yaml',
+              'concurrency:',
+              '  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}',
+              '  cancel-in-progress: true',
+              '```',
+              '',
+              'The `github.workflow` prefix prevents cross-workflow cancellation. The `github.head_ref || github.run_id` fallback makes pull-request synchronizes share a group while push/non-PR runs remain unique.',
+          ]
+          audit_path = Path('docs/audits/2026-08-30-ci-concurrency-inventory.md')
+          audit_path.parent.mkdir(parents=True, exist_ok=True)
+          audit_path.write_text('\n'.join(audit) + '\n', encoding='utf-8')
+
+          group_line = '  group: $' + '{{ github.workflow }}-$' + '{{ github.head_ref || github.run_id }}'
+          block = ['concurrency:', group_line, '  cancel-in-progress: true', '']
+          for path in files:
+              lines = path.read_text(encoding='utf-8').splitlines()
+              jobs_index = lines.index('jobs:')
+              rewritten = lines[:jobs_index] + block + lines[jobs_index:]
+              path.write_text('\n'.join(rewritten) + '\n', encoding='utf-8')
+
+          print(f'WORKFLOW_COUNT={len(files)}')
+          print('PREEXISTING_CONCURRENCY=0')
+          print('DEPLOYMENT_ENVIRONMENT_WORKFLOWS=0')
+          print('REWRITE_READY=YES')
+          PY
+          git diff --check
+          git diff --stat
+
+      - name: Commit rewritten workflows and inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows docs/audits/2026-08-30-ci-concurrency-inventory.md
+          git commit -m "ci: scope concurrency to workflow and PR head"
+          git push origin HEAD:ci/scoped-concurrency-166
