@@ -49,11 +49,15 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
             return 0;
         }
 
+        // The domain contract defines EnqueuedAtUtc as UTC. Raw SQL materialization can
+        // return the same database ticks with Kind=Unspecified, so restore only the Kind
+        // metadata before Npgsql uses the value as a timestamptz query parameter.
+        var enqueuedAtUtc = DateTime.SpecifyKind(request.EnqueuedAtUtc, DateTimeKind.Utc);
         var savedSearches = await _dbContext.SavedSearches
             .AsNoTracking()
             .Where(x => x.AlertEnabled
                 && x.AlertEnabledAtUtc.HasValue
-                && x.AlertEnabledAtUtc.Value <= request.EnqueuedAtUtc)
+                && x.AlertEnabledAtUtc.Value <= enqueuedAtUtc)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
