@@ -16,7 +16,9 @@ Advanced Discovery chegou até a fronteira válida sem promover fuzzy em produç
 
 Issues #113–#116 continuam `SKIP` para execução autônoma enquanto faltarem as autoridades externas/humanas documentadas.
 
-Repo governance encontrou um blocker separado em #160: `main` está `protected=false` e não há repository rulesets. O conector atual permite apenas leitura dessas configurações. TD-001 registra a dívida; não transformar workflows path-filtered em required contexts cegamente.
+Repo governance mantém #160 bloqueada em autoridade administrativa: `main` está `protected=false` e não há repository rulesets. TD-001 registra a dívida; não transformar workflows path-filtered em required contexts cegamente.
+
+CI throughput encontrou e reproduziu #166: backlog de runs superseded no mesmo PR. PR #172 aplica concorrência escopada por workflow + PR aos 26 workflows atuais, mantém eventos não-PR únicos por `github.run_id`, cancela somente `pull_request` superseded e adiciona guard no Harness. O experimento de três synchronize reproduziu cancelamento dos heads antigos; merge continua condicionado ao head documental final totalmente verde.
 
 ## #154 merged evidence
 
@@ -73,6 +75,7 @@ Reabrir scale/index somente com catálogo versionado materialmente mais amplo e 
 - #154 metamorphic robustness = concluída sem vencedor trigram.
 - #157 scale/index = `SKIP` por cardinalidade independente insuficiente.
 - #160 main protection = gap confirmado; TD-001 registra a dívida administrativa.
+- #166 workflow concurrency = contrato repo-internal implementado no PR #172; três synchronize provaram cancelamento de runs superseded, sem autorizar qualquer mudança de produto.
 
 ## Next valid work
 
@@ -85,6 +88,7 @@ Não criar requisito para preencher a fila. Próximo slice técnico só é váli
 - discovery baseline: [`../audits/2026-08-29-advanced-discovery-baseline.md`](../audits/2026-08-29-advanced-discovery-baseline.md);
 - typo scoring: [`../audits/2026-08-30-discovery-typo-scoring-comparison.md`](../audits/2026-08-30-discovery-typo-scoring-comparison.md);
 - metamorphic: [`../audits/2026-08-30-discovery-metamorphic-typo-robustness.md`](../audits/2026-08-30-discovery-metamorphic-typo-robustness.md);
+- workflow concurrency: [`../audits/2026-08-30-workflow-concurrency-probe.md`](../audits/2026-08-30-workflow-concurrency-probe.md);
 - generated facts: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 
 ## Update rule
