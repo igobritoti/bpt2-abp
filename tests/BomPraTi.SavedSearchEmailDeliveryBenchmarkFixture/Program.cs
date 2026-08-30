@@ -46,10 +46,13 @@ async Task<SavedSearchAlertDeliveryIntent> LoadAsync(Guid id)
 
 async Task SetStatusAsync(Guid id, SavedSearchAlertDeliveryStatus status, DateTime? attemptedAtUtc)
 {
+    var normalizedAttemptedAtUtc = attemptedAtUtc is null
+        ? (DateTime?)null
+        : DateTime.SpecifyKind(attemptedAtUtc.Value, DateTimeKind.Utc);
     await using var db = NewContext(options);
     await db.Database.ExecuteSqlInterpolatedAsync($"""
         UPDATE "MarketplaceSavedSearchAlertDeliveryIntents"
-        SET "Status" = {status.ToString()}, "LastAttemptAtUtc" = {attemptedAtUtc}
+        SET "Status" = {status.ToString()}, "LastAttemptAtUtc" = {normalizedAttemptedAtUtc}
         WHERE "Id" = {id}
         """);
 }
