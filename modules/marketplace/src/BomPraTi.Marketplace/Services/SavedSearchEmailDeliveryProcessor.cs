@@ -1,4 +1,6 @@
 using System.Data;
+using System.Security.Cryptography;
+using System.Text;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +79,12 @@ public sealed class SavedSearchEmailDeliveryProcessor : ITransientDependency
             return true;
         }
 
+        if (!await BindRecipientAsync(intent.Id, recipient.Email, cancellationToken))
+        {
+            await SuppressAsync(intent.Id, cancellationToken);
+            return true;
+        }
+
         // Authorization and Saved Search existence are checked again immediately before external I/O.
         eligibility = await ResolveEligibilityAsync(intent.SavedSearchAlertMatchId, cancellationToken);
         if (eligibility is null)
@@ -142,6 +150,19 @@ public sealed class SavedSearchEmailDeliveryProcessor : ITransientDependency
                     && savedSearch.EmailEachNewMatchEnabled
                 select new DeliveryEligibility(savedSearch.Id, match.ListingId))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<bool> BindRecipientAsync(
+        Guid intentId,
+        string email,
+        CancellationToken cancellationToken)
+    {
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())));
+        var current = await LoadForOutcomeAsync(intentId, cancellationToken);
+        if (IsTerminal(current.Status)) return false;
+        if (!current.BindRecipientFingerprint(fingerprint)) return false;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     private async Task SuppressAsync(Guid intentId, CancellationToken cancellationToken)
