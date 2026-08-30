@@ -93,6 +93,17 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
         return ToDto(savedSearch);
     }
 
+    public async Task<SavedSearchDto> SetEmailEachNewMatchEnabledAsync(
+        Guid id,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var savedSearch = await GetOwnedAsync(id, cancellationToken);
+        savedSearch.SetEmailEachNewMatchEnabled(enabled, DateTime.UtcNow);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(savedSearch);
+    }
+
     public async Task<IReadOnlyList<SavedSearchAlertMatchDto>> GetMatchesAsync(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -188,5 +199,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             item.Query,
             item.AlertEnabled,
             item.AlertEnabledAtUtc,
+            item.EmailEachNewMatchEnabled,
+            item.EmailEachNewMatchEnabledAtUtc,
             item.CreatedAtUtc);
 }
