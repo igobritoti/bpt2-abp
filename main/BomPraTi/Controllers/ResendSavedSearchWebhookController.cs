@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using BomPraTi.Marketplace.Services;
@@ -15,7 +13,6 @@ namespace BomPraTi.Controllers;
 [Route("api/webhooks/resend/saved-search-email")]
 public sealed class ResendSavedSearchWebhookController : ControllerBase
 {
-    private static readonly TimeSpan SignatureTolerance = TimeSpan.FromMinutes(5);
     private readonly SavedSearchEmailProviderEventProcessor _processor;
     private readonly IConfiguration _configuration;
 
@@ -42,7 +39,7 @@ public sealed class ResendSavedSearchWebhookController : ControllerBase
         var timestamp = Request.Headers["svix-timestamp"].ToString();
         var signature = Request.Headers["svix-signature"].ToString();
 
-        if (!VerifySvix(secret, eventId, timestamp, signature, rawBody, DateTimeOffset.UtcNow))
+        if (!ResendSvixWebhookVerifier.Verify(secret, eventId, timestamp, signature, rawBody, DateTimeOffset.UtcNow))
         {
             return Unauthorized();
         }
@@ -78,78 +75,6 @@ public sealed class ResendSavedSearchWebhookController : ControllerBase
             payload.Type,
             cancellationToken);
         return Ok();
-    }
-
-    internal static bool VerifySvix(
-        string secret,
-        string eventId,
-        string timestamp,
-        string signatureHeader,
-        string rawBody,
-        DateTimeOffset now)
-    {
-        if (string.IsNullOrWhiteSpace(eventId)
-            || string.IsNullOrWhiteSpace(timestamp)
-            || string.IsNullOrWhiteSpace(signatureHeader)
-            || !secret.StartsWith("whsec_", StringComparison.Ordinal)
-            || !long.TryParse(timestamp, NumberStyles.None, CultureInfo.InvariantCulture, out var unixTimestamp))
-        {
-            return false;
-        }
-
-        DateTimeOffset signedAt;
-        try
-        {
-            signedAt = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return false;
-        }
-
-        if ((now - signedAt).Duration() > SignatureTolerance)
-        {
-            return false;
-        }
-
-        byte[] key;
-        try
-        {
-            key = Convert.FromBase64String(secret["whsec_".Length..]);
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
-
-        var signedContent = Encoding.UTF8.GetBytes($"{eventId}.{timestamp}.{rawBody}");
-        var expected = HMACSHA256.HashData(key, signedContent);
-
-        foreach (var token in signatureHeader.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            var separator = token.IndexOf(',');
-            if (separator <= 0 || !string.Equals(token[..separator], "v1", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            byte[] actual;
-            try
-            {
-                actual = Convert.FromBase64String(token[(separator + 1)..]);
-            }
-            catch (FormatException)
-            {
-                continue;
-            }
-
-            if (actual.Length == expected.Length && CryptographicOperations.FixedTimeEquals(actual, expected))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private sealed record ResendWebhookPayload(string? Type, ResendWebhookData? Data);
