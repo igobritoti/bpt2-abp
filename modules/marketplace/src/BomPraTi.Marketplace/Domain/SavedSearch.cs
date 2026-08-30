@@ -22,6 +22,8 @@ public sealed class SavedSearch : AggregateRoot<Guid>
     public string? Query { get; private set; }
     public bool AlertEnabled { get; private set; }
     public DateTime? AlertEnabledAtUtc { get; private set; }
+    public bool EmailEachNewMatchEnabled { get; private set; }
+    public DateTime? EmailEachNewMatchEnabledAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     private SavedSearch() { }
@@ -63,6 +65,7 @@ public sealed class SavedSearch : AggregateRoot<Guid>
         MaxMileageKm = maxMileageKm;
         Query = query;
         AlertEnabled = false;
+        EmailEachNewMatchEnabled = false;
         CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
     }
 
@@ -87,5 +90,28 @@ public sealed class SavedSearch : AggregateRoot<Guid>
 
         AlertEnabled = false;
         AlertEnabledAtUtc = null;
+    }
+
+    public void SetEmailEachNewMatchEnabled(bool enabled, DateTime changedAtUtc)
+    {
+        if (enabled)
+        {
+            if (EmailEachNewMatchEnabled && EmailEachNewMatchEnabledAtUtc.HasValue)
+            {
+                return;
+            }
+
+            EmailEachNewMatchEnabled = true;
+            EmailEachNewMatchEnabledAtUtc = DateTime.SpecifyKind(changedAtUtc, DateTimeKind.Utc);
+            return;
+        }
+
+        if (!EmailEachNewMatchEnabled && EmailEachNewMatchEnabledAtUtc is null)
+        {
+            return;
+        }
+
+        EmailEachNewMatchEnabled = false;
+        EmailEachNewMatchEnabledAtUtc = null;
     }
 }
