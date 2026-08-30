@@ -89,6 +89,25 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
     {
         var savedSearch = await GetOwnedAsync(id, cancellationToken);
         savedSearch.SetAlertEnabled(enabled, DateTime.UtcNow);
+        if (!enabled)
+        {
+            await SuppressUndispatchedEmailIntentsAsync(id, cancellationToken);
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(savedSearch);
+    }
+
+    public async Task<SavedSearchDto> SetEmailEachNewMatchEnabledAsync(
+        Guid id,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var savedSearch = await GetOwnedAsync(id, cancellationToken);
+        savedSearch.SetEmailEachNewMatchEnabled(enabled, DateTime.UtcNow);
+        if (!enabled)
+        {
+            await SuppressUndispatchedEmailIntentsAsync(id, cancellationToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(savedSearch);
     }
@@ -110,12 +129,39 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var savedSearch = await GetOwnedAsync(id, cancellationToken);
+        await SuppressUndispatchedEmailIntentsAsync(id, cancellationToken);
         var matches = await _dbContext.SavedSearchAlertMatches
             .Where(x => x.SavedSearchId == id)
             .ToListAsync(cancellationToken);
         _dbContext.SavedSearchAlertMatches.RemoveRange(matches);
         _dbContext.SavedSearches.Remove(savedSearch);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SuppressUndispatchedEmailIntentsAsync(
+        Guid savedSearchId,
+        CancellationToken cancellationToken)
+    {
+        var matchIds = await _dbContext.SavedSearchAlertMatches
+            .AsNoTracking()
+            .Where(x => x.SavedSearchId == savedSearchId)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+        if (matchIds.Count == 0) return;
+
+        var intents = await _dbContext.SavedSearchAlertDeliveryIntents
+            .Where(x => matchIds.Contains(x.SavedSearchAlertMatchId)
+                && x.Channel == "email"
+                && x.Status != SavedSearchAlertDeliveryStatus.Accepted
+                && x.Status != SavedSearchAlertDeliveryStatus.Delivered
+                && x.Status != SavedSearchAlertDeliveryStatus.PermanentFailed
+                && x.Status != SavedSearchAlertDeliveryStatus.Suppressed)
+            .ToListAsync(cancellationToken);
+
+        foreach (var intent in intents)
+        {
+            intent.MarkSuppressed();
+        }
     }
 
     private async Task<SavedSearch> GetOwnedAsync(Guid id, CancellationToken cancellationToken)
@@ -188,5 +234,7 @@ public class SavedSearchAppService : ISavedSearchAppService, ITransientDependenc
             item.Query,
             item.AlertEnabled,
             item.AlertEnabledAtUtc,
+            item.EmailEachNewMatchEnabled,
+            item.EmailEachNewMatchEnabledAtUtc,
             item.CreatedAtUtc);
 }

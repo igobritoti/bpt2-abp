@@ -7,6 +7,7 @@ import {
   deleteSavedSearch,
   getMySavedSearches,
   getSavedSearchMatches,
+  setSavedSearchEmailEachNewMatch,
   setSavedSearchMonitoring,
   type SavedSearch,
   type SavedSearchAlertMatch,
@@ -93,6 +94,24 @@ export default function SavedSearchesPage() {
       setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o monitoramento.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function toggleEmailEachNewMatch(item: SavedSearch) {
+    if (!user) return;
+    setError(null);
+    setUpdatingId(item.id);
+    try {
+      const updated = await setSavedSearchEmailEachNewMatch(
+        user.access_token,
+        item.id,
+        !item.emailEachNewMatchEnabled,
+      );
+      setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível atualizar os emails desta busca.");
     } finally {
       setUpdatingId(null);
     }
@@ -211,6 +230,23 @@ export default function SavedSearchesPage() {
                           : item.alertEnabled
                             ? "Desativar monitoramento"
                             : "Monitorar novas ofertas"}
+                      </button>
+                      <p aria-live="polite">
+                        {item.emailEachNewMatchEnabled
+                          ? "Email ativo: um email para cada nova oferta detectada nesta busca."
+                          : "Emails por nova oferta desligados."}
+                      </p>
+                      <button
+                        className="secondary-action"
+                        disabled={updatingId === item.id}
+                        type="button"
+                        onClick={() => void toggleEmailEachNewMatch(item)}
+                      >
+                        {updatingId === item.id
+                          ? "Atualizando…"
+                          : item.emailEachNewMatchEnabled
+                            ? "Parar emails por nova oferta"
+                            : "Receber um email por nova oferta"}
                       </button>
                       <button
                         aria-expanded={matchesOpen}

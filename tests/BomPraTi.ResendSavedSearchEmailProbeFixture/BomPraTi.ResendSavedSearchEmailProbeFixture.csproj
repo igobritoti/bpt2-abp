@@ -7,7 +7,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj" />
     <ProjectReference Include="../../main/BomPraTi/BomPraTi.csproj" />
   </ItemGroup>
 </Project>

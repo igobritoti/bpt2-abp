@@ -93,9 +93,25 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
                     continue;
                 }
 
+                var matchId = Guid.NewGuid();
                 await _dbContext.SavedSearchAlertMatches.AddAsync(
-                    new SavedSearchAlertMatch(Guid.NewGuid(), savedSearch.Id, listingId, processedAtUtc),
+                    new SavedSearchAlertMatch(matchId, savedSearch.Id, listingId, processedAtUtc),
                     cancellationToken);
+
+                if (savedSearch.EmailEachNewMatchEnabled
+                    && savedSearch.EmailEachNewMatchEnabledAtUtc.HasValue
+                    && savedSearch.EmailEachNewMatchEnabledAtUtc.Value <= enqueuedAtUtc)
+                {
+                    await _dbContext.SavedSearchAlertDeliveryIntents.AddAsync(
+                        new SavedSearchAlertDeliveryIntent(
+                            Guid.NewGuid(),
+                            matchId,
+                            savedSearch.UserId,
+                            "email",
+                            processedAtUtc),
+                        cancellationToken);
+                }
+
                 existingIds.Add(savedSearch.Id);
                 added++;
             }

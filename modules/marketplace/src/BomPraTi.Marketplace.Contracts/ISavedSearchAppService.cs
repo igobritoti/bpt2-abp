@@ -15,6 +15,11 @@ public interface ISavedSearchAppService : IApplicationService
         bool enabled,
         CancellationToken cancellationToken = default);
 
+    Task<SavedSearchDto> SetEmailEachNewMatchEnabledAsync(
+        Guid id,
+        bool enabled,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<SavedSearchAlertMatchDto>> GetMatchesAsync(
         Guid id,
         CancellationToken cancellationToken = default);

@@ -18,4 +18,6 @@ public sealed record SavedSearchDto(
     string? Query,
     bool AlertEnabled,
     DateTime? AlertEnabledAtUtc,
+    bool EmailEachNewMatchEnabled,
+    DateTime? EmailEachNewMatchEnabledAtUtc,
     DateTime CreatedAtUtc);
