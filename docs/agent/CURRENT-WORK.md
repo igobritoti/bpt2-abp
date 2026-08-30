@@ -10,7 +10,7 @@ Issue #118 / PR #136 executa o primeiro boundary durável provider-neutral para 
 
 Issue #116 teve a baseline de identidade municipal IBGE integrada no `main` pelo PR #135; true physical radius continua bloqueado por autoridade do ponto físico da Listing e privacy/minimization.
 
-Issue #117 teve o benchmark PostgreSQL de claim/recovery integrado no `main` pelo PR #133. A issue permanece aberta porque deployment topology, cadence, retry/backoff e full-detection transaction boundary ainda não estão estabelecidos.
+Issue #117 teve o benchmark PostgreSQL de claim/recovery integrado no `main` pelo PR #133 e agora também possui runner automático provider-neutral com retry diferido por `NextAttemptAtUtc`. A validação local do build ficou bloqueada por restore NuGet externo; a operação de produção ainda precisa da decisão de rollout, mas a topologia de execução não está mais ausente.
 
 Issue #122 foi concluída e integrada pelo PR #131; o consumer quantitativo lossless/comparability boundary foi provado no fixture delimitado, enquanto Comparator continua bloqueado por cobertura Brasil/produção.
 
@@ -66,12 +66,12 @@ Auditoria: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.
 - `MUNICIPALITY_IDENTITY_AUTHORITY = IBGE_DTB_2025_PINNED` (#116);
 - `TRUE_LISTING_RADIUS = STILL_BLOCKED_ON_LOCATION_POINT_AUTHORITY_AND_PRIVACY` (#116);
 - `POSTGRES_TRANSACTIONAL_CLAIM_PRIMITIVE = PROVED_BOUNDED` (#117);
-- `AUTOMATIC_RUNNER = NOT_YET_AUTHORIZED` (#117).
+- `AUTOMATIC_RUNNER = PROVISIONED_IN_CODE` (#117).
 
 ## Próximos gatilhos independentes
 
 - #118: depois deste fake-provider boundary, definir uma autoridade real de consentimento externo e só então executar sandbox de provedor preservando recipient revalidation/idempotency semantics; Resend/SES continuam candidatos, não decisão de produção;
-- #117: obter fatos concretos de deployment/process lifetime antes de autorizar runner automático;
+- #117: runner automático já está provisionado no código; falta apenas validar em build/CI com restore disponível e decidir rollout operacional;
 - #116: true radius continua separado e bloqueado em point authority/privacy;
 - #113: recomendações dependem de ground truth/exposure protocol válido;
 - #114: inteligência de mercado depende de provider/licença/metodologia/provenance concretos;
@@ -94,7 +94,7 @@ Auditoria: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.
 ## Open blockers
 
 - Saved Search external delivery: durable provider-neutral recovery boundary provado; product email-consent authority, real-provider sandbox, cadence/retry policy e production operation continuam pendentes (#118).
-- Saved Search runner: deployment topology/cadence/retry/full-detection transaction boundary ainda não fixados (#117).
+- Saved Search runner: boundary transacional e runner automático provisionados; resta validar build/CI e rollout operacional (#117).
 - True radius: falta autoridade para ponto físico da Listing + privacy/minimization; município/centroide não é veículo (#116).
 - Comparator/ficha técnica ampla: cobertura Brasil/produção insuficiente.
 - Discovery avançado: baseline mede gaps reais, mas nenhuma implementação candidata foi comparada sob o mesmo corpus.

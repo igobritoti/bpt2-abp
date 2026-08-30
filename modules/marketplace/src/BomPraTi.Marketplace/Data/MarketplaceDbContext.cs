@@ -109,7 +109,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
         {
             b.ToTable("MarketplaceSavedSearchAlertDetectionRequests");
             b.HasIndex(x => x.ListingId).IsUnique();
-            b.HasIndex(x => new { x.ProcessedAtUtc, x.EnqueuedAtUtc });
+            b.HasIndex(x => new { x.ProcessedAtUtc, x.NextAttemptAtUtc, x.EnqueuedAtUtc });
         });
 
         builder.Entity<Lead>(b =>
