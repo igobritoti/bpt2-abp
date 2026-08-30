@@ -88,6 +88,8 @@ export type SavedSearch = Omit<PublicListingSearch, "sort" | "skip" | "take"> & 
   id: string;
   alertEnabled: boolean;
   alertEnabledAtUtc: string | null;
+  emailEachNewMatchEnabled: boolean;
+  emailEachNewMatchEnabledAtUtc: string | null;
   createdAtUtc: string;
 };
 
@@ -135,6 +137,19 @@ export async function setSavedSearchMonitoring(
 ): Promise<SavedSearch> {
   const response = await buyerRequest(
     `/api/app/saved-search/${encodeURIComponent(id)}/set-alert-enabled?enabled=${enabled}`,
+    accessToken,
+    { method: "POST" },
+  );
+  return (await response.json()) as SavedSearch;
+}
+
+export async function setSavedSearchEmailEachNewMatch(
+  accessToken: string,
+  id: string,
+  enabled: boolean,
+): Promise<SavedSearch> {
+  const response = await buyerRequest(
+    `/api/app/saved-search/${encodeURIComponent(id)}/set-email-each-new-match-enabled?enabled=${enabled}`,
     accessToken,
     { method: "POST" },
   );
