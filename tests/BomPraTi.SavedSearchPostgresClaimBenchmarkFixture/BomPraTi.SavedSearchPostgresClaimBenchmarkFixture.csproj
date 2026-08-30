@@ -7,6 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="ProductionExplicitClaim/**/*.cs" />
     <ProjectReference Include="../../modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj" />
   </ItemGroup>
 </Project>
