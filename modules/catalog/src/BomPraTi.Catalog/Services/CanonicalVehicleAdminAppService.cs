@@ -151,6 +151,74 @@ public class CanonicalVehicleAdminAppService : ICanonicalVehicleAdminAppService,
             ?? throw new InvalidOperationException("Canonical Vehicle was synchronized but could not be read back.");
     }
 
+    public async Task SynchronizeExternalIdentifiersAsync(
+        Guid vehicleId,
+        SynchronizeCanonicalVehicleExternalIdentifiersInput input,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        if (!await _dbContext.Vehicles.AnyAsync(x => x.Id == vehicleId, cancellationToken))
+        {
+            throw new EntityNotFoundException(typeof(Vehicle), vehicleId);
+        }
+
+        var authority = RequireOpaque(input.Authority, nameof(input.Authority));
+        var identifiers = (input.Identifiers ?? Array.Empty<CanonicalVehicleExternalIdentifierInput>())
+            .Select(x =>
+            {
+                ArgumentNullException.ThrowIfNull(x);
+                return new ExternalIdentifierKey(
+                    RequireOpaque(x.Namespace, nameof(x.Namespace)),
+                    RequireOpaque(x.Value, nameof(x.Value)));
+            })
+            .Distinct()
+            .OrderBy(x => x.Namespace, StringComparer.Ordinal)
+            .ThenBy(x => x.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var identifier in identifiers)
+        {
+            var existingOwner = await _dbContext.VehicleExternalIdentifiers
+                .SingleOrDefaultAsync(
+                    x => x.Authority == authority &&
+                         x.Namespace == identifier.Namespace &&
+                         x.Value == identifier.Value,
+                    cancellationToken);
+
+            if (existingOwner is not null && existingOwner.VehicleId != vehicleId)
+            {
+                throw new InvalidOperationException(
+                    $"External identifier '{authority}:{identifier.Namespace}:{identifier.Value}' is already linked to a different BPT2 Vehicle.");
+            }
+        }
+
+        var current = await _dbContext.VehicleExternalIdentifiers
+            .Where(x => x.VehicleId == vehicleId && x.Authority == authority)
+            .ToListAsync(cancellationToken);
+        var desired = identifiers.ToHashSet();
+
+        _dbContext.VehicleExternalIdentifiers.RemoveRange(
+            current.Where(x => !desired.Contains(new ExternalIdentifierKey(x.Namespace, x.Value))));
+
+        var currentKeys = current
+            .Select(x => new ExternalIdentifierKey(x.Namespace, x.Value))
+            .ToHashSet();
+        foreach (var identifier in identifiers.Where(x => !currentKeys.Contains(x)))
+        {
+            await _dbContext.VehicleExternalIdentifiers.AddAsync(
+                new VehicleExternalIdentifier(
+                    Guid.NewGuid(),
+                    vehicleId,
+                    authority,
+                    identifier.Namespace,
+                    identifier.Value),
+                cancellationToken);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private static string RequireName(string? value, int maxLength, string parameterName)
     {
         var trimmed = value?.Trim();
@@ -187,4 +255,16 @@ public class CanonicalVehicleAdminAppService : ICanonicalVehicleAdminAppService,
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
+
+    private static string RequireOpaque(string? value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Value is required.", parameterName);
+        }
+
+        return value;
+    }
+
+    private sealed record ExternalIdentifierKey(string Namespace, string Value);
 }
