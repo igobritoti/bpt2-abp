@@ -274,32 +274,20 @@ static async Task<Guid?> SelectNextDueListingIdAsync(
     await using var transaction = await db.Database.BeginTransactionAsync();
     try
     {
+        var scenarioIds = scenarioListingIds.ToArray();
         var request = await db.SavedSearchAlertDetectionRequests
-            .Where(x => scenarioListingIds.Contains(x.ListingId))
-            .Where(x => !x.ProcessedAtUtc.HasValue
-                && (!x.NextAttemptAtUtc.HasValue || x.NextAttemptAtUtc.Value <= nowUtc))
-            .OrderBy(x => x.EnqueuedAtUtc)
-            .ThenBy(x => x.Id)
-            .Take(1)
-            .FromSqlRaw("SELECT * FROM \"MarketplaceSavedSearchAlertDetectionRequests\" WHERE FALSE")
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM "MarketplaceSavedSearchAlertDetectionRequests"
+                WHERE "ProcessedAtUtc" IS NULL
+                  AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {nowUtc})
+                  AND "ListingId" = ANY({scenarioIds})
+                ORDER BY "EnqueuedAtUtc", "Id"
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+                """)
+            .AsNoTracking()
             .SingleOrDefaultAsync();
-
-        if (request is null)
-        {
-            request = await db.SavedSearchAlertDetectionRequests
-                .FromSqlInterpolated($"""
-                    SELECT *
-                    FROM "MarketplaceSavedSearchAlertDetectionRequests"
-                    WHERE "ProcessedAtUtc" IS NULL
-                      AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {nowUtc})
-                      AND "ListingId" = ANY({scenarioListingIds.ToArray()})
-                    ORDER BY "EnqueuedAtUtc", "Id"
-                    LIMIT 1
-                    FOR UPDATE SKIP LOCKED
-                    """)
-                .AsNoTracking()
-                .SingleOrDefaultAsync();
-        }
 
         await transaction.RollbackAsync();
         return request?.ListingId;
@@ -318,10 +306,7 @@ sealed class BlockingMissingPublicListingQuery : IPublicListingQuery
     private readonly TaskCompletionSource _release;
     private int _getCalls;
 
-    public BlockingMissingPublicListingQuery(
-        Guid listingId,
-        TaskCompletionSource entered,
-        TaskCompletionSource release)
+    public BlockingMissingPublicListingQuery(Guid listingId, TaskCompletionSource entered, TaskCompletionSource release)
     {
         _listingId = listingId;
         _entered = entered;
