@@ -120,7 +120,7 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             return Array.Empty<Guid>();
         }
 
-        var normalized = query.Trim().ToLowerInvariant();
+        var normalized = NormalizePresentationQuery(query);
         var vehicles =
             from vehicle in _dbContext.Vehicles.AsNoTracking()
             join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
@@ -129,10 +129,10 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             join generation in _dbContext.Generations.AsNoTracking()
                 on vehicle.GenerationId equals (Guid?)generation.Id into generationRows
             from generation in generationRows.DefaultIfEmpty()
-            where brand.Name.ToLower().Contains(normalized)
-                || model.Name.ToLower().Contains(normalized)
-                || version.Name.ToLower().Contains(normalized)
-                || (generation != null && generation.Name.ToLower().Contains(normalized))
+            where brand.Name.ToLower().Replace("-", " ").Contains(normalized)
+                || model.Name.ToLower().Replace("-", " ").Contains(normalized)
+                || version.Name.ToLower().Replace("-", " ").Contains(normalized)
+                || (generation != null && generation.Name.ToLower().Replace("-", " ").Contains(normalized))
             orderby vehicle.Id
             select vehicle.Id;
 
@@ -192,12 +192,12 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
 
         if (!string.IsNullOrWhiteSpace(input.Query))
         {
-            var query = input.Query.Trim().ToLowerInvariant();
+            var query = NormalizePresentationQuery(input.Query);
             vehicles = vehicles.Where(x =>
-                x.Brand.ToLower().Contains(query)
-                || x.Model.ToLower().Contains(query)
-                || x.Version.ToLower().Contains(query)
-                || (x.Generation != null && x.Generation.ToLower().Contains(query)));
+                x.Brand.ToLower().Replace("-", " ").Contains(query)
+                || x.Model.ToLower().Replace("-", " ").Contains(query)
+                || x.Version.ToLower().Replace("-", " ").Contains(query)
+                || (x.Generation != null && x.Generation.ToLower().Replace("-", " ").Contains(query)));
         }
 
         var rows = await vehicles
@@ -223,4 +223,7 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 x.BodyStyle))
             .ToList();
     }
+
+    private static string NormalizePresentationQuery(string value) =>
+        value.Trim().ToLowerInvariant().Replace('-', ' ');
 }
