@@ -26,6 +26,7 @@ public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
     public DateTime? LastAttemptAtUtc { get; private set; }
     public DateTime? NextAttemptAtUtc { get; private set; }
     public DateTime? LeaseExpiresAtUtc { get; private set; }
+    public string? RecipientFingerprint { get; private set; }
     public string? ProviderMessageId { get; private set; }
 
     private SavedSearchAlertDeliveryIntent() { }
@@ -58,6 +59,23 @@ public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
         NextAttemptAtUtc = null;
         LeaseExpiresAtUtc = DateTime.SpecifyKind(leaseExpiresAtUtc, DateTimeKind.Utc);
         Status = SavedSearchAlertDeliveryStatus.InFlight;
+    }
+
+    public bool BindRecipientFingerprint(string fingerprint)
+    {
+        if (string.IsNullOrWhiteSpace(fingerprint))
+        {
+            throw new ArgumentException("Recipient fingerprint is required.", nameof(fingerprint));
+        }
+
+        var normalized = fingerprint.Trim().ToUpperInvariant();
+        if (RecipientFingerprint is null)
+        {
+            RecipientFingerprint = normalized;
+            return true;
+        }
+
+        return string.Equals(RecipientFingerprint, normalized, StringComparison.Ordinal);
     }
 
     public void ScheduleRetry(DateTime nextAttemptAtUtc, bool outcomeUnknown = false)
