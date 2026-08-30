@@ -16,6 +16,8 @@ Advanced Discovery chegou até a fronteira válida sem promover fuzzy em produç
 
 Issues #113–#116 continuam `SKIP` para execução autônoma enquanto faltarem as autoridades externas/humanas documentadas.
 
+Repo governance encontrou um blocker separado em #160: `main` está `protected=false` e não há repository rulesets. O conector atual permite apenas leitura dessas configurações. TD-001 registra a dívida; não transformar workflows path-filtered em required contexts cegamente.
+
 ## #154 merged evidence
 
 Resultado congelado:
@@ -53,6 +55,7 @@ Reabrir scale/index somente com catálogo versionado materialmente mais amplo e 
 - #114 Market intelligence: external IDs já entregues via #139; falta quantidade de produto + provider/dataset autorizado.
 - #115 Trust/history/inspection: provider + Listing-instance identity + purpose/privacy/retention/assertion contract.
 - #116 True radius: município IBGE já entregue via #135; falta ponto físico autorizado + provenance/precision/lifecycle/privacy.
+- #160 Main integration enforcement: falta ruleset/branch-protection write administrativo; required status precisa desenho compatível com workflows path-filtered.
 - Resend produção: deployment externo; não reabre #118.
 - Comparator/ficha técnica ampla: #122 provou consumer boundary, não cobertura Brasil/produção nem produto concreto.
 - Favorite price-drop externo: exige authorization/delivery/recovery contract próprio.
@@ -69,10 +72,11 @@ Reabrir scale/index somente com catálogo versionado materialmente mais amplo e 
 - #150 scorer characterization = concluída sem cutoff.
 - #154 metamorphic robustness = concluída sem vencedor trigram.
 - #157 scale/index = `SKIP` por cardinalidade independente insuficiente.
+- #160 main protection = gap confirmado; TD-001 registra a dívida administrativa.
 
 ## Next valid work
 
-Não criar requisito para preencher a fila. Próximo slice técnico só é válido quando surgir novo gap reproduzível, um blocker #113–#116 receber sua autoridade/dataset/contrato, aparecer cardinalidade adequada para #157, ou um item ADIADO ganhar pergunta concreta e contrato mínimo.
+Não criar requisito para preencher a fila. Próximo slice técnico só é válido quando surgir novo gap reproduzível, um blocker #113–#116 receber sua autoridade/dataset/contrato, aparecer cardinalidade adequada para #157, #160 receber acesso administrativo/desenho de status enforcement, ou um item ADIADO ganhar pergunta concreta e contrato mínimo.
 
 ## Source of runtime truth
 
