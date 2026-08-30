@@ -45,60 +45,84 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
             return 0;
         }
 
+        var attemptedAtUtc = DateTime.UtcNow;
+        request.MarkAttempted(attemptedAtUtc);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
         var enqueuedAtUtc = DateTime.SpecifyKind(request.EnqueuedAtUtc, DateTimeKind.Utc);
-        if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
+        try
         {
-            var nextAttemptAtUtc = DateTime.UtcNow.Add(_options.MissingListingRetryDelay);
+            if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
+            {
+                request.ScheduleRetry(attemptedAtUtc, attemptedAtUtc.Add(_options.MissingListingRetryDelay));
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                await CommitLocalTransactionAsync(localTransaction, cancellationToken);
+                return 0;
+            }
+
+            var savedSearches = await _dbContext.SavedSearches
+                .AsNoTracking()
+                .Where(x => x.AlertEnabled
+                    && x.AlertEnabledAtUtc.HasValue
+                    && x.AlertEnabledAtUtc.Value <= enqueuedAtUtc)
+                .OrderBy(x => x.Id)
+                .ToListAsync(cancellationToken);
+
+            var existing = await _dbContext.SavedSearchAlertMatches
+                .AsNoTracking()
+                .Where(x => x.ListingId == listingId)
+                .Select(x => x.SavedSearchId)
+                .ToListAsync(cancellationToken);
+            var existingIds = existing.ToHashSet();
+            var processedAtUtc = DateTime.UtcNow;
+            var added = 0;
+
+            foreach (var savedSearch in savedSearches)
+            {
+                if (existingIds.Contains(savedSearch.Id))
+                {
+                    continue;
+                }
+
+                if (!await _publicListings.MatchesAsync(listingId, ToPublicSearch(savedSearch), cancellationToken))
+                {
+                    continue;
+                }
+
+                await _dbContext.SavedSearchAlertMatches.AddAsync(
+                    new SavedSearchAlertMatch(Guid.NewGuid(), savedSearch.Id, listingId, processedAtUtc),
+                    cancellationToken);
+                existingIds.Add(savedSearch.Id);
+                added++;
+            }
+
+            request.MarkProcessed(processedAtUtc);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await CommitLocalTransactionAsync(localTransaction, cancellationToken);
+            return added;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            if (localTransaction is not null)
+            {
+                await localTransaction.RollbackAsync(cancellationToken);
+            }
+
+            throw;
+        }
+        catch (Exception)
+        {
+            _dbContext.ChangeTracker.Clear();
+            var nextAttemptAtUtc = attemptedAtUtc.Add(_options.MissingListingRetryDelay);
             await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
                 UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
-                SET "LastAttemptAtUtc" = {nextAttemptAtUtc},
+                SET "LastAttemptAtUtc" = {attemptedAtUtc},
                     "NextAttemptAtUtc" = {nextAttemptAtUtc}
                 WHERE "Id" = {request.Id}
                 """, cancellationToken);
             await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return 0;
         }
-
-        var savedSearches = await _dbContext.SavedSearches
-            .AsNoTracking()
-            .Where(x => x.AlertEnabled
-                && x.AlertEnabledAtUtc.HasValue
-                && x.AlertEnabledAtUtc.Value <= enqueuedAtUtc)
-            .OrderBy(x => x.Id)
-            .ToListAsync(cancellationToken);
-
-        var existing = await _dbContext.SavedSearchAlertMatches
-            .AsNoTracking()
-            .Where(x => x.ListingId == listingId)
-            .Select(x => x.SavedSearchId)
-            .ToListAsync(cancellationToken);
-        var existingIds = existing.ToHashSet();
-        var detectedAtUtc = DateTime.UtcNow;
-        var added = 0;
-
-        foreach (var savedSearch in savedSearches)
-        {
-            if (existingIds.Contains(savedSearch.Id))
-            {
-                continue;
-            }
-
-            if (!await _publicListings.MatchesAsync(listingId, ToPublicSearch(savedSearch), cancellationToken))
-            {
-                continue;
-            }
-
-            await _dbContext.SavedSearchAlertMatches.AddAsync(
-                new SavedSearchAlertMatch(Guid.NewGuid(), savedSearch.Id, listingId, detectedAtUtc),
-                cancellationToken);
-            existingIds.Add(savedSearch.Id);
-            added++;
-        }
-
-        request.MarkProcessed(detectedAtUtc);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        await CommitLocalTransactionAsync(localTransaction, cancellationToken);
-        return added;
     }
 
     private static Task CommitLocalTransactionAsync(
