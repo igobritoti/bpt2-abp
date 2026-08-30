@@ -6,48 +6,54 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Issue #147 foi concluída pelo PR #149 (squash `004cbd44dbd864af28c94c173ed1d106e1d2bf8c`). Discovery de identidade canônica trata hífen ASCII e espaço como equivalentes de apresentação, sem fuzzy/edit distance, aliases ou nova engine.
+Issue #150 foi concluída pelo PR #153 (squash `3d76e0075795d558e554ecd07fb208e9634d432f`). O benchmark inicial de três typos não separou os quatro scorers e não autorizou fuzzy em produção.
 
-Issue #150 chegou à reprodução final-base no PR #153. O benchmark é somente observacional: compara `pg_trgm` (`similarity`, `word_similarity`, `strict_word_similarity`) e `fuzzystrmatch` Levenshtein sobre os três qrels de typo congelados em #112. Nenhum método, cutoff, índice, fallback ou comportamento fuzzy foi autorizado para produção.
+Issue #154 chegou à reprodução final-base no PR #156. O benchmark metamórfico amplia a avaliação para perturbações determinísticas pré-declaradas sem editar qrels depois dos scores. Ele separa `word_similarity` de Levenshtein neste corpus, mas não identifica vencedor entre os três métodos trigram nem autoriza cutoff/index/fuzzy em produção.
 
 Issues #113–#116 continuam explicitamente puladas para execução autônoma enquanto faltarem as autoridades externas/humanas documentadas.
 
-## Evidence — #150 final-base reproduction
+## Evidence — #154 final-base reproduction
 
-Run `33331449281` no head `0f7fbf1906f08e6939906f3b83969375677c9ae4`, base `c765485a79a88c76aa61ae82bf096e4b023c4953`:
+Run `33333069839` no head funcional `70d932e186e908056d4f34c83e46b8c8220101d3`, base `3d76e0075795d558e554ecd07fb208e9634d432f`:
 
 - fixture SHA-256 `54028f4c7925ad2f2d9a8b1637d00ab7e013f43b4e10fea0ff88a9b87474bd20` inalterado;
 - fresh migration: PASS;
-- exact: Catalog/Public MRR=1.0000, Recall=1.0000, FP=0;
-- confusable: Catalog/Public MRR=1.0000, Recall=1.0000, FP=0;
-- autocomplete/prefix: Catalog/Public MRR=1.0000, Recall=1.0000, FP=0;
-- presentation: Catalog/Public MRR=1.0000, Recall=1.0000, FP=0;
-- typo no comportamento de produção: Catalog/Public MRR=0.0000, Recall=0.0000, FP=0;
+- baseline exact/confusable/autocomplete/presentation: Catalog/Public MRR=1.0000, Recall=1.0000, FP=0;
+- baseline typo de produção: Catalog/Public MRR=0.0000, Recall=0.0000, FP=0;
 - facet/filter oracle: 10/10;
-- extensões somente no ambiente de benchmark: `pg_trgm:1.6`, `fuzzystrmatch:1.2`;
-- `levenshtein`: MRR=1.0000, Recall@target-count=1.0000, non-target ahead=0, margem mínima=5.0000;
-- `similarity`: MRR=1.0000, Recall@target-count=1.0000, non-target ahead=0, margem mínima=0.3571;
-- `strict_word_similarity`: MRR=1.0000, Recall@target-count=1.0000, non-target ahead=0, margem mínima=0.2857;
-- `word_similarity`: MRR=1.0000, Recall@target-count=1.0000, non-target ahead=0, margem mínima=0.2857;
-- artifact ID `9737773937`, ZIP SHA-256 `f904d01408099f48d103c14170eee6cebec2e3b636cc1bd1ead2c6468870a2c4`.
+- mutações brutas: 39;
+- casos válidos: 33;
+- exclusões registradas: 9, sem reposição manual;
+- Levenshtein: MRR=0.7281, Recall@target-count=0.6212, non-targets ahead=48;
+- `similarity`: MRR=0.9066, Recall=0.8485, non-targets ahead=9;
+- `strict_word_similarity`: MRR=0.9177, Recall=0.8788, non-targets ahead=10;
+- `word_similarity`: MRR=0.9404, Recall=0.9091, non-targets ahead=7;
+- relação de dominância pré-declarada observada: `word_similarity` domina Levenshtein;
+- nenhum domínio estabelecido entre os três scorers trigram;
+- artifact ID `9738224970`, ZIP SHA-256 `24c2ddb747dc0c8cad4efb35865846de03cb4d859c041e9e5a4db7bf7df9428f`.
 
-Os quatro métodos empatam na qualidade observada neste corpus pequeno. As escalas de margem são diferentes e não comparáveis diretamente entre Levenshtein e trigram. O resultado não identifica threshold de aceitação, custo em catálogo de produção, índice ideal nem política de fallback.
+Por transformação, os três trigram scorers foram 1.0/1.0 nos 11 casos `DUPLICATE_INTERIOR`; delete/transposição os separam. `strict_word_similarity` supera levemente `word_similarity` na transposição agregada, reforçando que média global isolada não escolhe política de produto.
 
-Audit: [`../audits/2026-08-30-discovery-typo-scoring-comparison.md`](../audits/2026-08-30-discovery-typo-scoring-comparison.md).
+`word_similarity` ainda falha em três casos gerados (`Cof`, `Cmof`, `Hgih`), portanto o resultado não prova typo tolerance resolvida.
 
-## Merge condition — #150
+Audit: [`../audits/2026-08-30-discovery-metamorphic-typo-robustness.md`](../audits/2026-08-30-discovery-metamorphic-typo-robustness.md).
 
-O PR #153 só fecha #150 após CI fresca do head que contém simultaneamente benchmark, workflow, audit e este snapshot, com Harness/relevantes verdes e sem review threads pendentes. A execução anterior acima é evidência da reprodução final-base, não substitui a prova fresca do head documental final.
+## Merge condition — #154
 
-## Next valid experiment after #150
+O PR #156 só fecha #154 após CI fresca do head que contém benchmark, workflow, audit e este snapshot, com checks aplicáveis verdes e sem review threads pendentes. O run acima é a reprodução final-base funcional; não substitui a prova fresca do head documental final.
 
-O próximo candidato autônomo é um benchmark metamórfico de robustez, ainda sem mudança de produção:
+## Next valid experiment after #154
 
-1. derivar positivos de labels/consultas exatas cuja relevância é determinada pelo próprio catálogo congelado, sem importar `MATCH/NO_MATCH` de entity resolution como qrel de busca;
-2. aplicar perturbações determinísticas de um caractere pré-declaradas antes de observar scores;
-3. medir preservação do alvo, non-targets ahead, separação e custo dos mesmos scorers;
-4. manter dataset, transformações e métricas versionados;
-5. não promover método/cutoff enquanto o experimento não separar candidatos de forma reproduzível.
+A próxima fronteira autônoma defensável é **eligibility/scale para os scorers trigram**, ainda benchmark-only:
+
+1. reduzir candidatos técnicos apenas por evidência já observada, sem promover scorer a produto;
+2. congelar uma cardinalidade negativa substancialmente maior que os 8 Vehicles atuais, derivada independentemente dos scores atuais;
+3. pré-declarar métricas de false-positive/eligibility antes de observar thresholds;
+4. medir planner/index behavior no PostgreSQL nessa cardinalidade;
+5. preservar o baseline exato/apresentação e os 33 metamorphic cases como regressão;
+6. não escolher cutoff depois de observar a distribuição sem regra prévia.
+
+Se não houver dataset/cardinalidade independente defensável, esse próximo experimento deve ser marcado `SKIP` em vez de sintetizar negativos ad hoc para favorecer uma tecnologia.
 
 ## Remaining blockers / skip rules
 
@@ -66,7 +72,8 @@ O próximo candidato autônomo é um benchmark metamórfico de robustez, ainda s
 - #139/#114: external provider identifier projection = entregue; market-price source semantics/license continuam externos.
 - #135/#116: município IBGE = provado; município/centroide não é ponto físico do veículo.
 - #147: apresentação hífen/espaço = entregue após comparação controlada; typo permanece gap medido separado.
-- #150: quatro scorers caracterizados no corpus #112; seleção de scorer/cutoff = NÃO DECIDIDA.
+- #150: quatro scorers caracterizados nos três qrels typo; nenhum vencedor/cutoff selecionado.
+- #154: robustez metamórfica separa `word_similarity` de Levenshtein, mas `TRIGRAM_METHOD_WINNER = NONE`.
 
 ## Source of runtime truth
 
@@ -77,6 +84,7 @@ O próximo candidato autônomo é um benchmark metamórfico de robustez, ainda s
 - cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md);
 - Advanced Discovery baseline: [`../audits/2026-08-29-advanced-discovery-baseline.md`](../audits/2026-08-29-advanced-discovery-baseline.md);
 - typo scoring: [`../audits/2026-08-30-discovery-typo-scoring-comparison.md`](../audits/2026-08-30-discovery-typo-scoring-comparison.md);
+- metamorphic typo robustness: [`../audits/2026-08-30-discovery-metamorphic-typo-robustness.md`](../audits/2026-08-30-discovery-metamorphic-typo-robustness.md);
 - quantitative consumer: [`../audits/2026-08-29-podium-quantitative-consumer-benchmark.md`](../audits/2026-08-29-podium-quantitative-consumer-benchmark.md);
 - Saved Search claim: [`../audits/2026-08-29-saved-search-postgres-claim-baseline.md`](../audits/2026-08-29-saved-search-postgres-claim-baseline.md);
 - município IBGE: [`../audits/2026-08-29-ibge-municipality-identity-baseline.md`](../audits/2026-08-29-ibge-municipality-identity-baseline.md);
