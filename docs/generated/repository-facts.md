@@ -5,8 +5,8 @@
 - .NET SDK baseline: `10.0.100`
 - Target frameworks found in project files: `net10.0`
 - ABP framework versions detected: `10.6.0`
-- Project files (`*.csproj`): **20**
-- Test project files under `tests/`: **9**
+- Project files (`*.csproj`): **21**
+- Test project files under `tests/`: **10**
 - Business module directories: **5** — `catalog`, `ingestion`, `marketplace`, `media`, `sellers`
 - GitHub workflow files: **24** — `admin-canonical-catalog-http-gate.yml`, `advanced-discovery-benchmark.yml`, `architecture-gate.yml`, `buyer-favorites-http-gate.yml`, `fresh-migration-gate.yml`, `gate01.yml`, `harness-gate.yml`, `host-gate.yml`, `ibge-municipality-identity-benchmark.yml`, `listing-http-lifecycle-gate.yml`, `listing-photo-http-gate.yml`, `moderation-listing-authority-http-gate.yml`, `podium-catalog-feed-gate.yml`, `podium-quantitative-consumer-benchmark.yml`, `product-api-gate.yml`, `public-buyer-http-gate.yml`, `public-discovery-http-gate.yml`, `public-web-gate.yml`, `saved-search-email-delivery-benchmark.yml`, `saved-search-postgres-claim-benchmark.yml`, `seller-auth-http-gate.yml`, `seller-draft-edit-http-gate.yml`, `seller-publish-http-gate.yml`, `seller-shell-http-gate.yml`
 - Active execution plans: **0** — none
