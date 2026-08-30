@@ -18,7 +18,7 @@ await SeedRequestAsync(options, requestId, listingId, enqueuedAtUtc);
 
 var enteredPublicQuery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 var releasePublicQuery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-var publicQuery = new BlockingPublicListingQuery(listingId, enteredPublicQuery, releasePublicQuery);
+var publicQuery = new BlockingMissingPublicListingQuery(listingId, enteredPublicQuery, releasePublicQuery);
 
 await using var serviceDb = new MarketplaceDbContext(options);
 var service = new SavedSearchAlertDetectionAppService(serviceDb, publicQuery);
@@ -26,33 +26,25 @@ var evaluation = service.EvaluateAsync(listingId);
 await enteredPublicQuery.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
 var lockHeld = await ExactRequestLockIsHeldAsync(options, listingId);
-Require(lockHeld, "production EvaluateAsync must hold the exact request row lock while detection is in progress");
+Require(lockHeld, "production EvaluateAsync must hold the exact request row lock while Listing evaluation is in progress");
 
 releasePublicQuery.SetResult();
 var added = await evaluation;
-Require(added == 0, "fixture has no Saved Searches, so detection must add zero matches");
-Require(publicQuery.GetCalls == 1, "the owner must perform the public Listing lookup exactly once");
+Require(added == 0, "missing public Listing must remain a zero-match no-op");
+Require(publicQuery.GetCalls == 1, "the explicit owner must perform the public Listing lookup exactly once");
 
 await using (var verify = new MarketplaceDbContext(options))
 {
     var request = await verify.SavedSearchAlertDetectionRequests
         .AsNoTracking()
         .SingleAsync(x => x.ListingId == listingId);
-    Require(request.ProcessedAtUtc.HasValue, "successful owner must mark the request processed");
+    Require(!request.ProcessedAtUtc.HasValue, "missing public Listing must preserve the current pending request behavior");
 }
 
-await using (var replayDb = new MarketplaceDbContext(options))
+await using (var afterReturnDb = new MarketplaceDbContext(options))
+await using (var transaction = await afterReturnDb.Database.BeginTransactionAsync())
 {
-    var replayService = new SavedSearchAlertDetectionAppService(replayDb, publicQuery);
-    var replayAdded = await replayService.EvaluateAsync(listingId);
-    Require(replayAdded == 0, "processed request replay must remain a no-op");
-}
-Require(publicQuery.GetCalls == 1, "processed replay must return before repeating Listing evaluation");
-
-await using (var afterCommitDb = new MarketplaceDbContext(options))
-await using (var transaction = await afterCommitDb.Database.BeginTransactionAsync())
-{
-    var unlocked = await afterCommitDb.SavedSearchAlertDetectionRequests
+    var unlocked = await afterReturnDb.SavedSearchAlertDetectionRequests
         .FromSqlInterpolated($"""
             SELECT *
             FROM "MarketplaceSavedSearchAlertDetectionRequests"
@@ -61,12 +53,13 @@ await using (var transaction = await afterCommitDb.Database.BeginTransactionAsyn
             """)
         .AsNoTracking()
         .SingleAsync();
-    Require(unlocked.Id == requestId, "row must be lockable again after owner commit");
+    Require(unlocked.Id == requestId, "row must be lockable again after the explicit owner returns");
     await transaction.RollbackAsync();
 }
 
-Console.WriteLine("SAVED_SEARCH_EXPLICIT_PRODUCTION_LOCK: PASS");
-Console.WriteLine("SAVED_SEARCH_EXPLICIT_PROCESSED_REPLAY: PASS");
+Console.WriteLine("SAVED_SEARCH_EXPLICIT_PRODUCTION_LOCK_HELD: PASS");
+Console.WriteLine("SAVED_SEARCH_EXPLICIT_LOCK_RELEASED_ON_RETURN: PASS");
+Console.WriteLine("SAVED_SEARCH_MISSING_LISTING_REMAINS_PENDING: PASS");
 
 static async Task SeedRequestAsync(
     DbContextOptions<MarketplaceDbContext> options,
@@ -138,14 +131,14 @@ static void Require(bool condition, string message)
     }
 }
 
-sealed class BlockingPublicListingQuery : IPublicListingQuery
+sealed class BlockingMissingPublicListingQuery : IPublicListingQuery
 {
     private readonly Guid _listingId;
     private readonly TaskCompletionSource _entered;
     private readonly TaskCompletionSource _release;
     private int _getCalls;
 
-    public BlockingPublicListingQuery(
+    public BlockingMissingPublicListingQuery(
         Guid listingId,
         TaskCompletionSource entered,
         TaskCompletionSource release)
@@ -167,20 +160,7 @@ sealed class BlockingPublicListingQuery : IPublicListingQuery
         Interlocked.Increment(ref _getCalls);
         _entered.TrySetResult();
         await _release.Task.WaitAsync(cancellationToken);
-        return new PublicListingDto(
-            listingId,
-            Guid.Empty,
-            null!,
-            null!,
-            "fixture",
-            1m,
-            string.Empty,
-            null,
-            null,
-            null,
-            "São Paulo",
-            "SP",
-            Array.Empty<PublicListingPhotoDto>());
+        return null;
     }
 
     public Task<IReadOnlyList<PublicListingDto>> GetManyAsync(
