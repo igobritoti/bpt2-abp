@@ -1,5 +1,9 @@
 name: BPT2 Harness Gate
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 on:
   pull_request:
     paths:
@@ -9,6 +13,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/check-action-pinning.py'
+      - 'scripts/check-workflow-concurrency.py'
       - 'scripts/test-http-smoke-wiring.py'
       - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
@@ -25,6 +30,7 @@ on:
       - 'docs/**'
       - 'scripts/check-harness.py'
       - 'scripts/check-action-pinning.py'
+      - 'scripts/check-workflow-concurrency.py'
       - 'scripts/test-http-smoke-wiring.py'
       - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
@@ -41,9 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Syntax check harness tooling
-        run: python3 -m py_compile scripts/check-harness.py scripts/check-action-pinning.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
+        run: python3 -m py_compile scripts/check-harness.py scripts/check-action-pinning.py scripts/check-workflow-concurrency.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
       - name: Prove immutable external action references
         run: python3 scripts/check-action-pinning.py
+      - name: Prove workflow-scoped PR concurrency
+        run: python3 scripts/check-workflow-concurrency.py
       - name: Prove HTTP smoke wiring guard
         run: python3 scripts/test-http-smoke-wiring.py
       - name: Prove ephemeral migration authority guard
