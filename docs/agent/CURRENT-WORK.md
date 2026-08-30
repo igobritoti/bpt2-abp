@@ -6,21 +6,27 @@ Este arquivo é um snapshot curto do trabalho corrente. Não é histórico, chan
 
 ## Active outcome
 
-Issue #118 / draft PR #145 implementa o contrato explícito de autorização externa `EMAIL_EACH_NEW_MATCH`, runner provider-neutral e boundary Resend/webhook para alertas de Saved Search.
+Issue #118 foi concluída e integrada em `main` pelo PR #145 (squash `b6a9e2e693be2a80de32cdc38ee52ca910a44de2`). O boundary entregue inclui autorização explícita por Saved Search `EMAIL_EACH_NEW_MATCH`, dispatch automático provider-neutral, recipient atual ativo+confirmado vindo de Identity, adapter Resend, webhook autenticado/idempotente e ledger durável de eventos do provider.
 
-Issue #117 foi concluída e integrada em `main` pelo PR #144 (squash `122594aea314388282cd4e53c5e70997b15e6984`).
+Issue #117 já havia sido concluída e integrada em `main` pelo PR #144 (squash `122594aea314388282cd4e53c5e70997b15e6984`), incluindo claim PostgreSQL, runner automático e correctness de retry/cancellation.
 
-Issue #118 já possuía, desde o PR #137, o ledger provider-neutral durável de delivery intent, idempotency key estável, recipient revalidation boundary e fake-provider recovery matrix. O PR #145 não recria esse baseline: adiciona autorização explícita por busca, dispatch automático, recipient atual confirmado, adapter/probe Resend e webhook autenticado/idempotente sem segredos no repositório.
+Não há outro slice de implementação automaticamente autorizado neste snapshot. As issues abertas #113–#116 permanecem em boundaries de autoridade, provider, dataset, privacy ou ground truth. Advanced Discovery possui benchmark reproduzível e gaps medidos, mas qualquer candidato de melhoria precisa ser comparado no corpus/qrels congelado antes de promoção de tecnologia ou feature.
 
-## Active plan
+## Evidence — #118 final
 
-1. Manter o head funcional de #118 estável enquanto roda a validação fresca.
-2. Validar o benchmark provider-neutral/Resend após a correção do fixture que chamava `AbpDbContext.SaveChangesAsync` fora do runtime ABP.
-3. Validar Harness após atualização dos fatos gerados para o novo fixture/projeto.
-4. Confirmar Fresh Migration, Host, Public Buyer/Web, claim benchmark e demais gates relevantes no mesmo head final.
-5. Confirmar que o probe Resend real reporta SKIP, e não PASS, quando credenciais externas não estão configuradas.
-6. Fazer review/thread/base refresh, atualizar PR para ready quando a matriz de engenharia estiver verde e mergear somente então.
-7. Verificar fechamento de #118 e `main` remoto após o merge.
+Head final validado do PR #145: `a735495707e4486ad75787e2398944d94ed9d280`.
+
+- GitHub Actions: **23/23 workflows verdes** no mesmo head final;
+- Saved Search Email Delivery Benchmark: `PASS`;
+- cenário provider-neutral: `12` scenarios, `9` provider calls, `4` logical acceptances;
+- Fresh Migration Gate: verde;
+- Harness, Host, Public Web, Public Buyer, Public Discovery, Saved Search claim e regressões relevantes: verdes;
+- Resend bounded probe: `SKIP` porque `BPT_RESEND_API_KEY`, sender, safe recipient e public URL não estavam configurados;
+- o `SKIP` é a evidência correta para ausência de credenciais externas e não foi transformado em `PASS`;
+- artifact do benchmark final: ID `9737276483`, ZIP SHA-256 `1d1f1aea048a0a59a8fcd9a1a45fd84739f1a1b1efb151401531e2edcb5f9acd`;
+- PR sem review threads pendentes;
+- `main` não havia avançado além da base durante a validação final;
+- issue #118 fechou como `completed` após o merge.
 
 ## Decisões atuais
 
@@ -32,7 +38,7 @@ Issue #118 já possuía, desde o PR #137, o ledger provider-neutral durável de 
 - `RECIPIENT_ADDRESS_STORED_IN_MARKETPLACE = NO`;
 - `DURABLE_DELIVERY_INTENT = EXISTS`;
 - `PROVIDER_NEUTRAL_RECOVERY = PROVED_BOUNDED`;
-- `AUTOMATIC_EMAIL_DELIVERY_RUNNER = IMPLEMENTED`;
+- `AUTOMATIC_EMAIL_DELIVERY_RUNNER = IMPLEMENTED_AND_GREEN`;
 - `FIRST_SANDBOX_PROBE = RESEND`;
 - `PROVIDER_ACCEPTED_EQUALS_DELIVERED = NO`;
 - `RESEND_WEBHOOK_AUTHENTICITY = IMPLEMENTED`;
@@ -40,22 +46,17 @@ Issue #118 já possuía, desde o PR #137, o ledger provider-neutral durável de 
 - `OPEN_CLICK_TRACKING = NOT_AUTHORIZED`;
 - `PRODUCTION_PROVIDER_ACTIVATION = EXTERNAL_DEPLOYMENT_ACTION`;
 - `POSTGRES_TRANSACTIONAL_CLAIM_PRIMITIVE = PROVED_BOUNDED` (#117);
-- `AUTOMATIC_SAVED_SEARCH_DETECTION_RUNNER = PROVISIONED_AND_GREEN` (#117).
+- `AUTOMATIC_SAVED_SEARCH_DETECTION_RUNNER = IMPLEMENTED_AND_GREEN` (#117).
 
-## Evidence on the current slice
+## Remaining blockers / next valid triggers
 
-Focused local builds were green with `RestoreIgnoreFailedSources=true` for:
-
-- `modules/marketplace/src/BomPraTi.Marketplace/BomPraTi.Marketplace.csproj`;
-- `tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj`;
-- `tests/BomPraTi.ResendSavedSearchEmailProbeFixture/BomPraTi.ResendSavedSearchEmailProbeFixture.csproj`.
-
-On remote head `84d4f6bf6ac9dd05db1bae2eb3248b880906b75e`, 21 of 23 workflows were green. The two focused failures were diagnosed from logs rather than retried blindly:
-
-- Saved Search Email Delivery Benchmark: build and fresh migration were green; execution failed because the fixture manually constructed an ABP DbContext and then called `SaveChangesAsync`, which requires runtime DI services. The fixture setup was changed to direct PostgreSQL state preparation and the production provider-event processor was strengthened to use an atomic unique-ledger claim.
-- Harness Gate: only `docs/generated/repository-facts.md` was stale after adding the new test project; generated counters were reconciled.
-
-The active head after those corrections and documentation reconciliation must receive a fresh CI round before merge. Earlier green results are supporting evidence, not a substitute for final-head CI.
+- #113 Recommendations: bloqueado até existir autoridade de avaliação válida — qrels humanos para uma pergunta explícita ou dataset comportamental exposure-aware. Favorite/Lead atuais não criam negativos de relevância.
+- #114 Market intelligence: external provider identifier projection já está entregue; resta definir a quantidade de produto e obter source/provider com licença, metodologia, coverage e direitos de uso verificáveis.
+- #115 Trust/history/inspection: bloqueado em provider/authorization, Listing-instance identity, purpose/privacy/retention e assertion semantics verificáveis.
+- #116 True radius: baseline de município IBGE está entregue; raio físico continua bloqueado em autoridade do ponto da Listing, provenance/precision/lifecycle e privacy/minimization.
+- Advanced Discovery: benchmark atual mede gaps de presentation normalization e typo tolerance; próximo experimento válido deve alterar uma variável por vez e comparar contra o corpus/qrels congelado, incluindo false positives e planner/latency. Nenhuma tecnologia avançada está selecionada.
+- Comparator/enrichment quantitativo: consumer/comparability boundary #122 foi provado, mas promoção de ficha técnica/Comparator continua condicionada a cobertura Brasil/produção suficiente e ao produto concreto.
+- Resend produção: credenciais, sender/domain, safe recipient, DPA/legal/commercial approval e operação de produção são ações externas de deployment; não reabrem #118 por si só.
 
 ## Source of runtime truth
 
@@ -63,21 +64,12 @@ The active head after those corrections and documentation reconciliation must re
 - Produto: [`../PRODUCT.md`](../PRODUCT.md).
 - Fatos derivados: [`../generated/repository-facts.md`](../generated/repository-facts.md).
 - Decisões: [`../MDV.md`](../MDV.md) e [`../adr/`](../adr/).
-- Saved Search claim baseline: [`../audits/2026-08-29-saved-search-postgres-claim-baseline.md`](../audits/2026-08-29-saved-search-postgres-claim-baseline.md).
-- Saved Search external email delivery baseline: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md`](../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md).
-
-## Open blockers
-
-- Nenhum blocker de engenharia conhecido impede o slice #118 definido na issue; o boundary atual é validação fresca do head final, review e merge.
-- O probe Resend real depende de credencial, sender/domain e recipient seguro fornecidos externamente; ausência desses itens deve permanecer `SKIP`/evidência não executada.
-- Production commercial activation, provider account approval, DPA/legal approval e production secrets continuam ações externas de deployment, não requisitos para manter #118 aberta depois do contrato executável ficar verde.
-
-## Parallel precondition reconciliation
-
-Enquanto #118 aguardava CI, as issues #114 e #116 foram revalidadas contra `main` sem criar features especulativas:
-
-- #114: external provider identifiers já são normalizados pelo Podium feed, preservados em raw identity e sincronizados/persistidos no Catalog com ownership único por `Authority + Namespace + Value`; o blocker remanescente é semântica/source/license de market price, não identity projection.
-- #116: o benchmark IBGE DTB 2025 já fixa source/member hashes, prova o boundary `City + UF` de identidade municipal e preserva unidades especiais; true Listing radius continua bloqueado em location-point authority/privacy e nenhuma semântica de centroid/PostGIS foi promovida.
+- Cobertura funcional: [`../audits/2026-08-27-unified-functional-coverage-matrix.md`](../audits/2026-08-27-unified-functional-coverage-matrix.md).
+- Advanced Discovery: [`../audits/2026-08-29-advanced-discovery-baseline.md`](../audits/2026-08-29-advanced-discovery-baseline.md).
+- Podium quantitative consumer: [`../audits/2026-08-29-podium-quantitative-consumer-benchmark.md`](../audits/2026-08-29-podium-quantitative-consumer-benchmark.md).
+- Saved Search claim: [`../audits/2026-08-29-saved-search-postgres-claim-baseline.md`](../audits/2026-08-29-saved-search-postgres-claim-baseline.md).
+- Município IBGE: [`../audits/2026-08-29-ibge-municipality-identity-baseline.md`](../audits/2026-08-29-ibge-municipality-identity-baseline.md).
+- Saved Search email delivery: [`../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md`](../audits/2026-08-29-saved-search-email-delivery-contract-baseline.md).
 
 ## Update rule
 
