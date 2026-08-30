@@ -7,8 +7,9 @@ public enum SavedSearchAlertDeliveryStatus
     Pending = 0,
     OutcomeUnknown = 1,
     Accepted = 2,
-    PermanentFailed = 3,
-    Suppressed = 4
+    Delivered = 3,
+    PermanentFailed = 4,
+    Suppressed = 5
 }
 
 public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
@@ -58,6 +59,9 @@ public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
         MarkAttempted(attemptedAtUtc);
         Status = SavedSearchAlertDeliveryStatus.Accepted;
     }
+
+    public void MarkDelivered()
+        => Status = SavedSearchAlertDeliveryStatus.Delivered;
 
     public void MarkPermanentFailed(DateTime attemptedAtUtc)
     {
