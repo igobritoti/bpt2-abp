@@ -1,0 +1,34 @@
+name: BPT2 IBGE Municipality Identity Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/observe-ibge-dtb-2025.py'
+      - 'scripts/benchmark-ibge-municipality-identity.py'
+      - '.github/workflows/ibge-municipality-identity-benchmark.yml'
+      - 'benchmarks/ibge-municipality-identity/**'
+      - 'docs/audits/**municipality**'
+      - 'docs/agent/CURRENT-WORK.md'
+      - 'docs/generated/repository-facts.md'
+
+permissions:
+  contents: read
+
+jobs:
+  ibge-municipality-identity:
+    runs-on: ubuntu-24.04
+    env:
+      BPT_IBGE_MUNICIPALITY_OUTPUT: artifacts/ibge-municipality-identity-baseline.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Execute source-bound municipality identity baseline
+        run: python scripts/benchmark-ibge-municipality-identity.py
+      - name: Upload municipality identity evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibge-municipality-identity-baseline
+          path: artifacts/ibge-municipality-identity-baseline.json
+          if-no-files-found: error
