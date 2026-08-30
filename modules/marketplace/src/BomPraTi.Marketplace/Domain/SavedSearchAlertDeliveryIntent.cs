@@ -5,11 +5,13 @@ namespace BomPraTi.Marketplace.Domain;
 public enum SavedSearchAlertDeliveryStatus
 {
     Pending = 0,
-    OutcomeUnknown = 1,
-    Accepted = 2,
-    Delivered = 3,
-    PermanentFailed = 4,
-    Suppressed = 5
+    InFlight = 1,
+    RetryScheduled = 2,
+    OutcomeUnknown = 3,
+    Accepted = 4,
+    Delivered = 5,
+    PermanentFailed = 6,
+    Suppressed = 7
 }
 
 public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
@@ -20,7 +22,11 @@ public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
     public string IdempotencyKey { get; private set; } = string.Empty;
     public SavedSearchAlertDeliveryStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public int AttemptCount { get; private set; }
     public DateTime? LastAttemptAtUtc { get; private set; }
+    public DateTime? NextAttemptAtUtc { get; private set; }
+    public DateTime? LeaseExpiresAtUtc { get; private set; }
+    public string? ProviderMessageId { get; private set; }
 
     private SavedSearchAlertDeliveryIntent() { }
 
@@ -45,36 +51,87 @@ public sealed class SavedSearchAlertDeliveryIntent : Entity<Guid>
         CreatedAtUtc = DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc);
     }
 
+    public void MarkInFlight(DateTime attemptedAtUtc, DateTime leaseExpiresAtUtc)
+    {
+        AttemptCount++;
+        LastAttemptAtUtc = DateTime.SpecifyKind(attemptedAtUtc, DateTimeKind.Utc);
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = DateTime.SpecifyKind(leaseExpiresAtUtc, DateTimeKind.Utc);
+        Status = SavedSearchAlertDeliveryStatus.InFlight;
+    }
+
+    public void ScheduleRetry(DateTime nextAttemptAtUtc, bool outcomeUnknown = false)
+    {
+        NextAttemptAtUtc = DateTime.SpecifyKind(nextAttemptAtUtc, DateTimeKind.Utc);
+        LeaseExpiresAtUtc = null;
+        Status = outcomeUnknown
+            ? SavedSearchAlertDeliveryStatus.OutcomeUnknown
+            : SavedSearchAlertDeliveryStatus.RetryScheduled;
+    }
+
+    public void MarkAccepted(string providerMessageId)
+    {
+        if (string.IsNullOrWhiteSpace(providerMessageId))
+        {
+            throw new ArgumentException("Provider message id is required for accepted delivery.", nameof(providerMessageId));
+        }
+
+        ProviderMessageId = providerMessageId.Trim();
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = null;
+        Status = SavedSearchAlertDeliveryStatus.Accepted;
+    }
+
+    public void MarkDelivered()
+    {
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = null;
+        Status = SavedSearchAlertDeliveryStatus.Delivered;
+    }
+
+    public void MarkPermanentFailed()
+    {
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = null;
+        Status = SavedSearchAlertDeliveryStatus.PermanentFailed;
+    }
+
+    public void MarkSuppressed()
+    {
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = null;
+        Status = SavedSearchAlertDeliveryStatus.Suppressed;
+    }
+
+    public void ReturnToPending(DateTime attemptedAtUtc)
+    {
+        LastAttemptAtUtc = DateTime.SpecifyKind(attemptedAtUtc, DateTimeKind.Utc);
+        NextAttemptAtUtc = null;
+        LeaseExpiresAtUtc = null;
+        Status = SavedSearchAlertDeliveryStatus.Pending;
+    }
+
     public void MarkAttempted(DateTime attemptedAtUtc)
         => LastAttemptAtUtc = DateTime.SpecifyKind(attemptedAtUtc, DateTimeKind.Utc);
 
     public void MarkOutcomeUnknown(DateTime attemptedAtUtc)
     {
         MarkAttempted(attemptedAtUtc);
+        LeaseExpiresAtUtc = null;
         Status = SavedSearchAlertDeliveryStatus.OutcomeUnknown;
     }
 
     public void MarkAccepted(DateTime attemptedAtUtc)
     {
         MarkAttempted(attemptedAtUtc);
+        LeaseExpiresAtUtc = null;
         Status = SavedSearchAlertDeliveryStatus.Accepted;
     }
-
-    public void MarkDelivered()
-        => Status = SavedSearchAlertDeliveryStatus.Delivered;
 
     public void MarkPermanentFailed(DateTime attemptedAtUtc)
     {
         MarkAttempted(attemptedAtUtc);
+        LeaseExpiresAtUtc = null;
         Status = SavedSearchAlertDeliveryStatus.PermanentFailed;
-    }
-
-    public void MarkSuppressed()
-        => Status = SavedSearchAlertDeliveryStatus.Suppressed;
-
-    public void ReturnToPending(DateTime attemptedAtUtc)
-    {
-        MarkAttempted(attemptedAtUtc);
-        Status = SavedSearchAlertDeliveryStatus.Pending;
     }
 }
