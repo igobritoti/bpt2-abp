@@ -39,17 +39,17 @@ jobs:
           PROBE_DIR="$probe_dir" node <<'NODE'
           const fs = require("fs");
           const path = require("path");
-          const manifestPath = path.join(process.env.PROBE_DIR, "package.json");
-          const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-          manifest.dependencies.react = "0.0.0-lockfile-probe";
-          fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+          const lockPath = path.join(process.env.PROBE_DIR, "package-lock.json");
+          const lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+          lock.packages["node_modules/react"].version = "0.0.0-lockfile-probe";
+          fs.writeFileSync(lockPath, JSON.stringify(lock, null, 2) + "\n");
           NODE
-          if (cd "$probe_dir" && npm ci --ignore-scripts --no-audit --no-fund > npm-ci-mismatch.log 2>&1); then
+          if (cd "$probe_dir" && timeout 30s npm ci --ignore-scripts --no-audit --no-fund > npm-ci-mismatch.log 2>&1); then
             cat "$probe_dir/npm-ci-mismatch.log"
             echo "npm ci unexpectedly accepted an inconsistent package.json/package-lock.json pair" >&2
             exit 1
           fi
-          grep -Eiq 'package.json|lock ?file|lockfile|in sync' "$probe_dir/npm-ci-mismatch.log" || {
+          grep -Eiq 'package.json|lock ?file|lockfile|in sync|invalid' "$probe_dir/npm-ci-mismatch.log" || {
             cat "$probe_dir/npm-ci-mismatch.log"
             echo "npm ci failed, but not with lockfile-mismatch evidence" >&2
             exit 1
