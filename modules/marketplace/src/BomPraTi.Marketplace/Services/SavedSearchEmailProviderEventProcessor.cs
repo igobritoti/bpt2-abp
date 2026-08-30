@@ -23,65 +23,51 @@ public sealed class SavedSearchEmailProviderEventProcessor : ITransientDependenc
     {
         var normalizedProvider = provider.Trim().ToLowerInvariant();
         var normalizedEventId = providerEventId.Trim();
-        if (await _dbContext.SavedSearchEmailProviderEvents.AsNoTracking()
-            .AnyAsync(x => x.Provider == normalizedProvider && x.ProviderEventId == normalizedEventId, cancellationToken))
+        var normalizedMessageId = providerMessageId.Trim();
+        var normalizedEventType = eventType.Trim().ToLowerInvariant();
+        var receivedAtUtc = DateTime.UtcNow;
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var inserted = await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "MarketplaceSavedSearchEmailProviderEvents"
+                ("Id", "Provider", "ProviderEventId", "ProviderMessageId", "EventType", "ReceivedAtUtc")
+            VALUES
+                ({Guid.NewGuid()}, {normalizedProvider}, {normalizedEventId}, {normalizedMessageId}, {normalizedEventType}, {receivedAtUtc})
+            ON CONFLICT ("Provider", "ProviderEventId") DO NOTHING
+            """, cancellationToken);
+
+        if (inserted == 0)
         {
+            await transaction.RollbackAsync(cancellationToken);
             return;
         }
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-        try
+        switch (normalizedEventType)
         {
-            if (await _dbContext.SavedSearchEmailProviderEvents.AsNoTracking()
-                .AnyAsync(x => x.Provider == normalizedProvider && x.ProviderEventId == normalizedEventId, cancellationToken))
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                return;
-            }
-
-            var intent = await _dbContext.SavedSearchAlertDeliveryIntents
-                .SingleOrDefaultAsync(x => x.ProviderMessageId == providerMessageId, cancellationToken);
-
-            if (intent is not null)
-            {
-                switch (eventType.Trim().ToLowerInvariant())
-                {
-                    case "email.delivered":
-                        intent.MarkDelivered();
-                        break;
-                    case "email.bounced":
-                    case "email.complained":
-                    case "email.failed":
-                        if (intent.Status != SavedSearchAlertDeliveryStatus.Delivered)
-                        {
-                            intent.MarkPermanentFailed();
-                        }
-                        break;
-                }
-            }
-
-            await _dbContext.SavedSearchEmailProviderEvents.AddAsync(
-                new SavedSearchEmailProviderEvent(
-                    Guid.NewGuid(),
-                    normalizedProvider,
-                    normalizedEventId,
-                    providerMessageId,
-                    eventType,
-                    DateTime.UtcNow),
-                cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            case "email.delivered":
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                    UPDATE "MarketplaceSavedSearchAlertDeliveryIntents"
+                    SET "Status" = {SavedSearchAlertDeliveryStatus.Delivered.ToString()},
+                        "NextAttemptAtUtc" = NULL,
+                        "LeaseExpiresAtUtc" = NULL
+                    WHERE "ProviderMessageId" = {normalizedMessageId}
+                    """, cancellationToken);
+                break;
+            case "email.bounced":
+            case "email.complained":
+            case "email.failed":
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                    UPDATE "MarketplaceSavedSearchAlertDeliveryIntents"
+                    SET "Status" = {SavedSearchAlertDeliveryStatus.PermanentFailed.ToString()},
+                        "NextAttemptAtUtc" = NULL,
+                        "LeaseExpiresAtUtc" = NULL
+                    WHERE "ProviderMessageId" = {normalizedMessageId}
+                      AND "Status" <> {SavedSearchAlertDeliveryStatus.Delivered.ToString()}
+                    """, cancellationToken);
+                break;
         }
-        catch (DbUpdateException)
-        {
-            await transaction.RollbackAsync(CancellationToken.None);
-            _dbContext.ChangeTracker.Clear();
-            if (await _dbContext.SavedSearchEmailProviderEvents.AsNoTracking()
-                .AnyAsync(x => x.Provider == normalizedProvider && x.ProviderEventId == normalizedEventId, CancellationToken.None))
-            {
-                return;
-            }
-            throw;
-        }
+
+        await transaction.CommitAsync(cancellationToken);
     }
 }
