@@ -15,6 +15,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<SavedSearchAlertMatch> SavedSearchAlertMatches => Set<SavedSearchAlertMatch>();
     public DbSet<SavedSearchAlertDeliveryIntent> SavedSearchAlertDeliveryIntents => Set<SavedSearchAlertDeliveryIntent>();
+    public DbSet<SavedSearchEmailProviderEvent> SavedSearchEmailProviderEvents => Set<SavedSearchEmailProviderEvent>();
     public DbSet<SavedSearchAlertDetectionRequest> SavedSearchAlertDetectionRequests => Set<SavedSearchAlertDetectionRequest>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<ListingReport> ListingReports => Set<ListingReport>();
@@ -106,6 +107,17 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.HasIndex(x => new { x.SavedSearchAlertMatchId, x.Channel }).IsUnique();
             b.HasIndex(x => new { x.Status, x.NextAttemptAtUtc, x.LeaseExpiresAtUtc, x.CreatedAtUtc });
             b.HasIndex(x => x.IdempotencyKey).IsUnique();
+        });
+
+        builder.Entity<SavedSearchEmailProviderEvent>(b =>
+        {
+            b.ToTable("MarketplaceSavedSearchEmailProviderEvents");
+            b.Property(x => x.Provider).HasMaxLength(32).IsRequired();
+            b.Property(x => x.ProviderEventId).HasMaxLength(128).IsRequired();
+            b.Property(x => x.ProviderMessageId).HasMaxLength(256).IsRequired();
+            b.Property(x => x.EventType).HasMaxLength(64).IsRequired();
+            b.HasIndex(x => new { x.Provider, x.ProviderEventId }).IsUnique();
+            b.HasIndex(x => new { x.ProviderMessageId, x.ReceivedAtUtc });
         });
 
         builder.Entity<SavedSearchAlertDetectionRequest>(b =>
