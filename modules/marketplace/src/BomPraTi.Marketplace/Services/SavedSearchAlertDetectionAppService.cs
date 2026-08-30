@@ -1,8 +1,10 @@
+using System.Data;
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Volo.Abp.DependencyInjection;
 
 namespace BomPraTi.Marketplace.Services;
@@ -23,15 +25,27 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
 
     public async Task<int> EvaluateAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
+        await using var localTransaction = _dbContext.Database.CurrentTransaction is null
+            ? await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
+            : null;
+
         var request = await _dbContext.SavedSearchAlertDetectionRequests
-            .SingleOrDefaultAsync(x => x.ListingId == listingId, cancellationToken);
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM "MarketplaceSavedSearchAlertDetectionRequests"
+                WHERE "ListingId" = {listingId}
+                FOR UPDATE
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
         if (request is null || request.ProcessedAtUtc.HasValue)
         {
+            await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return 0;
         }
 
         if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
         {
+            await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return 0;
         }
 
@@ -73,8 +87,16 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
 
         request.MarkProcessed(detectedAtUtc);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await CommitLocalTransactionAsync(localTransaction, cancellationToken);
         return added;
     }
+
+    private static Task CommitLocalTransactionAsync(
+        IDbContextTransaction? localTransaction,
+        CancellationToken cancellationToken) =>
+        localTransaction is null
+            ? Task.CompletedTask
+            : localTransaction.CommitAsync(cancellationToken);
 
     private static PublicListingSearchInput ToPublicSearch(SavedSearch savedSearch) => new()
     {
