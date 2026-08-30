@@ -14,6 +14,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
     public DbSet<FavoritePriceDropMatch> FavoritePriceDropMatches => Set<FavoritePriceDropMatch>();
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
     public DbSet<SavedSearchAlertMatch> SavedSearchAlertMatches => Set<SavedSearchAlertMatch>();
+    public DbSet<SavedSearchAlertDeliveryIntent> SavedSearchAlertDeliveryIntents => Set<SavedSearchAlertDeliveryIntent>();
     public DbSet<SavedSearchAlertDetectionRequest> SavedSearchAlertDetectionRequests => Set<SavedSearchAlertDetectionRequest>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<ListingReport> ListingReports => Set<ListingReport>();
@@ -91,6 +92,17 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.ToTable("MarketplaceSavedSearchAlertMatches");
             b.HasIndex(x => new { x.SavedSearchId, x.ListingId }).IsUnique();
             b.HasIndex(x => new { x.SavedSearchId, x.DetectedAtUtc });
+        });
+
+        builder.Entity<SavedSearchAlertDeliveryIntent>(b =>
+        {
+            b.ToTable("MarketplaceSavedSearchAlertDeliveryIntents");
+            b.Property(x => x.Channel).HasMaxLength(32).IsRequired();
+            b.Property(x => x.IdempotencyKey).HasMaxLength(96).IsRequired();
+            b.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            b.HasIndex(x => new { x.SavedSearchAlertMatchId, x.Channel }).IsUnique();
+            b.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+            b.HasIndex(x => x.IdempotencyKey).IsUnique();
         });
 
         builder.Entity<SavedSearchAlertDetectionRequest>(b =>

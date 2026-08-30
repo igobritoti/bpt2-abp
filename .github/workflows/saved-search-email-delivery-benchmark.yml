@@ -1,0 +1,56 @@
+name: BPT2 Saved Search Email Delivery Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'modules/marketplace/src/BomPraTi.Marketplace/Domain/SavedSearchAlertDeliveryIntent.cs'
+      - 'modules/marketplace/src/BomPraTi.Marketplace/Data/MarketplaceDbContext.cs'
+      - 'tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/**'
+      - 'docs/audits/2026-08-29-saved-search-email-delivery-contract-baseline.md'
+      - 'docs/agent/CURRENT-WORK.md'
+      - 'docs/generated/repository-facts.md'
+      - '.github/workflows/saved-search-email-delivery-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  saved-search-email-delivery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: BomPraTi
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d BomPraTi"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BPT_DB_CONNECTION: Host=localhost;Port=5432;Database=BomPraTi;Username=postgres;Password=postgres
+      BPT_SAVED_SEARCH_EMAIL_DELIVERY_OUTPUT: artifacts/saved-search-email-delivery-baseline.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build email delivery benchmark
+        run: dotnet build tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj --configuration Release
+      - name: Apply fresh database
+        run: bash scripts/fresh-migration-gate.sh
+      - name: Execute provider-neutral email delivery baseline
+        run: dotnet run --project tests/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture/BomPraTi.SavedSearchEmailDeliveryBenchmarkFixture.csproj --configuration Release --no-build
+      - name: Upload delivery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saved-search-email-delivery-baseline
+          path: artifacts/saved-search-email-delivery-baseline.json
+          if-no-files-found: error
