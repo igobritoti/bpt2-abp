@@ -46,13 +46,11 @@ await w1.RollbackAsync();
 await using var recoveryA = await ClaimAsync(options, "W3-recovery-A");
 var recoveryRequest = recoveryA.Request ?? throw new InvalidOperationException("rolled-back A was not eligible again");
 Require(recoveryRequest.ListingId == listingA, "rolled-back A must become eligible again");
-recoveryRequest.MarkProcessed(baseTime.AddMinutes(1));
-await recoveryA.Context.SaveChangesAsync();
+await MarkProcessedAsync(recoveryA.Context, recoveryRequest.Id, baseTime.AddMinutes(1));
 await recoveryA.CommitAsync();
 observations.Add(new { test = "rollback-recovery", listingId = listingA, recovered = true, recoveryA.ClaimMs, recoveryA.TransactionMs });
 
-w2.Request.MarkProcessed(baseTime.AddMinutes(2));
-await w2.Context.SaveChangesAsync();
+await MarkProcessedAsync(w2.Context, w2.Request.Id, baseTime.AddMinutes(2));
 await w2.CommitAsync();
 
 await using var crashAfterLedger = await ClaimAsync(options, "W4-crash-after-ledger");
@@ -66,12 +64,11 @@ var replayRequest = replayC.Request ?? throw new InvalidOperationException("C wa
 Require(replayRequest.ListingId == listingC, "C must be recoverable after owner rollback");
 var insertedReplayMatch = await EnsureMatchAsync(options, savedSearchId, listingC, baseTime.AddMinutes(4));
 Require(!insertedReplayMatch, "replay must observe durable ledger outcome instead of inserting duplicate");
-replayRequest.MarkProcessed(baseTime.AddMinutes(4));
-await replayC.Context.SaveChangesAsync();
+await MarkProcessedAsync(replayC.Context, replayRequest.Id, baseTime.AddMinutes(4));
 await replayC.CommitAsync();
 await using (var verify = NewContext(options))
 {
-    var count = await verify.SavedSearchAlertMatches.CountAsync(x => x.SavedSearchId == savedSearchId && x.ListingId == listingC);
+    var count = await verify.SavedSearchAlertMatches.AsNoTracking().CountAsync(x => x.SavedSearchId == savedSearchId && x.ListingId == listingC);
     Require(count == 1, "replay must converge to one durable Saved Search / Listing match");
 }
 observations.Add(new { test = "crash-after-ledger-replay", listingId = listingC, durableMatches = 1, duplicateInsertAttempted = false });
@@ -81,16 +78,14 @@ Require(slowD.Request?.ListingId == listingD, "slow owner must claim D");
 await using var independentE = await ClaimAsync(options, "W7-independent-E");
 var independentRequest = independentE.Request ?? throw new InvalidOperationException("E did not progress while D was locked");
 Require(independentRequest.ListingId == listingE, "locked/slow D must not prevent E from progressing");
-independentRequest.MarkProcessed(baseTime.AddMinutes(5));
-await independentE.Context.SaveChangesAsync();
+await MarkProcessedAsync(independentE.Context, independentRequest.Id, baseTime.AddMinutes(5));
 await independentE.CommitAsync();
 await slowD.RollbackAsync();
 
 await using var restartD = await ClaimAsync(options, "W8-restart-D");
 var restartRequest = restartD.Request ?? throw new InvalidOperationException("cancelled D was not eligible after restart-equivalent rollback");
 Require(restartRequest.ListingId == listingD, "cancelled D must become eligible after restart-equivalent rollback");
-restartRequest.MarkProcessed(baseTime.AddMinutes(6));
-await restartD.Context.SaveChangesAsync();
+await MarkProcessedAsync(restartD.Context, restartRequest.Id, baseTime.AddMinutes(6));
 await restartD.CommitAsync();
 observations.Add(new { test = "independent-progress-and-cancellation", slow = listingD, progressed = listingE, recovered = listingD });
 
@@ -102,7 +97,7 @@ observations.Add(new { test = "completed-noop", eligible = 0 });
 var enqueueOutcomes = await RunConcurrentEnqueueRaceAsync(options, duplicateListing, baseTime.AddMinutes(7));
 await using (var verify = NewContext(options))
 {
-    var durable = await verify.SavedSearchAlertDetectionRequests.CountAsync(x => x.ListingId == duplicateListing);
+    var durable = await verify.SavedSearchAlertDetectionRequests.AsNoTracking().CountAsync(x => x.ListingId == duplicateListing);
     Require(durable == 1, "concurrent enqueue must converge to one durable request row");
 }
 Require(enqueueOutcomes.Count(x => x == "INSERTED") == 1, "exactly one enqueue insertion should commit");
@@ -115,7 +110,7 @@ var report = new
     protocol = new
     {
         database = "PostgreSQL",
-        claim = "SELECT pending request FOR UPDATE SKIP LOCKED LIMIT 1 inside short transaction",
+        claim = "SELECT pending request FOR UPDATE SKIP LOCKED LIMIT 1 inside transaction",
         claimStateColumnsAdded = false,
         schedulingEnabled = false,
         automaticRunnerEnabled = false,
@@ -163,9 +158,12 @@ static async Task SeedRequestsAsync(
     await using var db = NewContext(options);
     foreach (var request in requests)
     {
-        db.SavedSearchAlertDetectionRequests.Add(new SavedSearchAlertDetectionRequest(request.Id, request.ListingId, request.EnqueuedAtUtc));
+        var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "MarketplaceSavedSearchAlertDetectionRequests" ("Id", "ListingId", "EnqueuedAtUtc", "ProcessedAtUtc", "ExtraProperties", "ConcurrencyStamp")
+            VALUES ({request.Id}, {request.ListingId}, {request.EnqueuedAtUtc}, NULL, '{{}}', {Guid.NewGuid().ToString("N")})
+            """);
+        Require(affected == 1, "seed request insert failed");
     }
-    await db.SaveChangesAsync();
 }
 
 static async Task<ClaimHandle> ClaimAsync(DbContextOptions<MarketplaceDbContext> options, string worker)
@@ -183,10 +181,20 @@ static async Task<ClaimHandle> ClaimAsync(DbContextOptions<MarketplaceDbContext>
             FOR UPDATE SKIP LOCKED
             LIMIT 1
             """)
-        .AsTracking()
+        .AsNoTracking()
         .SingleOrDefaultAsync();
     claimWatch.Stop();
     return new ClaimHandle(worker, context, transaction, request, claimWatch.Elapsed.TotalMilliseconds, transactionWatch);
+}
+
+static async Task MarkProcessedAsync(MarketplaceDbContext db, Guid requestId, DateTime processedAtUtc)
+{
+    var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
+        UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
+        SET "ProcessedAtUtc" = {processedAtUtc}
+        WHERE "Id" = {requestId} AND "ProcessedAtUtc" IS NULL
+        """);
+    Require(affected == 1, "claimed request could not be marked processed");
 }
 
 static async Task<bool> EnsureMatchAsync(
@@ -196,10 +204,12 @@ static async Task<bool> EnsureMatchAsync(
     DateTime detectedAtUtc)
 {
     await using var db = NewContext(options);
-    if (await db.SavedSearchAlertMatches.AnyAsync(x => x.SavedSearchId == savedSearchId && x.ListingId == listingId)) return false;
-    db.SavedSearchAlertMatches.Add(new SavedSearchAlertMatch(Guid.NewGuid(), savedSearchId, listingId, detectedAtUtc));
-    await db.SaveChangesAsync();
-    return true;
+    var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
+        INSERT INTO "MarketplaceSavedSearchAlertMatches" ("Id", "SavedSearchId", "ListingId", "DetectedAtUtc")
+        VALUES ({Guid.NewGuid()}, {savedSearchId}, {listingId}, {detectedAtUtc})
+        ON CONFLICT ("SavedSearchId", "ListingId") DO NOTHING
+        """);
+    return affected == 1;
 }
 
 static async Task<string[]> RunConcurrentEnqueueRaceAsync(
@@ -212,13 +222,15 @@ static async Task<string[]> RunConcurrentEnqueueRaceAsync(
     {
         await gate.Task;
         await using var db = NewContext(options);
-        db.SavedSearchAlertDetectionRequests.Add(new SavedSearchAlertDetectionRequest(id, listingId, enqueuedAtUtc));
         try
         {
-            await db.SaveChangesAsync();
-            return "INSERTED";
+            var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "MarketplaceSavedSearchAlertDetectionRequests" ("Id", "ListingId", "EnqueuedAtUtc", "ProcessedAtUtc", "ExtraProperties", "ConcurrencyStamp")
+                VALUES ({id}, {listingId}, {enqueuedAtUtc}, NULL, '{{}}', {Guid.NewGuid().ToString("N")})
+                """);
+            return affected == 1 ? "INSERTED" : "UNEXPECTED";
         }
-        catch (DbUpdateException)
+        catch (Exception exception) when (exception.InnerException?.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) == true || exception.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
         {
             return "UNIQUE_BACKSTOP";
         }
