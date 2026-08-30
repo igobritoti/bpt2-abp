@@ -39,5 +39,9 @@ public sealed class BomPraTiMarketplaceModule : AbpModule
             options.MissingListingRetryDelay = TimeSpan.FromMinutes(5);
         });
         context.Services.AddHostedService<SavedSearchAlertRunnerBackgroundService>();
+
+        context.Services.AddOptions<SavedSearchEmailDeliveryOptions>()
+            .BindConfiguration("SavedSearchEmailDelivery");
+        context.Services.AddHostedService<SavedSearchEmailDeliveryBackgroundService>();
     }
 }
