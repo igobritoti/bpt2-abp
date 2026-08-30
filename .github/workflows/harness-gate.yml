@@ -8,6 +8,7 @@ on:
       - 'ARCHITECTURE.md'
       - 'docs/**'
       - 'scripts/check-harness.py'
+      - 'scripts/check-action-pinning.py'
       - 'scripts/test-http-smoke-wiring.py'
       - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
@@ -23,6 +24,7 @@ on:
       - 'ARCHITECTURE.md'
       - 'docs/**'
       - 'scripts/check-harness.py'
+      - 'scripts/check-action-pinning.py'
       - 'scripts/test-http-smoke-wiring.py'
       - 'scripts/test-ephemeral-migration-authority.py'
       - 'scripts/generate-repo-facts.py'
@@ -37,9 +39,11 @@ jobs:
   harness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Syntax check harness tooling
-        run: python3 -m py_compile scripts/check-harness.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
+        run: python3 -m py_compile scripts/check-harness.py scripts/check-action-pinning.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
+      - name: Prove immutable external action references
+        run: python3 scripts/check-action-pinning.py
       - name: Prove HTTP smoke wiring guard
         run: python3 scripts/test-http-smoke-wiring.py
       - name: Prove ephemeral migration authority guard
