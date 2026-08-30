@@ -106,7 +106,9 @@ await using (var afterFailureDb = new MarketplaceDbContext(options))
         .SingleAsync(x => x.ListingId == failingListingId);
     Require(failingRequest.LastAttemptAtUtc.HasValue, "generic failure must record the real attempt time");
     Require(failingRequest.NextAttemptAtUtc.HasValue, "generic failure must schedule a retry");
-    Require(failingRequest.NextAttemptAtUtc.Value > failingRequest.LastAttemptAtUtc.GetValueOrDefault(), "retry must be deferred after the actual attempt");
+    Require(
+        failingRequest.NextAttemptAtUtc.GetValueOrDefault() > failingRequest.LastAttemptAtUtc.GetValueOrDefault(),
+        "retry must be deferred after the actual attempt");
     var healthyEligible = await SelectNextDueListingIdAsync(options, retryBaseUtc);
     Require(healthyEligible == healthyListingId, "a problematic request must not starve another due request");
 }
@@ -146,7 +148,7 @@ var cancellationQuery = new CancelledPublicListingQuery(cancelledListingId);
 await using (var cancellationDb = new MarketplaceDbContext(options))
 {
     var processor = new SavedSearchAlertDetectionProcessor(cancellationDb, cancellationQuery, retryingOptions);
-    var cancellationTokenSource = new CancellationTokenSource();
+    using var cancellationTokenSource = new CancellationTokenSource();
     cancellationTokenSource.Cancel();
 
     try
