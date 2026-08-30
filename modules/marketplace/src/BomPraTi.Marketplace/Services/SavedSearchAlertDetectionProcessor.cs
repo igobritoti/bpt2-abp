@@ -48,8 +48,13 @@ public sealed class SavedSearchAlertDetectionProcessor : ITransientDependency
         var enqueuedAtUtc = DateTime.SpecifyKind(request.EnqueuedAtUtc, DateTimeKind.Utc);
         if (await _publicListings.GetAsync(listingId, cancellationToken) is null)
         {
-            request.ScheduleRetry(DateTime.UtcNow.Add(_options.MissingListingRetryDelay));
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var nextAttemptAtUtc = DateTime.UtcNow.Add(_options.MissingListingRetryDelay);
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE "MarketplaceSavedSearchAlertDetectionRequests"
+                SET "LastAttemptAtUtc" = {nextAttemptAtUtc},
+                    "NextAttemptAtUtc" = {nextAttemptAtUtc}
+                WHERE "Id" = {request.Id}
+                """, cancellationToken);
             await CommitLocalTransactionAsync(localTransaction, cancellationToken);
             return 0;
         }
