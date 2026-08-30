@@ -85,6 +85,7 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.HasIndex(x => new { x.UserId, x.CriteriaKey }).IsUnique();
             b.HasIndex(x => new { x.UserId, x.CreatedAtUtc });
             b.HasIndex(x => new { x.AlertEnabled, x.Id });
+            b.HasIndex(x => new { x.EmailEachNewMatchEnabled, x.Id });
         });
 
         builder.Entity<SavedSearchAlertMatch>(b =>
@@ -100,8 +101,9 @@ public sealed class MarketplaceDbContext : AbpDbContext<MarketplaceDbContext>
             b.Property(x => x.Channel).HasMaxLength(32).IsRequired();
             b.Property(x => x.IdempotencyKey).HasMaxLength(96).IsRequired();
             b.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            b.Property(x => x.ProviderMessageId).HasMaxLength(256);
             b.HasIndex(x => new { x.SavedSearchAlertMatchId, x.Channel }).IsUnique();
-            b.HasIndex(x => new { x.Status, x.CreatedAtUtc });
+            b.HasIndex(x => new { x.Status, x.NextAttemptAtUtc, x.LeaseExpiresAtUtc, x.CreatedAtUtc });
             b.HasIndex(x => x.IdempotencyKey).IsUnique();
         });
 
