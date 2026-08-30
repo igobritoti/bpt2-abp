@@ -3,13 +3,19 @@ name: BPT2 Saved Search PostgreSQL Claim Benchmark
 on:
   pull_request:
     paths:
-      - 'modules/marketplace/src/BomPraTi.Marketplace/Services/SavedSearchAlertDetectionAppService.cs'
+      - 'modules/marketplace/src/BomPraTi.Marketplace/Domain/SavedSearch.cs'
+      - 'modules/marketplace/src/BomPraTi.Marketplace/Domain/SavedSearchAlertDetectionRequest.cs'
+      - 'modules/marketplace/src/BomPraTi.Marketplace/Services/SavedSearchAlertDetectionProcessor.cs'
       - 'tests/BomPraTi.SavedSearchPostgresClaimBenchmarkFixture/**'
       - 'docs/audits/2026-08-29-saved-search-postgres-claim-baseline.md'
       - 'docs/agent/CURRENT-WORK.md'
       - 'docs/generated/repository-facts.md'
       - '.github/workflows/saved-search-postgres-claim-benchmark.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

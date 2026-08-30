@@ -22,6 +22,10 @@ Issue #118 já possuía, desde o PR #137, o ledger provider-neutral durável de 
 6. Fazer review/thread/base refresh, atualizar PR para ready quando a matriz de engenharia estiver verde e mergear somente então.
 7. Verificar fechamento de #118 e `main` remoto após o merge.
 
+## Repo health
+
+- Os workflows de Saved Search agora cancelam runs superseded por PR e o benchmark de claim passou a observar o processor real `SavedSearchAlertDetectionProcessor.cs` e o request row correspondente, em vez de um nome antigo de app service.
+
 ## Decisões atuais
 
 - `EMAIL_EACH_NEW_MATCH_DEFAULT = OFF`;
