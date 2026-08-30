@@ -1,6 +1,10 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using BomPraTi.Marketplace.Data;
 using BomPraTi.Marketplace.Domain;
+using BomPraTi.Marketplace.Services;
+using BomPraTi.Services;
 using Microsoft.EntityFrameworkCore;
 
 var connection = Environment.GetEnvironmentVariable("BPT_DB_CONNECTION")
@@ -150,11 +154,40 @@ Require((await LoadAsync(transient.Id)).Status == SavedSearchAlertDeliveryStatus
     "Transient failure must remain recoverable with an explicit retry state.");
 scenarios.Add(new { id = "permanent-vs-transient", passed = true });
 
-await SetStatusAsync(changedIntent.Id, SavedSearchAlertDeliveryStatus.Delivered, (await LoadAsync(changedIntent.Id)).LastAttemptAtUtc);
-await SetStatusAsync(changedIntent.Id, SavedSearchAlertDeliveryStatus.Delivered, (await LoadAsync(changedIntent.Id)).LastAttemptAtUtc);
-Require((await LoadAsync(changedIntent.Id)).Status == SavedSearchAlertDeliveryStatus.Delivered,
-    "Callback replay must converge idempotently to Delivered.");
-scenarios.Add(new { id = "delivery-callback-replay", passed = true });
+var webhookIntent = await EnsureIntentAsync(Guid.NewGuid(), Guid.NewGuid(), eligible) ?? throw new InvalidOperationException();
+await using (var db = NewContext(options))
+{
+    var tracked = await db.SavedSearchAlertDeliveryIntents.SingleAsync(x => x.Id == webhookIntent.Id);
+    tracked.MarkAccepted("resend-message-1");
+    await db.SaveChangesAsync();
+}
+await using (var db = NewContext(options))
+{
+    var webhookProcessor = new SavedSearchEmailProviderEventProcessor(db);
+    await webhookProcessor.ProcessAsync("resend", "evt-delivered-1", "resend-message-1", "email.delivered");
+    await webhookProcessor.ProcessAsync("resend", "evt-delivered-1", "resend-message-1", "email.delivered");
+    Require(await db.SavedSearchEmailProviderEvents.AsNoTracking().CountAsync(x => x.ProviderEventId == "evt-delivered-1") == 1,
+        "Webhook replay must persist one provider event ledger row.");
+}
+Require((await LoadAsync(webhookIntent.Id)).Status == SavedSearchAlertDeliveryStatus.Delivered,
+    "Delivered webhook must transition Accepted intent to Delivered.");
+scenarios.Add(new { id = "provider-webhook-replay-idempotent", passed = true });
+
+var keyBytes = Encoding.UTF8.GetBytes("saved-search-webhook-test-secret-32");
+var webhookSecret = $"whsec_{Convert.ToBase64String(keyBytes)}";
+var webhookNow = new DateTimeOffset(now);
+var webhookTimestamp = webhookNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+var webhookEventId = "evt-signature-1";
+var rawBody = "{\"type\":\"email.delivered\",\"data\":{\"email_id\":\"resend-message-1\"}}";
+var signedContent = Encoding.UTF8.GetBytes($"{webhookEventId}.{webhookTimestamp}.{rawBody}");
+var webhookSignature = $"v1,{Convert.ToBase64String(HMACSHA256.HashData(keyBytes, signedContent))}";
+Require(ResendSvixWebhookVerifier.Verify(webhookSecret, webhookEventId, webhookTimestamp, webhookSignature, rawBody, webhookNow),
+    "Valid Resend/Svix webhook signature must be accepted.");
+Require(!ResendSvixWebhookVerifier.Verify(webhookSecret, webhookEventId, webhookTimestamp, webhookSignature, rawBody + " ", webhookNow),
+    "Tampered raw webhook body must be rejected.");
+Require(!ResendSvixWebhookVerifier.Verify(webhookSecret, webhookEventId, webhookTimestamp, webhookSignature, rawBody, webhookNow.AddMinutes(6)),
+    "Stale webhook timestamp must be rejected.");
+scenarios.Add(new { id = "resend-svix-authenticity", passed = true });
 
 var isolatedFail = await EnsureIntentAsync(Guid.NewGuid(), Guid.NewGuid(), eligible) ?? throw new InvalidOperationException();
 var isolatedOk = await EnsureIntentAsync(Guid.NewGuid(), Guid.NewGuid(), eligible) ?? throw new InvalidOperationException();
@@ -167,11 +200,11 @@ scenarios.Add(new { id = "failure-isolation", passed = true });
 
 var artifact = new
 {
-    schema = "bpt2.saved-search-email-delivery-baseline.v2",
+    schema = "bpt2.saved-search-email-delivery-baseline.v3",
     sourceBoundary = "SavedSearchAlertMatch + UserId + email channel; recipient resolved at dispatch",
     durableIntentStoresRecipientAddress = false,
     productMonitoringOptInIsExternalEmailOptIn = false,
-    provider = "provider-neutral fake with idempotency simulation",
+    provider = "provider-neutral fake + production Resend/Svix verifier",
     scenarioCount = scenarios.Count,
     scenarios,
     providerCalls = provider.Calls.Count,
@@ -182,6 +215,8 @@ var artifact = new
         sourceReplayIdempotency = "PROVED_BOUNDED",
         recipientRevalidation = "PROVED_BOUNDED",
         providerOutcomeUnknown = "PRESERVED_EXPLICITLY",
+        webhookAuthenticity = "PROVED_BOUNDED",
+        webhookReplay = "PROVED_BOUNDED",
         productionProvider = "RESEND_FOR_BOUNDED_PROBE",
         productionCadence = "EMAIL_EACH_NEW_MATCH_EXPLICIT_PER_SAVED_SEARCH",
         productionConsentSource = "EXPLICIT_SAVED_SEARCH_AUTHORIZATION",
