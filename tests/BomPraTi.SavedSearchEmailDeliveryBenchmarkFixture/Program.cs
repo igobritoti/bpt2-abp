@@ -157,9 +157,14 @@ scenarios.Add(new { id = "permanent-vs-transient", passed = true });
 var webhookIntent = await EnsureIntentAsync(Guid.NewGuid(), Guid.NewGuid(), eligible) ?? throw new InvalidOperationException();
 await using (var db = NewContext(options))
 {
-    var tracked = await db.SavedSearchAlertDeliveryIntents.SingleAsync(x => x.Id == webhookIntent.Id);
-    tracked.MarkAccepted("resend-message-1");
-    await db.SaveChangesAsync();
+    await db.Database.ExecuteSqlInterpolatedAsync($"""
+        UPDATE "MarketplaceSavedSearchAlertDeliveryIntents"
+        SET "Status" = {SavedSearchAlertDeliveryStatus.Accepted.ToString()},
+            "ProviderMessageId" = {"resend-message-1"},
+            "NextAttemptAtUtc" = NULL,
+            "LeaseExpiresAtUtc" = NULL
+        WHERE "Id" = {webhookIntent.Id}
+        """);
 }
 await using (var db = NewContext(options))
 {
