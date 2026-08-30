@@ -54,6 +54,15 @@ jobs:
         run: bash scripts/fresh-migration-gate.sh
       - name: Seed and execute frozen discovery baseline
         run: dotnet run --project tests/BomPraTi.AdvancedDiscoveryBenchmarkFixture/BomPraTi.AdvancedDiscoveryBenchmarkFixture.csproj --configuration Release --no-build
+      - name: Normalize baseline JSON encoding
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('artifacts/discovery-baseline-before-metamorphic-typo.json')
+          data = p.read_bytes()
+          if data.startswith(b'\xef\xbb\xbf'):
+              p.write_bytes(data[3:])
+          PY
       - name: Execute metamorphic typo comparison
         run: dotnet run --project tests/BomPraTi.MetamorphicTypoBenchmarkFixture/BomPraTi.MetamorphicTypoBenchmarkFixture.csproj --configuration Release --no-build
       - name: Upload metamorphic evidence
