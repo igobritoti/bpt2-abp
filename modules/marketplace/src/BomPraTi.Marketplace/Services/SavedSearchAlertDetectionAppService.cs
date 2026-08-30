@@ -1,3 +1,4 @@
+using BomPraTi.Marketplace.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.DependencyInjection;
 
@@ -13,6 +14,6 @@ public class SavedSearchAlertDetectionAppService : ISavedSearchAlertDetectionApp
         _processor = processor;
     }
 
-    public async Task<int> EvaluateAsync(Guid listingId, CancellationToken cancellationToken = default)
+    public Task<int> EvaluateAsync(Guid listingId, CancellationToken cancellationToken = default)
         => _processor.EvaluateAsync(listingId, cancellationToken);
 }
