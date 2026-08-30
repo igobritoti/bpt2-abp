@@ -10,6 +10,7 @@ on:
       - 'modules/media/**'
       - 'main/**'
       - 'tests/BomPraTi.HttpLifecycleFixture/**'
+      - 'tests/BomPraTi.SavedSearchPostgresClaimBenchmarkFixture/**'
       - 'scripts/public-buyer-http-smoke.sh'
       - 'scripts/buyer-saved-search-http-smoke.sh'
       - 'scripts/public-seller-hub-http-smoke.sh'
@@ -20,6 +21,7 @@ on:
       - 'scripts/whatsapp-auth-forwarding-smoke.sh'
       - 'scripts/authenticated-lead-http-smoke.sh'
       - 'scripts/fresh-migration-gate.sh'
+      - '.github/workflows/saved-search-postgres-claim-benchmark.yml'
       - '.github/workflows/public-buyer-http-gate.yml'
 
 permissions:
