@@ -1,0 +1,39 @@
+name: BPT2 Public Web Lock Generator
+
+on:
+  push:
+    branches:
+      - "chore/public-web-lock-165"
+    paths:
+      - ".github/workflows/public-web-lock-generator.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.13.0"
+
+      - name: Generate lockfile with CI toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "NODE_VERSION=$(node --version)"
+          echo "NPM_VERSION=$(npm --version)"
+          cd public-web
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package.json
+          echo "LOCK_SHA256=$(sha256sum package-lock.json | awk '{print $1}')"
+          echo "LOCK_BYTES=$(wc -c < package-lock.json)"
+          echo "LOCK_GZIP_BASE64_BEGIN"
+          gzip -9 -c package-lock.json | base64 -w0
+          echo
+          echo "LOCK_GZIP_BASE64_END"
