@@ -39,7 +39,7 @@ jobs:
   harness:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Syntax check harness tooling
         run: python3 -m py_compile scripts/check-harness.py scripts/check-action-pinning.py scripts/test-http-smoke-wiring.py scripts/test-ephemeral-migration-authority.py scripts/generate-repo-facts.py scripts/podium7-contract-projection-experiment.py
       - name: Prove immutable external action references
