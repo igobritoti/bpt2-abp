@@ -27,7 +27,12 @@ var service = new SavedSearchAlertDetectionProcessor(
     publicQuery,
     Options.Create(new SavedSearchAlertRunnerOptions()));
 var evaluation = service.EvaluateAsync(listingId);
-await enteredPublicQuery.Task.WaitAsync(TimeSpan.FromSeconds(10));
+var firstCompletion = await Task.WhenAny(enteredPublicQuery.Task, evaluation).WaitAsync(TimeSpan.FromSeconds(10));
+if (firstCompletion == evaluation)
+{
+    await evaluation;
+    throw new InvalidOperationException("production EvaluateAsync returned before entering the public Listing query");
+}
 
 var lockHeld = await ExactRequestLockIsHeldAsync(options, listingId);
 Require(lockHeld, "production EvaluateAsync must hold the exact request row lock while Listing evaluation is in progress");
