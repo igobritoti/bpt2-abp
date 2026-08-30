@@ -366,7 +366,9 @@ sealed class RetryingPublicListingQuery : IPublicListingQuery
             }
         }
 
-        if (listingId is not (_failingListingId or _healthyListingId or _cancelledListingId))
+        if (listingId != _failingListingId
+            && listingId != _healthyListingId
+            && listingId != _cancelledListingId)
         {
             throw new InvalidOperationException("unexpected Listing id");
         }
