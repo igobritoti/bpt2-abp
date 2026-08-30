@@ -159,7 +159,11 @@ sealed class BlockingPublicListingQuery : IPublicListingQuery
 
     public async Task<PublicListingDto?> GetAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
-        Require(listingId == _listingId, "unexpected Listing id");
+        if (listingId != _listingId)
+        {
+            throw new InvalidOperationException("unexpected Listing id");
+        }
+
         Interlocked.Increment(ref _getCalls);
         _entered.TrySetResult();
         await _release.Task.WaitAsync(cancellationToken);
