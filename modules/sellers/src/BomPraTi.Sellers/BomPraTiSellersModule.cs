@@ -1,5 +1,6 @@
 using BomPraTi.Sellers.Contracts;
 using BomPraTi.Sellers.Data;
+using BomPraTi.Sellers.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Application;
 using Volo.Abp.Domain;
@@ -22,6 +23,8 @@ public sealed class BomPraTiSellersModule : AbpModule
         {
             options.AddDefaultRepositories(includeAllEntities: true);
         });
+
+        context.Services.AddTransient<ISellerPublicQuery, SellerPublicQueryAppService>();
 
         Configure<AbpDbContextOptions>(options => options.UseNpgsql());
     }
