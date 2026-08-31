@@ -17,6 +17,10 @@ Snapshot volatile only.
   - `npm run typecheck` in `public-web`;
   - `npm run build` in `public-web` with `BPT_PUBLIC_BASE_URL` and `BPT_API_BASE_URL` defined;
   - `dotnet build tests/BomPraTi.Gate01Smoke/BomPraTi.Gate01Smoke.csproj`.
+- Remote integration state:
+  - branch `codex/public-seller-experience-01` pushed to `origin`;
+  - PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) opened against `main`;
+  - GitHub CLI check inspection is blocked by `HTTP 401` on the current credential.
 - Current control-plane artifacts:
   - [docs/baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md](../baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md)
   - [docs/closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md](../closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
@@ -27,20 +31,21 @@ Snapshot volatile only.
 | --- | --- | --- | --- | --- | --- |
 | BR-01 | Browser/DB runtime unavailable on this machine | end-to-end public Seller / Buyer smoke | `BPT_DB_CONNECTION`, `BPT_FIXTURE_VEHICLE_ID`, and `BPT_PUBLIC_BASE_URL` are absent on this machine | PostgreSQL-capable runtime / browser smoke env | yes |
 | BR-02 | `#160` main-branch integration policy remains administrative | repository administration | open issue #160 and branch-protection/ruleset enforcement remain unresolved | repository administration authority | yes |
+| BR-03 | GitHub CLI/API auth unavailable for PR inspection | remote CI / mergeability | `gh pr checks 177` returned `HTTP 401: Requires authentication` | authenticated GitHub access | yes |
 
 ## Immediate blocker
 
-Repo-internal work is integrated locally. Remaining validation is external: browser/DB smoke and repository administration.
+Repo-internal work is integrated locally. Remaining validation is external/remote: browser/DB smoke, repository administration, and authenticated PR inspection/merge.
 
 ## Remote integration state
 
-- no PR opened yet for this slice;
+- PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) is open for this slice;
 - remote repository remains `tihotm/bpt2-abp`;
-- current worktree contains the local public Seller experience patch awaiting integration.
+- current worktree/branch contains the local public Seller experience patch awaiting CI and merge.
 
 ## Next closure item
 
-Keep the current wave in `COMPLETE_EXTERNAL_VALIDATION_PENDING` while the remaining external runtime smoke and `#160` administrative blocker finalize.
+Keep the current wave in `COMPLETE_REMOTE_INTEGRATION_PENDING` while the remaining remote CI/mergeability, browser/DB smoke, and `#160` administrative blocker finalize.
 
 ## Canonical links
 
