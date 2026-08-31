@@ -7,7 +7,7 @@ Snapshot volatile only.
 ## In flight
 
 - Wave `PRODUCT-WAVE-LISTING-DECISION-SUPPORT-01`: public Listing detail decision support using canonical vehicle facts and current public actions.
-- The wave is being prepared from `origin/main` at `9848b6913df371ea0f055370522a2242aff81a72`.
+- The wave is integrated into `origin/main` at `ef81ed9cd5673617336ffa172454eeb1dd42a57e`.
 - Public Listing decision-support patch is in place:
   - public Listing detail preserves safe return navigation;
   - public Listing detail now reinforces canonical vehicle identity with brand/model/generation/version/model year plus available opaque technical fields from the catalog;
@@ -18,8 +18,7 @@ Snapshot volatile only.
   - `npm run typecheck` in `public-web`;
   - `npm run build` in `public-web` with `BPT_PUBLIC_BASE_URL` and `BPT_API_BASE_URL` defined.
 - Remote integration state:
-  - current branch contains the local Listing decision-support patch awaiting integration;
-  - `main` remains at `9848b6913df371ea0f055370522a2242aff81a72`.
+  - `main` now includes the Listing decision-support patch at `ef81ed9cd5673617336ffa172454eeb1dd42a57e`.
 - Current control-plane artifacts:
   - [docs/baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md](../baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md)
   - [docs/closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md](../closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
@@ -38,7 +37,7 @@ Repo-internal work is integrated locally. Remaining validation is external: brow
 ## Remote integration state
 
 - remote repository remains `tihotm/bpt2-abp`;
-- current worktree/branch contains the local Listing decision-support patch.
+- current worktree/branch contains the integrated Listing decision-support patch.
 
 ## Next closure item
 
