@@ -7,7 +7,8 @@ Snapshot volatile only.
 ## In flight
 
 - Wave `PRODUCT-WAVE-PUBLIC-SELLER-EXPERIENCE-01`: public Seller Hub continuity from Listing detail to Seller inventory and back navigation.
-- Local public Seller experience patch is in place:
+- The wave is integrated into `origin/main` at `0b7e6fa0ab510b2fbb6a264b916871daa8ea65b5`.
+- Public Seller experience patch is in place:
   - public Listing cards preserve the current discovery state as `returnTo` when opening a listing detail;
   - listing detail back navigation restores the caller discovery state when `returnTo` is present;
   - public Seller Hub uses only authorized Seller data, shows public inventory only, and renders an empty state when no public inventory is available;
@@ -18,9 +19,10 @@ Snapshot volatile only.
   - `npm run build` in `public-web` with `BPT_PUBLIC_BASE_URL` and `BPT_API_BASE_URL` defined;
   - `dotnet build tests/BomPraTi.Gate01Smoke/BomPraTi.Gate01Smoke.csproj`.
 - Remote integration state:
-  - branch `codex/public-seller-experience-01` pushed to `origin`;
-  - PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) opened against `main`;
-  - GitHub CLI check inspection is blocked by `HTTP 401` on the current credential.
+  - branch `codex/public-seller-experience-01` was pushed to `origin`;
+  - PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) existed for the wave before direct integration;
+  - `main` now includes the wave head `0b7e6fa0ab510b2fbb6a264b916871daa8ea65b5`;
+  - GitHub CLI check inspection remains blocked by `HTTP 401` on the current credential.
 - Current control-plane artifacts:
   - [docs/baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md](../baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md)
   - [docs/closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md](../closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
@@ -35,17 +37,17 @@ Snapshot volatile only.
 
 ## Immediate blocker
 
-Repo-internal work is integrated locally. Remaining validation is external/remote: browser/DB smoke, repository administration, and authenticated PR inspection/merge.
+Repo-internal work is integrated locally. Remaining validation is external: browser/DB smoke and repository administration.
 
 ## Remote integration state
 
-- PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) is open for this slice;
+- PR [#177](https://github.com/tihotm/bpt2-abp/pull/177) was the integration vehicle for this slice;
 - remote repository remains `tihotm/bpt2-abp`;
-- current worktree/branch contains the local public Seller experience patch awaiting CI and merge.
+- current worktree/branch contains the integrated public Seller experience patch.
 
 ## Next closure item
 
-Keep the current wave in `COMPLETE_REMOTE_INTEGRATION_PENDING` while the remaining remote CI/mergeability, browser/DB smoke, and `#160` administrative blocker finalize.
+Keep the current wave in `COMPLETE_EXTERNAL_VALIDATION_PENDING` while the remaining browser/DB smoke and `#160` administrative blocker finalize.
 
 ## Canonical links
 
