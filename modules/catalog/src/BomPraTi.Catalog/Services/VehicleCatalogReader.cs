@@ -30,7 +30,8 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             return Array.Empty<VehicleRefDto>();
         }
 
-        var rows = await (
+        // PERF: Direct projection into VehicleRefDto in EF Core query eliminates intermediate anonymous object allocation
+        return await (
             from vehicle in _dbContext.Vehicles.AsNoTracking()
             join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
             join model in _dbContext.Models.AsNoTracking() on vehicle.ModelId equals model.Id
@@ -39,73 +40,55 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 on vehicle.GenerationId equals (Guid?)generation.Id into generationRows
             from generation in generationRows.DefaultIfEmpty()
             where ids.Contains(vehicle.Id)
-            select new
-            {
+            select new VehicleRefDto(
                 vehicle.Id,
+                brand.Name,
+                model.Name,
+                generation == null ? null : generation.Name,
+                version.Name,
                 vehicle.ModelYear,
                 vehicle.Powertrain,
                 vehicle.Transmission,
-                vehicle.BodyStyle,
-                Brand = brand.Name,
-                Model = model.Name,
-                Generation = generation == null ? null : generation.Name,
-                Version = version.Name
-            })
+                vehicle.BodyStyle))
             .ToListAsync(cancellationToken);
-
-        return rows
-            .Select(x => new VehicleRefDto(
-                x.Id,
-                x.Brand,
-                x.Model,
-                x.Generation,
-                x.Version,
-                x.ModelYear,
-                x.Powertrain,
-                x.Transmission,
-                x.BodyStyle))
-            .ToList();
     }
 
     public async Task<IReadOnlyList<Guid>> FindIdsAsync(
         VehicleCatalogSearchInput input,
         CancellationToken cancellationToken = default)
     {
-        var vehicles =
-            from vehicle in _dbContext.Vehicles.AsNoTracking()
-            join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
-            join model in _dbContext.Models.AsNoTracking() on vehicle.ModelId equals model.Id
-            select new
-            {
-                vehicle.Id,
-                vehicle.ModelYear,
-                Brand = brand.Name,
-                Model = model.Name
-            };
-
-        if (!string.IsNullOrWhiteSpace(input.Brand))
-        {
-            var brand = input.Brand.Trim().ToLowerInvariant();
-            vehicles = vehicles.Where(x => x.Brand.ToLower() == brand);
-        }
-
-        if (!string.IsNullOrWhiteSpace(input.Model))
-        {
-            var model = input.Model.Trim().ToLowerInvariant();
-            vehicles = vehicles.Where(x => x.Model.ToLower() == model);
-        }
+        // PERF: Avoid joining Brands/Models when no brand or model filters are provided, avoiding SQL JOIN overhead and anonymous type allocations
+        var query = _dbContext.Vehicles.AsNoTracking();
 
         if (input.MinModelYear.HasValue)
         {
-            vehicles = vehicles.Where(x => x.ModelYear.HasValue && x.ModelYear.Value >= input.MinModelYear.Value);
+            query = query.Where(x => x.ModelYear.HasValue && x.ModelYear.Value >= input.MinModelYear.Value);
         }
 
         if (input.MaxModelYear.HasValue)
         {
-            vehicles = vehicles.Where(x => x.ModelYear.HasValue && x.ModelYear.Value <= input.MaxModelYear.Value);
+            query = query.Where(x => x.ModelYear.HasValue && x.ModelYear.Value <= input.MaxModelYear.Value);
         }
 
-        return await vehicles
+        if (!string.IsNullOrWhiteSpace(input.Brand))
+        {
+            var brandTerm = input.Brand.Trim().ToLowerInvariant();
+            query = from vehicle in query
+                    join brand in _dbContext.Brands.AsNoTracking() on vehicle.BrandId equals brand.Id
+                    where brand.Name.ToLower() == brandTerm
+                    select vehicle;
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Model))
+        {
+            var modelTerm = input.Model.Trim().ToLowerInvariant();
+            query = from vehicle in query
+                    join model in _dbContext.Models.AsNoTracking() on vehicle.ModelId equals model.Id
+                    where model.Name.ToLower() == modelTerm
+                    select vehicle;
+        }
+
+        return await query
             .OrderBy(x => x.Id)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -200,7 +183,8 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 || (x.Generation != null && x.Generation.ToLower().Replace("-", " ").Contains(query)));
         }
 
-        var rows = await vehicles
+        // PERF: Direct projection into VehicleRefDto in EF Core query eliminates intermediate anonymous object allocation
+        return await vehicles
             .OrderBy(x => x.Brand)
             .ThenBy(x => x.Model)
             .ThenBy(x => x.ModelYear)
@@ -208,9 +192,6 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
             .ThenBy(x => x.Id)
             .Skip(Math.Max(skip, 0))
             .Take(Math.Clamp(take, 1, 100))
-            .ToListAsync(cancellationToken);
-
-        return rows
             .Select(x => new VehicleRefDto(
                 x.Id,
                 x.Brand,
@@ -221,7 +202,7 @@ public sealed class VehicleCatalogReader : IVehicleCatalogReader, ITransientDepe
                 x.Powertrain,
                 x.Transmission,
                 x.BodyStyle))
-            .ToList();
+            .ToListAsync(cancellationToken);
     }
 
     private static string NormalizePresentationQuery(string value) =>

@@ -1,0 +1,3 @@
+## 2026-08-31 - EF Core Projection vs In-Memory Mapping in Query Services
+**Learning:** Projecting directly into target DTOs inside EF Core queries (`.Select(x => new VehicleRefDto(...))`) avoids intermediate anonymous type allocations and eliminates second-pass in-memory `.Select()` mapping calls. Conditional LINQ joins (e.g. joining `Brands` or `Models` only when filter criteria are present) avoid redundant SQL `JOIN` clauses when filtering by vehicle IDs or year ranges alone.
+**Action:** When inspecting query services, check if queries construct anonymous objects just to project them into DTOs immediately after `.ToListAsync()`, or if SQL `JOIN`s are unconditionally included even for searches that don't filter on joined tables.

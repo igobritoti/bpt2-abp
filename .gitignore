@@ -1,0 +1,9 @@
+# Ignore build outputs
+**/bin/
+**/obj/
+bin/
+obj/
+.vs/
+.idea/
+.next/
+node_modules/
