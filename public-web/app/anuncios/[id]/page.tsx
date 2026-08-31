@@ -6,6 +6,7 @@ import { cache } from "react";
 import FavoriteButton from "./FavoriteButton";
 import ReportButton from "./ReportButton";
 import WhatsAppContactButton from "./WhatsAppContactButton";
+import { getVehicle, vehicleRefLabel } from "@/lib/catalog";
 import {
   formatPrice,
   getPublicListing,
@@ -19,6 +20,7 @@ import { publicUrl } from "@/lib/site-url";
 export const dynamic = "force-dynamic";
 
 const loadListing = cache((id: string) => getPublicListing(id));
+const loadVehicle = cache((id: string) => getVehicle(id));
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -75,6 +77,15 @@ function serializeStructuredData(data: Record<string, unknown>): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
+function vehicleValue(value: string | number | null | undefined): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const text = typeof value === "number" ? String(value) : value.trim();
+  return text ? text : null;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const listing = await loadListing(id);
@@ -118,9 +129,15 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   const returnTo = firstParam(rawSearchParams.returnTo).trim();
   const listing = await loadListing(id);
   if (!listing) notFound();
+  const vehicle = await loadVehicle(listing.vehicleId);
   const contactUrl = whatsAppUrl(listing.seller.whatsAppNumber);
   const structuredData = listingStructuredData(listing);
   const backHref = returnTo.startsWith("/") ? returnTo : "/";
+  const vehicleHref = `/veiculos/${encodeURIComponent(listing.vehicleId)}`;
+  const vehicleTitle = vehicle
+    ? vehicleRefLabel(vehicle)
+    : [listing.vehicle.brand, listing.vehicle.model, listing.vehicle.version].filter(Boolean).join(" ");
+  const vehicleSpecs = vehicle;
 
   return (
     <>
@@ -132,7 +149,11 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         <nav className="back-nav" aria-label="Voltar para anúncios"><Link href={backHref}>← Todos os anúncios</Link></nav>
         <article>
           <header className="detail-header">
-            <div><p className="eyebrow"><Link href={`/veiculos/${listing.vehicleId}`}>{vehicleLabel(listing)}</Link></p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>
+            <div>
+              <p className="eyebrow"><Link href={vehicleHref}>{vehicleLabel(listing)}</Link></p>
+              <h1>{listing.title}</h1>
+              <p className="detail-location">{listing.city} · {listing.stateCode}</p>
+            </div>
             <p className="detail-price">{formatPrice(listing.price)}</p>
           </header>
           <section aria-label="Fotos do anúncio" className="photo-grid">
@@ -142,6 +163,23 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
           </section>
           <div className="detail-columns">
             <div className="detail-content">
+              <section className="detail-section" aria-labelledby="vehicle-identity-title">
+                <p className="eyebrow">Veículo canônico</p>
+                <h2 id="vehicle-identity-title">Identidade automotiva e ficha canônica</h2>
+                <dl className="facts-grid">
+                  <div><dt>Marca</dt><dd>{listing.vehicle.brand}</dd></div>
+                  <div><dt>Modelo</dt><dd>{listing.vehicle.model}</dd></div>
+                  {vehicleValue(listing.vehicle.generation) ? <div><dt>Geração</dt><dd>{vehicleValue(listing.vehicle.generation)}</dd></div> : null}
+                  <div><dt>Versão</dt><dd>{listing.vehicle.version}</dd></div>
+                  {vehicleValue(listing.vehicle.modelYear) ? <div><dt>Ano do modelo</dt><dd>{vehicleValue(listing.vehicle.modelYear)}</dd></div> : null}
+                  {vehicleValue(vehicleSpecs?.powertrain) ? <div><dt>Motorização</dt><dd>{vehicleValue(vehicleSpecs?.powertrain)}</dd></div> : null}
+                  {vehicleValue(vehicleSpecs?.transmission) ? <div><dt>Transmissão</dt><dd>{vehicleValue(vehicleSpecs?.transmission)}</dd></div> : null}
+                  {vehicleValue(vehicleSpecs?.bodyStyle) ? <div><dt>Carroceria</dt><dd>{vehicleValue(vehicleSpecs?.bodyStyle)}</dd></div> : null}
+                </dl>
+                <p className="detail-location">
+                  <Link href={vehicleHref}>Ver Vehicle Hub · {vehicleTitle}</Link>
+                </p>
+              </section>
               <section className="detail-section" aria-labelledby="facts-title">
                 <p className="eyebrow">Veículo</p><h2 id="facts-title">Dados do anúncio</h2>
                 <dl className="facts-grid">
