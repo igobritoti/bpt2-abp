@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import type { User } from "oidc-client-ts";
 
 import { formatPrice } from "../../lib/public-listings";
@@ -61,8 +61,7 @@ function nextListingAction(status: string): string {
   return "Estado desconhecido";
 }
 
-const STATUS_FILTERS = ["all", "Draft", "Published", "Paused", "Archived"] as const;
-type StatusFilter = (typeof STATUS_FILTERS)[number];
+type StatusFilter = "all" | "Draft" | "Published" | "Paused" | "Archived";
 
 function readStatusFilter(value: string | null): StatusFilter {
   if (value === "Draft" || value === "Published" || value === "Paused" || value === "Archived") {
@@ -96,7 +95,7 @@ function leadStatusLabel(lead: SellerLead): string {
   return lead.contactedAtUtc ? "Atendido" : "Novo";
 }
 
-export default function SellerEntryPage() {
+function SellerEntryPageContent() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [listings, setListings] = useState<SellerListing[]>([]);
@@ -341,5 +340,19 @@ export default function SellerEntryPage() {
         </div>
       ) : null}
     </main>
+  );
+}
+
+export default function SellerEntryPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="shell seller-shell">
+          <p className="seller-shell-status">Carregando área do vendedor…</p>
+        </main>
+      }
+    >
+      <SellerEntryPageContent />
+    </Suspense>
   );
 }
