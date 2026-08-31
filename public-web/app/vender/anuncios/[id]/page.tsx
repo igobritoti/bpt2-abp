@@ -35,6 +35,59 @@ function vehicleLabel(vehicle: VehicleRef | null): string {
     .join(" · ");
 }
 
+function readinessChecks(detail: SellerListingDetail | null): Array<{ label: string; ok: boolean }> {
+  const listing = detail?.listing;
+  return [
+    { label: "Listing em estado mutável", ok: Boolean(listing && listing.status !== "Archived" && listing.status !== "Moderated") },
+    { label: "Vehicle canônico presente", ok: Boolean(listing?.vehicleId) },
+  ];
+}
+
+function currentStatusLabel(status: string): string {
+  switch (status) {
+    case "Draft":
+      return "Rascunho";
+    case "Published":
+      return "Publicado";
+    case "Paused":
+      return "Pausado";
+    case "Archived":
+      return "Arquivado";
+    case "Moderated":
+      return "Moderado";
+    default:
+      return status;
+  }
+}
+
+function nextActionLabel(status: string): string {
+  switch (status) {
+    case "Draft":
+    case "Paused":
+      return "Publicar";
+    case "Published":
+      return "Pausar";
+    case "Archived":
+      return "Nenhuma ação de lifecycle";
+    case "Moderated":
+      return "Aguardar liberação";
+    default:
+      return "Estado desconhecido";
+  }
+}
+
+function canPublish(status: string): boolean {
+  return status === "Draft" || status === "Paused";
+}
+
+function canPause(status: string): boolean {
+  return status === "Published";
+}
+
+function canArchive(status: string): boolean {
+  return status === "Draft" || status === "Published" || status === "Paused";
+}
+
 export default function EditSellerListingPage() {
   const params = useParams<{ id: string }>();
   const listingId = params.id;
@@ -59,6 +112,8 @@ export default function EditSellerListingPage() {
   const [city, setCity] = useState("");
   const [stateCode, setStateCode] = useState("");
   const currentPhotos = detail?.photos ?? null;
+  const checks = readinessChecks(detail);
+  const readyToPublish = checks.every((check) => check.ok);
 
   const reloadOwnedDetail = useCallback(
     async (accessToken: string): Promise<SellerListingDetail | null> => {
@@ -310,11 +365,29 @@ export default function EditSellerListingPage() {
           <section className="seller-panel seller-editor-panel">
             <div className="seller-edit-summary">
               <div>
-                <p className="eyebrow">{detail.listing.status}</p>
+                <p className="eyebrow">Status atual</p>
                 <h2>{vehicleLabel(vehicle)}</h2>
+                <p className="seller-form-help">Estado visível ao vendedor: {currentStatusLabel(detail.listing.status)}.</p>
               </div>
               <p>{detail.photos.length} foto(s) na galeria atual</p>
             </div>
+
+            <section className="seller-readiness-panel" aria-labelledby="readiness-title">
+              <div className="seller-panel-heading">
+                <div>
+                  <p className="eyebrow">Prontidão</p>
+                  <h3 id="readiness-title">{readyToPublish ? "Pode ser publicado" : "Publicação bloqueada pelo estado atual"}</h3>
+                </div>
+              </div>
+              <ul className="seller-readiness-list">
+                {checks.map((check) => (
+                  <li key={check.label} className={check.ok ? "is-ok" : "is-missing"}>
+                    {check.ok ? "OK" : "Bloqueia"} · {check.label}
+                  </li>
+                ))}
+              </ul>
+              <p className="seller-form-help">Próxima ação: {nextActionLabel(detail.listing.status)}.</p>
+            </section>
 
             <form className="seller-profile-form seller-listing-form" onSubmit={save}>
               <label>
@@ -356,7 +429,7 @@ export default function EditSellerListingPage() {
               </div>
 
               <p className="seller-form-help">
-                Vehicle e ownership não são escolhidos nesta edição. Um conflito 409 interrompe o save em vez de sobrescrever uma versão mais nova.
+                Vehicle e ownership não são escolhidos nesta edição. Um conflito 409 interrompe o save em vez de sobrescrever uma versão mais nova. Publicação depende apenas de estado mutável e Vehicle canônico.
               </p>
 
               <button className="primary-action" type="submit" disabled={saving}>
@@ -432,15 +505,21 @@ export default function EditSellerListingPage() {
             </div>
 
             <div className="seller-transition-actions">
-              <button type="button" className="primary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("publish")}>
-                {transitionBusy === "publish" ? "Publicando…" : "Publicar"}
-              </button>
-              <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("pause")}>
-                {transitionBusy === "pause" ? "Pausando…" : "Pausar"}
-              </button>
-              <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("archive")}>
-                {transitionBusy === "archive" ? "Arquivando…" : "Arquivar"}
-              </button>
+              {canPublish(detail.listing.status) ? (
+                <button type="button" className="primary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("publish")}>
+                  {transitionBusy === "publish" ? "Publicando…" : "Publicar"}
+                </button>
+              ) : null}
+              {canPause(detail.listing.status) ? (
+                <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("pause")}>
+                  {transitionBusy === "pause" ? "Pausando…" : "Pausar"}
+                </button>
+              ) : null}
+              {canArchive(detail.listing.status) ? (
+                <button type="button" className="secondary-action" disabled={transitionBusy !== null} onClick={() => void runTransition("archive")}>
+                  {transitionBusy === "archive" ? "Arquivando…" : "Arquivar"}
+                </button>
+              ) : null}
               {detail.listing.status === "Published" ? (
                 <Link className="secondary-action action-link" href={`/anuncios/${listingId}`}>
                   Ver anúncio público
