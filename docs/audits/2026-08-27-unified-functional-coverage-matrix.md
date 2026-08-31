@@ -3,7 +3,9 @@
 Data original: 2026-08-27  
 Última reconciliação: 2026-08-30
 
-Status: índice operacional reconciliado com o estado entregue até PR #156 e com o audit de precondição #157. Esta matriz não autoriza implementação por si só.
+Status: SUPERSEDED
+Superseded by: [docs/closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md](../closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
+Historical evidence only.
 
 ## Regra de leitura
 

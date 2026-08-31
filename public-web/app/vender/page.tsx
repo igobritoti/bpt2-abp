@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { User } from "oidc-client-ts";
 
 import { formatPrice } from "../../lib/public-listings";
@@ -11,13 +12,82 @@ import {
   getMyListings,
   getSellerProfile,
   markSellerLeadContacted,
+  transitionSellerListing,
   type SellerLead,
   type SellerLeadOutcome,
   type SellerListing,
   type SellerProfile,
+  type SellerListingAction,
   upsertSellerProfile,
 } from "../../lib/seller-api";
 import { getCurrentSellerUser, getSellerUserManager } from "../../lib/seller-auth";
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case "Draft":
+      return "Rascunho";
+    case "Published":
+      return "Publicado";
+    case "Paused":
+      return "Pausado";
+    case "Archived":
+      return "Arquivado";
+    default:
+      return status;
+  }
+}
+
+function canEditListing(status: string): boolean {
+  return status !== "Archived" && status !== "Moderated";
+}
+
+function canPauseListing(status: string): boolean {
+  return status === "Published";
+}
+
+function canPublishListing(status: string): boolean {
+  return status === "Draft" || status === "Paused";
+}
+
+function canArchiveListing(status: string): boolean {
+  return status === "Draft" || status === "Published" || status === "Paused";
+}
+
+function nextListingAction(status: string): string {
+  if (status === "Draft" || status === "Paused") return "Publicar";
+  if (status === "Published") return "Pausar";
+  if (status === "Archived") return "Arquivado";
+  if (status === "Moderated") return "Moderado";
+  return "Estado desconhecido";
+}
+
+const STATUS_FILTERS = ["all", "Draft", "Published", "Paused", "Archived"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+function readStatusFilter(value: string | null): StatusFilter {
+  if (value === "Draft" || value === "Published" || value === "Paused" || value === "Archived") {
+    return value;
+  }
+  return "all";
+}
+
+function inventorySummary(listings: SellerListing[]): {
+  draft: number;
+  published: number;
+  paused: number;
+  archived: number;
+} {
+  return listings.reduce(
+    (summary, listing) => {
+      if (listing.status === "Draft") summary.draft += 1;
+      else if (listing.status === "Published") summary.published += 1;
+      else if (listing.status === "Paused") summary.paused += 1;
+      else if (listing.status === "Archived") summary.archived += 1;
+      return summary;
+    },
+    { draft: 0, published: 0, paused: 0, archived: 0 },
+  );
+}
 
 function leadStatusLabel(lead: SellerLead): string {
   if (lead.closedAtUtc) {
@@ -36,8 +106,29 @@ export default function SellerEntryPage() {
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+  const [updatingListingId, setUpdatingListingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeStatus = readStatusFilter(searchParams.get("status"));
+  const summary = inventorySummary(listings);
+  const filteredListings = useMemo(
+    () => (activeStatus === "all" ? listings : listings.filter((listing) => listing.status === activeStatus)),
+    [activeStatus, listings],
+  );
+
+  function setStatusFilter(next: StatusFilter) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "all") {
+      params.delete("status");
+    } else {
+      params.set("status", next);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   useEffect(() => {
     async function loadSellerShell() {
@@ -133,6 +224,23 @@ export default function SellerEntryPage() {
     }
   }
 
+  async function runListingAction(listingId: string, action: SellerListingAction) {
+    if (!user) return;
+
+    setError(null);
+    setNotice(null);
+    setUpdatingListingId(listingId);
+    try {
+      const updated = await transitionSellerListing(user.access_token, listingId, action);
+      setListings((current) => current.map((listing) => (listing.id === listingId ? updated : listing)));
+      setNotice(`Anúncio ${action === "publish" ? "publicado" : action === "pause" ? "pausado" : "arquivado"}.`);
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível atualizar o anúncio.");
+    } finally {
+      setUpdatingListingId(null);
+    }
+  }
+
   return (
     <main className="shell seller-shell">
       <header className="seller-dashboard-header">
@@ -168,14 +276,44 @@ export default function SellerEntryPage() {
             </form>
           </section>
 
-          <section className="seller-panel seller-listings-panel">
+          <section className="seller-panel seller-listings-panel" aria-labelledby="inventory-title">
             <div className="seller-panel-heading"><div><p className="eyebrow">Marketplace</p><h2>Meus anúncios</h2></div><div className="seller-panel-actions"><span className="seller-count">{listings.length}</span><Link className="primary-action action-link" href="/vender/anuncios/novo">Novo anúncio</Link></div></div>
-            {listings.length === 0 ? <div className="empty-state seller-empty-state"><h3>Nenhum anúncio ainda.</h3><p>Crie um Draft escolhendo um Vehicle do catálogo canônico.</p></div> : (
-              <div className="seller-listing-list">{listings.map((listing) => <article className="seller-listing-row" key={listing.id}><div><p className="seller-listing-status">{listing.status}</p><h3>{listing.title}</h3><p className="seller-listing-location">{listing.city} / {listing.stateCode}</p></div><div className="seller-listing-actions"><p className="seller-listing-price">{formatPrice(listing.price)}</p><Link className="secondary-action action-link" href={`/vender/anuncios/${listing.id}`}>Editar</Link></div></article>)}</div>
+            <div className="seller-summary-grid" aria-label="Resumo do inventário">
+              <button type="button" aria-pressed={activeStatus === "Published"} className={`seller-summary-card${activeStatus === "Published" ? " is-active" : ""}`} onClick={() => setStatusFilter("Published")}>
+                <strong>{summary.published}</strong>
+                <span>Publicados</span>
+              </button>
+              <button type="button" aria-pressed={activeStatus === "Draft"} className={`seller-summary-card${activeStatus === "Draft" ? " is-active" : ""}`} onClick={() => setStatusFilter("Draft")}>
+                <strong>{summary.draft}</strong>
+                <span>Rascunhos</span>
+              </button>
+              <button type="button" aria-pressed={activeStatus === "Paused"} className={`seller-summary-card${activeStatus === "Paused" ? " is-active" : ""}`} onClick={() => setStatusFilter("Paused")}>
+                <strong>{summary.paused}</strong>
+                <span>Pausados</span>
+              </button>
+              <button type="button" aria-pressed={activeStatus === "Archived"} className={`seller-summary-card${activeStatus === "Archived" ? " is-active" : ""}`} onClick={() => setStatusFilter("Archived")}>
+                <strong>{summary.archived}</strong>
+                <span>Arquivados</span>
+              </button>
+            </div>
+            <div className="seller-queue-toolbar">
+              <p className="seller-form-help">
+                {activeStatus === "all"
+                  ? "Mostrando todos os anúncios do inventário."
+                  : `Mostrando apenas anúncios com status ${statusLabel(activeStatus)}.`}
+              </p>
+              {activeStatus !== "all" ? (
+                <button type="button" className="secondary-action compact-action" onClick={() => setStatusFilter("all")}>
+                  Limpar filtro
+                </button>
+              ) : null}
+            </div>
+            {listings.length === 0 ? <div className="empty-state seller-empty-state"><h3>Nenhum anúncio ainda.</h3><p>Crie um Draft escolhendo um Vehicle do catálogo canônico.</p></div> : filteredListings.length === 0 ? <div className="empty-state seller-empty-state"><h3>Nenhum anúncio neste estado.</h3><p>Limpe o filtro ou escolha outro status para continuar.</p></div> : (
+              <div className="seller-listing-list">{filteredListings.map((listing) => <article className="seller-listing-row" key={listing.id}><div><p className="seller-listing-status">{statusLabel(listing.status)}</p><h3>{listing.title}</h3><p className="seller-listing-location">{listing.city} / {listing.stateCode}</p><p className="seller-form-help">Próxima ação: {nextListingAction(listing.status)}</p></div><div className="seller-listing-actions"><p className="seller-listing-price">{formatPrice(listing.price)}</p>{canPublishListing(listing.status) ? <button type="button" className="secondary-action compact-action" disabled={updatingListingId === listing.id} onClick={() => void runListingAction(listing.id, "publish")}>{updatingListingId === listing.id ? "Atualizando…" : "Publicar"}</button> : null}{canPauseListing(listing.status) ? <button type="button" className="secondary-action compact-action" disabled={updatingListingId === listing.id} onClick={() => void runListingAction(listing.id, "pause")}>{updatingListingId === listing.id ? "Atualizando…" : "Pausar"}</button> : null}{canArchiveListing(listing.status) ? <button type="button" className="secondary-action compact-action" disabled={updatingListingId === listing.id} onClick={() => void runListingAction(listing.id, "archive")}>{updatingListingId === listing.id ? "Atualizando…" : "Arquivar"}</button> : null}{canEditListing(listing.status) ? <Link className="secondary-action action-link" href={`/vender/anuncios/${listing.id}`}>Editar</Link> : null}<Link className="secondary-action action-link" href="#contatos">Ver leads</Link></div></article>)}</div>
             )}
           </section>
 
-          <section className="seller-panel seller-listings-panel">
+          <section className="seller-panel seller-listings-panel" id="contatos" aria-labelledby="contacts-title">
             <div className="seller-panel-heading"><div><p className="eyebrow">Contatos</p><h2>Leads de WhatsApp</h2></div><span className="seller-count">{leads.length}</span></div>
             {leads.length === 0 ? <div className="empty-state seller-empty-state"><h3>Nenhum contato ainda.</h3><p>Quando alguém iniciar um contato pelo WhatsApp de um anúncio seu, ele aparecerá aqui.</p></div> : (
               <div className="seller-listing-list">

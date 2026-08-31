@@ -1,12 +1,14 @@
 # BPT2 knowledge base
 
-`docs/` é o **system of record** versionado do projeto. O objetivo é progressive disclosure: comece por `../AGENTS.md` e `agent/CURRENT-WORK.md`, depois abra somente a fonte canônica necessária à tarefa.
+`docs/` é o **system of record** versionado do projeto. O objetivo é progressive disclosure: comece por `baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md`, depois `closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md`, então `agent/CURRENT-WORK.md` e somente depois abra a fonte canônica restante necessária à tarefa.
 
 ## Fonte canônica por assunto
 
 | Assunto | Fonte de verdade |
 |---|---|
 | Estado corrente e próximo acceptance target | [`agent/CURRENT-WORK.md`](agent/CURRENT-WORK.md) |
+| Baseline operacional atual | [`baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md`](baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md) |
+| Closure matrix / work selection | [`closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md`](closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md) |
 | Desenvolvimento local e bootstrap reproduzível | [`LOCAL-DEVELOPMENT.md`](LOCAL-DEVELOPMENT.md) |
 | Produto, escopo e não objetivos | [`PRODUCT.md`](PRODUCT.md) |
 | Arquitetura e ownership de módulos | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
@@ -22,12 +24,22 @@
 | Fatos derivados do repositório | [`generated/repository-facts.md`](generated/repository-facts.md) |
 | Fontes normativas externas | [`references/`](references/) |
 
+## Baseline entry points
+
+1. [`baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md`](baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md)
+2. [`closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md`](closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
+3. [`agent/CURRENT-WORK.md`](agent/CURRENT-WORK.md)
+
+Historical audits remain under [`audits/`](audits/).
+
 ## Estrutura
 
 ```text
 docs/
+├── baselines/
 ├── agent/
 │   └── CURRENT-WORK.md
+├── closure/
 ├── adr/
 ├── exec-plans/
 │   ├── active/
