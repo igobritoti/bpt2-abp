@@ -20,7 +20,14 @@ export const dynamic = "force-dynamic";
 
 const loadListing = cache((id: string) => getPublicListing(id));
 
-type PageProps = { params: Promise<{ id: string }> };
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+};
+
+function firstParam(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
 
 function listingStructuredData(listing: PublicListing): Record<string, unknown> {
   const canonical = publicUrl(`/anuncios/${listing.id}`);
@@ -105,12 +112,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ListingDetailPage({ params }: PageProps) {
+export default async function ListingDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const rawSearchParams = await searchParams;
+  const returnTo = firstParam(rawSearchParams.returnTo).trim();
   const listing = await loadListing(id);
   if (!listing) notFound();
   const contactUrl = whatsAppUrl(listing.seller.whatsAppNumber);
   const structuredData = listingStructuredData(listing);
+  const backHref = returnTo.startsWith("/") ? returnTo : "/";
 
   return (
     <>
@@ -119,7 +129,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
         type="application/ld+json"
       />
       <main className="shell detail-shell">
-        <nav className="back-nav" aria-label="Voltar para anúncios"><Link href="/">← Todos os anúncios</Link></nav>
+        <nav className="back-nav" aria-label="Voltar para anúncios"><Link href={backHref}>← Todos os anúncios</Link></nav>
         <article>
           <header className="detail-header">
             <div><p className="eyebrow"><Link href={`/veiculos/${listing.vehicleId}`}>{vehicleLabel(listing)}</Link></p><h1>{listing.title}</h1><p className="detail-location">{listing.city} · {listing.stateCode}</p></div>

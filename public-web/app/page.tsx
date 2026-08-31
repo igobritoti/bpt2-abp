@@ -108,6 +108,16 @@ function discoveryHref(search: PublicListingSearch, skip: number, take: number):
   return `/?${params.toString()}`;
 }
 
+function detailHref(listingId: string, returnTo: string): string {
+  const params = new URLSearchParams();
+  if (returnTo && returnTo !== "/") {
+    params.set("returnTo", returnTo);
+  }
+
+  const query = params.toString();
+  return query ? `/anuncios/${encodeURIComponent(listingId)}?${query}` : `/anuncios/${encodeURIComponent(listingId)}`;
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const raw = await searchParams;
   const vehicleId = textParam(raw, "vehicleId");
@@ -191,6 +201,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const hasNext = skip + page.items.length < page.totalCount;
   const currentPage = Math.floor(skip / take) + 1;
   const totalPages = Math.max(1, Math.ceil(page.totalCount / take));
+  const currentDiscoveryHref = discoveryHref(search, skip, take);
 
   return (
     <main className="shell">
@@ -373,7 +384,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               const cover = listing.photos[0];
               return (
                 <article className="listing-card" key={listing.id}>
-                  <Link className="listing-link" href={`/anuncios/${listing.id}`}>
+                  <Link className="listing-link" href={detailHref(listing.id, currentDiscoveryHref)}>
                     <div className="listing-media">
                       {cover ? (
                         <img

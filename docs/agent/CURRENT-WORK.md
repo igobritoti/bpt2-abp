@@ -6,12 +6,17 @@ Snapshot volatile only.
 
 ## In flight
 
-- Wave `PRODUCT-WAVE-SELLER-OPS-01`: Seller inventory/readiness drill-down and queue work surface.
-- The wave is merged into `origin/main` via PR [#175](https://github.com/tihotm/bpt2-abp/pull/175) at `341b3793186ec26474734440f823867e7b90a04b`.
-- Wave block completed and integrated:
-  - inventory status queues now expose direct lifecycle actions where backend allows them;
-  - listing edit surface now shows current lifecycle context and publish authority instead of an invented readiness checklist;
-  - publication readiness is reduced to actual mutability/canonical-vehicle authority.
+- Wave `PRODUCT-WAVE-PUBLIC-SELLER-EXPERIENCE-01`: public Seller Hub continuity from Listing detail to Seller inventory and back navigation.
+- Local public Seller experience patch is in place:
+  - public Listing cards preserve the current discovery state as `returnTo` when opening a listing detail;
+  - listing detail back navigation restores the caller discovery state when `returnTo` is present;
+  - public Seller Hub uses only authorized Seller data, shows public inventory only, and renders an empty state when no public inventory is available;
+  - public Listing detail now links to the Seller Hub through the authorized public Seller projection.
+- Repo-internal validation that passed on this slice:
+  - `npm run lint` in `public-web`;
+  - `npm run typecheck` in `public-web`;
+  - `npm run build` in `public-web` with `BPT_PUBLIC_BASE_URL` and `BPT_API_BASE_URL` defined;
+  - `dotnet build tests/BomPraTi.Gate01Smoke/BomPraTi.Gate01Smoke.csproj`.
 - Current control-plane artifacts:
   - [docs/baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md](../baselines/POST_MVP_OPERATIONAL_BASELINE_V1.md)
   - [docs/closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md](../closure/POST_MVP_OPERATIONAL_CLOSURE_MATRIX.md)
@@ -20,18 +25,18 @@ Snapshot volatile only.
 
 | ID | Blocker | Affects | Evidence | Required unblock | Can wave continue? |
 | --- | --- | --- | --- | --- | --- |
-| BR-01 | Browser/DB runtime unavailable on this machine | end-to-end Seller smoke | previous documented fresh-environment probe remains blocked by missing disposable runtime | PostgreSQL-capable runtime / browser smoke env | yes |
+| BR-01 | Browser/DB runtime unavailable on this machine | end-to-end public Seller / Buyer smoke | `BPT_DB_CONNECTION`, `BPT_FIXTURE_VEHICLE_ID`, and `BPT_PUBLIC_BASE_URL` are absent on this machine | PostgreSQL-capable runtime / browser smoke env | yes |
 | BR-02 | `#160` main-branch integration policy remains administrative | repository administration | open issue #160 and branch-protection/ruleset enforcement remain unresolved | repository administration authority | yes |
 
 ## Immediate blocker
 
-Repo-internal work is integrated. Remaining validation is external: browser/DB smoke and repository administration.
+Repo-internal work is integrated locally. Remaining validation is external: browser/DB smoke and repository administration.
 
 ## Remote integration state
 
-- remote repository moved to `tihotm/bpt2-abp`;
-- PR [#175](https://github.com/tihotm/bpt2-abp/pull/175) merged successfully;
-- `main` on the remote now includes the Seller Operations wave and the reconstructed baseline.
+- no PR opened yet for this slice;
+- remote repository remains `tihotm/bpt2-abp`;
+- current worktree contains the local public Seller experience patch awaiting integration.
 
 ## Next closure item
 

@@ -9,6 +9,7 @@ import {
   publicPhotoUrl,
   vehicleLabel,
 } from "@/lib/public-listings";
+import { getPublicSeller } from "@/lib/public-sellers";
 import { publicUrl } from "@/lib/site-url";
 import styles from "../../page.module.css";
 
@@ -17,8 +18,9 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 12;
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const loadSellerIdentity = cache((sellerId: string) =>
-  getPublicListings({ sellerId, skip: 0, take: 1 }),
+const loadSellerIdentity = cache((sellerId: string) => getPublicSeller(sellerId));
+const loadSellerListings = cache((sellerId: string) =>
+  getPublicListings({ sellerId, skip: 0, take: PAGE_SIZE }),
 );
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
@@ -52,21 +54,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const page = await loadSellerIdentity(sellerId);
-  const firstListing = page.items[0];
-  const seller = firstListing?.seller;
-  if (!seller) {
+  const page = await loadSellerListings(sellerId);
+  const seller = await loadSellerIdentity(sellerId);
+  const resolvedSeller = seller ?? page.items[0]?.seller;
+  if (!resolvedSeller) {
     return {
       title: "Vendedor não encontrado",
       robots: { index: false, follow: false },
     };
   }
 
-  const displayName = seller.displayName ?? "Vendedor";
-  const canonical = publicUrl(`/vendedores/${seller.sellerId}`);
-  const description = `${page.totalCount} anúncio(s) público(s) de ${displayName} no Bom Pra Ti.`;
-  const firstPhoto = firstListing.photos[0];
-  const socialImage = firstPhoto ? publicPhotoUrl(firstListing.id, firstPhoto.id) : undefined;
+  const displayName = resolvedSeller.displayName ?? "Vendedor";
+  const canonical = publicUrl(`/vendedores/${resolvedSeller.sellerId}`);
+  const description =
+    page.totalCount > 0
+      ? `${page.totalCount} anúncio(s) público(s) de ${displayName} no Bom Pra Ti.`
+      : `Perfil público de ${displayName} no Bom Pra Ti.`;
+  const firstPhoto = page.items[0]?.photos[0];
+  const socialImage = page.items[0] && firstPhoto ? publicPhotoUrl(page.items[0].id, firstPhoto.id) : undefined;
 
   return {
     title: displayName,
@@ -96,17 +101,19 @@ export default async function SellerHubPage({ params, searchParams }: PageProps)
   const raw = await searchParams;
   const skip = skipParam(raw);
   const page = await getPublicListings({ sellerId, skip, take: PAGE_SIZE });
-  if (page.totalCount === 0) notFound();
+  const seller = await loadSellerIdentity(sellerId);
+  if (!seller && page.totalCount === 0) notFound();
 
-  const identityPage = page.items.length > 0 ? page : await loadSellerIdentity(sellerId);
-  const seller = identityPage.items[0]?.seller;
-  if (!seller) notFound();
+  const sellerFromListing = page.items[0]?.seller;
+  const resolvedSeller = seller ?? sellerFromListing;
+  if (!resolvedSeller) notFound();
 
-  const displayName = seller.displayName ?? "Vendedor";
-  const hasPrevious = skip > 0;
-  const hasNext = skip + page.items.length < page.totalCount;
-  const currentPage = Math.floor(skip / PAGE_SIZE) + 1;
-  const totalPages = Math.max(1, Math.ceil(page.totalCount / PAGE_SIZE));
+  const displayName = resolvedSeller.displayName ?? "Vendedor";
+  const hasPublicInventory = page.totalCount > 0;
+  const hasPrevious = hasPublicInventory && skip > 0;
+  const hasNext = hasPublicInventory && skip + page.items.length < page.totalCount;
+  const currentPage = hasPublicInventory ? Math.floor(skip / PAGE_SIZE) + 1 : 1;
+  const totalPages = hasPublicInventory ? Math.max(1, Math.ceil(page.totalCount / PAGE_SIZE)) : 1;
 
   return (
     <main className="shell">
@@ -117,7 +124,11 @@ export default async function SellerHubPage({ params, searchParams }: PageProps)
       <header className="hero">
         <p className="eyebrow">Vendedor</p>
         <h1>{displayName}</h1>
-        <p className="lede">{page.totalCount} anúncio(s) publicado(s) por este vendedor.</p>
+        <p className="lede">
+          {hasPublicInventory
+            ? `${page.totalCount} anúncio(s) publicado(s) por este vendedor.`
+            : "Nenhum anúncio público disponível no momento."}
+        </p>
       </header>
 
       <section aria-labelledby="seller-listings-title" className="listing-section">
@@ -131,8 +142,12 @@ export default async function SellerHubPage({ params, searchParams }: PageProps)
 
         {page.items.length === 0 ? (
           <div className="empty-state">
-            <h3>Nenhum anúncio nesta página.</h3>
-            <p>Volte para a página anterior para continuar vendo os anúncios deste vendedor.</p>
+            <h3>{hasPublicInventory ? "Nenhum anúncio nesta página." : "Nenhum anúncio público disponível no momento."}</h3>
+            <p>
+              {hasPublicInventory
+                ? "Volte para a página anterior para continuar vendo os anúncios deste vendedor."
+                : "Este vendedor ainda não publicou anúncios visíveis ao público."}
+            </p>
           </div>
         ) : (
           <div className="listing-grid">
@@ -170,7 +185,7 @@ export default async function SellerHubPage({ params, searchParams }: PageProps)
         {(hasPrevious || hasNext) && (
           <nav aria-label="Paginação dos anúncios do vendedor" className={styles.pagination}>
             {hasPrevious ? (
-              <Link href={sellerHref(seller.sellerId, Math.max(0, skip - PAGE_SIZE))}>
+              <Link href={sellerHref(resolvedSeller.sellerId, Math.max(0, skip - PAGE_SIZE))}>
                 ← Anterior
               </Link>
             ) : (
@@ -180,7 +195,7 @@ export default async function SellerHubPage({ params, searchParams }: PageProps)
               Página {Math.min(currentPage, totalPages)} de {totalPages}
             </span>
             {hasNext ? (
-              <Link href={sellerHref(seller.sellerId, skip + PAGE_SIZE)}>Próxima →</Link>
+              <Link href={sellerHref(resolvedSeller.sellerId, skip + PAGE_SIZE)}>Próxima →</Link>
             ) : (
               <span aria-hidden="true" />
             )}

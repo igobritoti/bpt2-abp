@@ -5,6 +5,8 @@ using BomPraTi.Media;
 using BomPraTi.Marketplace;
 using BomPraTi.Marketplace.Contracts;
 using BomPraTi.Marketplace.Domain;
+using BomPraTi.Sellers.Contracts;
+using BomPraTi.Sellers.Domain;
 using BomPraTi.Sellers;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
@@ -58,6 +60,10 @@ try
             .InsertAsync(new VehicleVersion(versionId, modelId, generationId, "Gate Version"), autoSave: true);
         await services.GetRequiredService<IRepository<Vehicle, Guid>>()
             .InsertAsync(new Vehicle(vehicleId, brandId, modelId, generationId, versionId, 2025), autoSave: true);
+        await services.GetRequiredService<IRepository<SellerProfile, Guid>>()
+            .InsertAsync(new SellerProfile(sellerA, "Gate Seller A", "+55 (11) 99999-1111"), autoSave: true);
+        await services.GetRequiredService<IRepository<SellerProfile, Guid>>()
+            .InsertAsync(new SellerProfile(sellerB, "Gate Seller B", "+55 (11) 99999-2222"), autoSave: true);
     });
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
@@ -87,6 +93,22 @@ try
         Require(await publicQuery.GetAsync(listingId) is null, "Public query exposed a Draft listing.");
     });
     Console.WriteLine("G01_PUBLIC_DRAFT: PASS");
+
+    await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
+    {
+        var sellerQuery = services.GetRequiredService<ISellerPublicQuery>();
+        var sellerProfile = await sellerQuery.GetAsync(sellerB)
+            ?? throw new InvalidOperationException("Public seller query did not resolve a seller profile without listings.");
+        Require(sellerProfile.SellerId == sellerB, "Public seller query returned the wrong SellerId.");
+        Require(sellerProfile.DisplayName == "Gate Seller B", "Public seller query returned the wrong seller display name.");
+        Require(sellerProfile.WhatsAppNumber == "5511999992222", "Public seller query did not normalize WhatsApp digits.");
+
+        var publicQuery = services.GetRequiredService<IPublicListingQuery>();
+        var emptyPage = await publicQuery.SearchPageAsync(new PublicListingSearchInput { SellerId = sellerB, Take = 1 });
+        Require(emptyPage.TotalCount == 0, "Public seller inventory leaked private counts.");
+        Require(emptyPage.Items.Count == 0, "Public seller inventory leaked private listings.");
+    });
+    Console.WriteLine("G01_PUBLIC_SELLER_EMPTY: PASS");
 
     await InNewUnitOfWorkAsync(application.ServiceProvider, async services =>
     {

@@ -26,7 +26,7 @@ export default function ReportButton({ listingId }: { listingId: string }) {
     setError(null);
     const user = await getCurrentBuyerUser();
     if (!user) {
-      await signInBuyer(window.location.pathname);
+      await signInBuyer(`${window.location.pathname}${window.location.search}`);
       return;
     }
 

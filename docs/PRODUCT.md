@@ -81,6 +81,7 @@ Capacidades comprovadas:
 - `FirstPublishedAtUtc?` nasce na primeira publicação; pause/re-publish não cria bump e legado sem evidência permanece `null`;
 - zero-results explícito;
 - detalhe público, galeria, CTA WhatsApp, Seller Hub e Vehicle Hub;
+- Seller Hub usa autoridade pública de seller e permanece válido mesmo sem inventário público, mostrando estado vazio sem vazar contagens privadas;
 - apresentação textual agora trata hífen ASCII e espaço como equivalentes no discovery de identidade canônica (`T Cross` ↔ `T-Cross`), após comparação no corpus congelado #112 sem regressão de exact/confusable/prefix/facets;
 - typo tolerance continua não entregue: o benchmark atual ainda mede 0 de recall/MRR para os três typos congelados sob a semântica de produção corrente.
 
