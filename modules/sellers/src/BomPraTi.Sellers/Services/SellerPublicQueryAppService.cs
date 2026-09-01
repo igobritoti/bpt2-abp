@@ -5,6 +5,7 @@ using Volo.Abp.DependencyInjection;
 namespace BomPraTi.Sellers.Services;
 
 [AllowAnonymous]
+[ExposeServices(typeof(ISellerPublicQuery))]
 public sealed class SellerPublicQueryAppService : ISellerPublicQuery, ITransientDependency
 {
     private readonly ISellerPublicReader _reader;
