@@ -83,8 +83,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          probe="${RUNNER_TEMP}/listing-decision-support-smoke.sh"
+          probe="scripts/.listing-decision-support-smoke.sh"
           cp scripts/listing-http-lifecycle-smoke.sh "$probe"
+          trap 'rm -f "$probe"' EXIT
           python3 - "$probe" <<'PY'
           from pathlib import Path
           import sys
