@@ -6,109 +6,89 @@ Status: **CONCLUÍDO**
 
 Medir o estado unificado atual do BPT2 antes de qualquer recomendação sobre manter o repositório único, separar frontend/backend, ou introduzir tooling de monorepo.
 
-O outcome deste plano é um baseline reproduzível de acoplamento estrutural e histórico. Este estudo, sozinho, **não** prova que monorepo ou múltiplos repositórios são superiores.
+O outcome é um baseline reproduzível de acoplamento estrutural e histórico. Este estudo, sozinho, **não** prova que monorepo ou múltiplos repositórios são superiores.
 
 ## Contexto congelado
 
 - baseline commit: `53be795b6205ef57c03f1118e0c0287dc0f2873c`;
-- repositório observado: `tihotm/bpt2-abp`;
+- repositório: `tihotm/bpt2-abp`;
 - backend: modular monolith ABP 10.6 / .NET 10 sob `main/`, `modules/` e testes associados;
 - frontend público: Next.js sob `public-web/`;
 - o estado atual já contém backend e frontend no mesmo repositório;
-- o histórico registra trabalho "post-unified", portanto não existe neste repositório um controle contemporâneo de dois repositórios separados para comparação causal direta.
+- não existe neste repositório um controle contemporâneo equivalente de dois repositórios separados para comparação causal direta.
 
-## Perguntas de pesquisa
+## Perguntas e hipóteses
 
-RQ1. Qual fração das mudanças recentes cruza simultaneamente a boundary backend/frontend?
+RQ1. Qual fração das mudanças recentes cruza a boundary backend/frontend?
 
-RQ2. Qual fração das mudanças recentes permanece confinada a backend ou frontend?
+RQ2. Qual fração permanece confinada a backend ou frontend?
 
-RQ3. O código fonte possui dependências de arquivo/import diretas cruzando a boundary backend/frontend, ou a integração observável ocorre por contratos HTTP/configuração?
+RQ3. Existem dependências diretas de arquivo/import cruzando essa boundary?
 
-RQ4. Os workflows atuais conseguem selecionar CI por paths de backend/frontend, ou mudanças de uma boundary acionam sistematicamente gates da outra?
+RQ4. Os workflows atuais selecionam CI por paths de backend/frontend?
 
-## Hipóteses
+H1. Baixa frequência cross-boundary manteria split como alternativa material a testar, sem preferência automática.
 
-H1. Se mudanças cross-boundary forem raras e as boundaries forem estruturalmente independentes, separar repositórios permanece uma alternativa material a ser testada; o baseline não determina que ela seja preferível.
+H2. Alta frequência cross-boundary fornece evidência de necessidade de coordenação atômica, sem provar redução de custo por monorepo.
 
-H2. Se mudanças cross-boundary forem frequentes, isso fornece evidência de coordenação atômica no estado atual, mas ainda não prova que monorepo reduz custo total de manutenção.
+H3. Dependências diretas de arquivo implicariam trabalho adicional de desacoplamento antes de um split.
 
-H3. Se houver dependências diretas de arquivo/import entre frontend e backend, uma separação exigiria trabalho de desacoplamento adicional mensurável.
+## Workload e classificação pré-declarados
 
-## Objetos de estudo / workload
-
-- árvore do commit do PR;
-- últimos **100 commits de primeiro pai** anteriores/incluindo o head do estudo, excluindo commits cuja mudança esteja limitada a `docs/` para a métrica de acoplamento de produto;
-- todos os workflows `pull_request` em `.github/workflows/*.yml`;
-- arquivos de fonte/configuração sob `public-web/`, `main/`, `modules/`, `tests/` e `scripts/`.
-
-A janela de 100 commits foi pré-declarada para limitar custo e manter o estudo reproduzível. Resultados não são generalizados para toda a vida do projeto.
-
-## Classificação de paths
-
-Backend/product backend:
-- `main/**`
-- `modules/**`
-- `tests/**` quando o teste referencia backend/.NET
-- scripts explicitamente usados por gates backend
-
-Frontend:
-- `public-web/**`
-
-Shared/control-plane:
-- `.github/**`, `docs/**`, arquivos raiz, `scripts/**` não atribuíveis exclusivamente a uma boundary
-
-Um commit é `cross-boundary` somente quando contém ao menos um path backend e ao menos um path frontend. Mudanças somente shared/control-plane não contam como cross-boundary.
+- 100 commits de primeiro pai encerrando no baseline commit congelado;
+- somente commits com mudança em backend ou frontend entram no denominador de produto;
+- backend: `main/**`, `modules/**`, `tests/**`;
+- frontend: `public-web/**`;
+- `.github/**`, `docs/**`, raiz e scripts não atribuíveis ficam como shared/control-plane;
+- `cross-boundary` exige ao menos um path backend e um frontend no mesmo commit;
+- todos os workflows `pull_request` em `.github/workflows/*.yml` entram na análise de scoping.
 
 ## Métricas pré-declaradas
 
-1. `product_commits_n`: commits na janela com pelo menos uma mudança backend ou frontend.
-2. `backend_only_n` e proporção.
-3. `frontend_only_n` e proporção.
-4. `cross_boundary_n` e proporção.
-5. `direct_cross_boundary_reference_count`: referências textuais/imports com paths relativos que cruzem `public-web` ↔ backend.
-6. `pr_workflows_n`.
-7. `frontend_scoped_workflows_n`: workflows cuja lista `pull_request.paths` contém `public-web/**`.
-8. `backend_scoped_workflows_n`: workflows cuja lista `pull_request.paths` contém `main/**` ou `modules/**`.
-9. `dual_scoped_workflows_n`: workflows cuja lista de paths contém frontend e backend.
-10. lista nominal de workflows sem `pull_request.paths` quando aplicável.
+1. `product_commits_n`;
+2. `backend_only_n` e proporção;
+3. `frontend_only_n` e proporção;
+4. `cross_boundary_n` e proporção;
+5. `direct_cross_boundary_reference_count`;
+6. `pr_workflows_n`;
+7. `frontend_scoped_workflows_n`;
+8. `backend_scoped_workflows_n`;
+9. `dual_scoped_workflows_n`;
+10. workflows PR sem `paths`.
 
-## Regra de decisão deste estágio
+## Regra de decisão pré-declarada
 
-Este estágio não seleciona arquitetura final.
+- `product_commits_n < 30`: ampliar evidência antes de inferir frequência;
+- referência direta > 0: medir/remover dependência antes de experimento de split;
+- `cross_boundary_ratio >= 0.25`: próximo estudo deve medir custo de coordenação/atomicidade cross-repo;
+- `cross_boundary_ratio <= 0.10`: próximo estudo deve medir custo de isolamento e CI independente;
+- entre 0.10 e 0.25: nenhuma direção recebe preferência por esta métrica.
 
-- Se `product_commits_n < 30`, o histórico é considerado insuficiente para inferência de frequência e a próxima etapa deve ampliar a janela ou usar outro método.
-- Se houver `direct_cross_boundary_reference_count > 0`, qualquer experimento de split deve primeiro medir/remover essas dependências.
-- Se `cross_boundary_n / product_commits_n >= 0.25`, a próxima comparação deve incluir explicitamente custo de coordenação/atomicidade de mudanças cross-repo.
-- Se `cross_boundary_n / product_commits_n <= 0.10`, a próxima comparação deve incluir explicitamente custo de isolamento e CI independente.
-- Entre 0.10 e 0.25, nenhuma direção arquitetural recebe preferência por esta métrica.
+Os thresholds selecionam **o próximo experimento**, não a arquitetura vencedora.
 
-Esses thresholds servem apenas para escolher **qual experimento fazer depois**; não são thresholds de superioridade de arquitetura.
-
-## Ambiente / versões materiais
+## Ambiente e artefatos
 
 - GitHub Actions `ubuntu-24.04`;
-- checkout com histórico completo (`fetch-depth: 0`);
-- Python 3 disponível no runner;
-- `git` do runner;
-- análise estática da árvore e histórico do próprio PR.
-
-## Artefatos para reprodução
-
+- checkout de histórico completo;
+- Python 3 e git do runner;
 - `scripts/measure-monorepo-coupling.py`;
 - `.github/workflows/monorepo-coupling-baseline.yml`;
-- artifact JSON `monorepo-coupling-baseline.json` produzido pelo workflow;
+- artifact JSON `monorepo-coupling-baseline.json`;
 - `docs/audits/2026-09-03-monorepo-coupling-baseline.md`.
 
-## Resultado final
+## Resultado aceito
 
-Execução exata no head `8a98ca748647f91f50e018c7e0c63bd44e64b430`, workflow run `33762990004`:
+Execução: workflow run `33763243292`.
+
+Tree head medido: `a74e835838b40f432bf332f448622eb7f88d068d`.
+
+History ref/SHA congelado: `53be795b6205ef57c03f1118e0c0287dc0f2873c`.
 
 - 100 commits first-parent examinados;
-- 45 commits de produto no denominador;
-- backend-only: 25 (55,56%);
-- frontend-only: 8 (17,78%);
-- cross-boundary: 12 (26,67%);
+- 49 commits de produto;
+- backend-only: 25 (51,02%);
+- frontend-only: 11 (22,45%);
+- cross-boundary: 13 (26,53%);
 - referências diretas de arquivo/path frontend ↔ backend: 0;
 - workflows PR: 28;
 - frontend-scoped: 11;
@@ -116,49 +96,38 @@ Execução exata no head `8a98ca748647f91f50e018c7e0c63bd44e64b430`, workflow ru
 - dual-scoped: 10;
 - workflows PR sem `paths`: 0.
 
-O artifact id `9896272092` foi produzido com digest SHA-256 `4799ff71c09b68aeb3a4e51da0d073f8a2a9ab7002e816932de7b37eb256577d`.
+Artifact id `9896377668`, SHA-256 `246d3c6c61331b550b7a8b3d25561bcf5d9dd18c91a25fc7f8447c1a053f39f4`.
 
-## Interpretação conforme regra pré-declarada
+## Interpretação
 
-`product_commits_n >= 30`, portanto a condição mínima de amostra deste baseline foi atendida.
+A amostra mínima (`>=30`) foi atendida. Nenhuma dependência direta de arquivo/import foi encontrada pela análise estática. A proporção cross-boundary de **26,53%** ultrapassa o threshold pré-declarado de 25%; portanto o próximo estudo deve medir explicitamente custo de coordenação e atomicidade de uma separação em múltiplos repositórios.
 
-`direct_cross_boundary_reference_count = 0`, então nenhuma dependência direta de arquivo/import foi encontrada por esta análise estática.
-
-`cross_boundary_ratio = 26,67% >= 25%`, portanto o próximo estudo deve incluir explicitamente o custo de coordenação/atomicidade de mudanças cross-repo. Isso seleciona a próxima pergunta experimental; não seleciona monorepo como arquitetura superior.
+Isto **não** seleciona monorepo, split, Nx, Turborepo ou qualquer outra arquitetura como superior.
 
 ## Limitações / ameaças à validade
 
-- um único repositório atual não fornece controle causal contra uma arquitetura multi-repo equivalente;
-- histórico recente pode refletir a fase específica do MVP;
-- contagem de commits não equivale a esforço humano, lead time ou custo operacional;
-- path co-change pode refletir documentação/testes e não dependência semântica;
-- análise textual de referências detecta dependências explícitas de path, não acoplamento via API/contrato;
-- filtros de workflow medem configuração declarada, não duração/custo total de CI.
+- não há controle causal multi-repo equivalente;
+- a janela pode refletir uma fase específica do MVP;
+- commit count não equivale a esforço, lead time ou custo;
+- co-change não equivale a dependência semântica;
+- a análise textual não cobre acoplamento via API/contrato;
+- path filters não medem duração/custo total de CI.
 
-## Escopo
+## Correções metodológicas registradas
 
-Incluiu protocolo, script, workflow e evidência bruta.
-
-Não incluiu migração, split do repositório, adoção de Nx/Turborepo, alteração de arquitetura de produto ou recomendação final.
+- A primeira execução foi descartada porque o checkout padrão do PR usou o merge-ref sintético.
+- A segunda usou o PR head, mas revelou que os commits de instrumentação deslocavam a janela móvel de 100 commits.
+- Como o baseline commit já estava congelado antes dos resultados, o instrumento final passou a usar `53be795...` como history ref e o head corrente apenas para árvore/workflows. Nenhum threshold ou hipótese foi alterado.
 
 ## Critérios de aceite
 
-- protocolo registrado antes do resultado: PASS;
-- workflow executado no head exato do PR: PASS;
-- artifact JSON produzido: PASS;
-- métricas calculadas sem alterar código de produto: PASS;
-- conclusão limitada ao que as métricas suportam: PASS;
-- checks aplicáveis verdes e nenhuma review thread não resolvida: verificação final do PR.
-
-## Checkpoints
-
-1. protocolo e instrumento de medição: concluído;
-2. execução remota: concluído;
-3. interpretação conforme regra pré-declarada: concluído;
-4. registrar conclusão e mover plano para `completed/`: concluído.
+- protocolo antes do resultado: PASS;
+- artifact JSON reproduzível: PASS;
+- código de produto inalterado: PASS;
+- conclusão limitada à evidência: PASS;
+- checks/review: verificação final do PR #187.
 
 ## Decision log
 
-- 2026-09-03: não usar preferência arquitetural como critério; este estágio mede apenas o estado atual e seleciona o próximo experimento conforme thresholds pré-declarados.
-- 2026-09-03: primeira execução mostrou 27,08% cross-boundary, mas foi descartada como evidência final porque o checkout padrão usou o merge-ref do PR.
-- 2026-09-03: workflow corrigido para checkout explícito do PR head SHA; repetição exata mostrou 26,67% cross-boundary e selecionou o experimento de coordenação/atomicidade cross-repo.
+- 2026-09-03: preferência arquitetural não é critério; o baseline apenas seleciona o próximo experimento.
+- 2026-09-03: resultado aceito seleciona estudo controlado de coordenação/atomicidade cross-repo.
