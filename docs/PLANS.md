@@ -27,12 +27,17 @@ Um plano ativo contém:
 7. `Progress log` factual;
 8. `Decision log`.
 
+Quando uma decisão aberta depender de alegação empírica ou comparação — por exemplo performance, manutenção, complexidade, confiabilidade, segurança, produtividade, custo ou superioridade entre alternativas — o plano deve também registrar ou apontar para o protocolo mínimo exigido por `QUALITY.md`: pergunta/hipótese, objetos de estudo ou workload, baseline/alternativas, métricas, ambiente e versões materiais, regra de decisão quando aplicável, artefatos para reprodução e limitações/ameaças à validade.
+
+Se esses elementos ainda não existirem, a decisão permanece explicitamente como hipótese ou experimento proposto; o plano não deve antecipar a conclusão.
+
 Ao concluir, registrar resultado e evidência final, marcar `Status: **CONCLUÍDO**` e mover para `completed/`.
 
 ## Regras
 
 - Plano não substitui `PRODUCT.md`, `ARCHITECTURE.md`, ADR ou `MDV.md`.
 - Hipótese invalidada deve atualizar o plano; não continuar por sunk cost.
+- Recomendação empírica deve obedecer `ENGINEERING.md` e `QUALITY.md`; o plano registra a execução e a evidência, não cria um padrão metodológico paralelo.
 - Não usar plano como diário infinito.
 - `agent/CURRENT-WORK.md` aponta para o plano ativo relevante; não replica o progress log.
 - Não manter uma lista manual de “planos ativos” aqui; a árvore `exec-plans/active/` e `CURRENT-WORK` são as fontes.
