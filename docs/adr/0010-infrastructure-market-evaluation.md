@@ -68,5 +68,5 @@ It does not require a market survey for ordinary application code, domain logic,
 - BPT2 remains evidence-first without becoming build-first.
 - Custom infrastructure is an explicit decision, not the default experiment.
 - Existing solutions are evaluated before engineering cost is committed to reproducing them.
-- Adoption or custom build is subject to the same requirement de operacionalizar alegações comparativas e registrar evidência compatível.
+- Adoption and custom build are subject to the same requirement to operationalize comparative claims and record compatible evidence.
 - Existing deferred decisions remain deferred. This ADR changes the process used when they are opened; it does not activate Redis, brokers, external search, object storage providers, distributed locks or background jobs by itself.
