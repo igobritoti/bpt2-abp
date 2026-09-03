@@ -28,14 +28,15 @@ This matrix is the work-selection authority for the current baseline phase. It d
 | BPT2-009 | Market intelligence | Source authority and stable binding | POST_BASELINE | Open issue #114 | Needs licensed provider/dataset or explicit external authority | Issue #114 | Keep in post-baseline expansion |
 | BPT2-010 | Trust / inspection | Vehicle history and inspection trust contracts | POST_BASELINE | Open issue #115 | Needs provider/contract/identity decisions | Issue #115 | Keep in post-baseline expansion |
 | BPT2-011 | Geographic radius | True radius semantics beyond municipality identity | POST_BASELINE | Open issue #116 | Municipality identity is already separate; radius is a product expansion | Issue #116 | Keep in post-baseline expansion |
-| BPT2-012 | Operational readiness | Local bootstrap, build, migrations, and documented gate flow | PARTIAL | `../LOCAL-DEVELOPMENT.md`, `../QUALITY.md`, fresh build passes, fresh-migration gate fails closed without `BPT_DB_CONNECTION`, disposable PostgreSQL probe blocked by unavailable Docker daemon in this environment | External environment still needed to complete the clean fresh-DB bootstrap on this machine | `../LOCAL-DEVELOPMENT.md` | Re-run against a Docker-enabled or live PostgreSQL environment with documented `BPT_DB_CONNECTION` |
+| BPT2-012 | Operational readiness | Fresh build, migrations, PostgreSQL-backed runtime, and documented gate flow | PASS | `../LOCAL-DEVELOPMENT.md`, `../QUALITY.md`, fresh-migration evidence, and PR #185 exact-head run `33761113685` on `66fb58623ef9b8fb2ee8f81b414dd885957bb3ad` | None for the measured clean PostgreSQL + API + production `public-web` SSR/HTTP boundary | `../LOCAL-DEVELOPMENT.md`, `.github/workflows/listing-decision-support-runtime-gate.yml` | Keep the reproducible remote runtime gate as operational evidence; define a separate target before claiming browser-engine/hydration coverage |
 
 ## Resolution summary
 
 - `BASELINE_CLOSURE`: none currently require new engineering work.
 - `POST_BASELINE`: #113, #114, #115, #116.
 - `ADMIN`: #160.
-- `EXTERNAL`: none currently required to close the baseline, but the operational readiness probe still needs an environment with PostgreSQL availability.
+- `EXTERNAL`: none currently required to close the baseline.
+- Operational readiness has reproducible remote evidence for fresh PostgreSQL + API + production Next.js SSR/HTTP. Browser-engine automation is outside that measured claim unless separately specified.
 
 ## Authority
 
