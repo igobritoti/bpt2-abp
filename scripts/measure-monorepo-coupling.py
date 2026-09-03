@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -95,7 +96,9 @@ def direct_cross_boundary_references() -> list[dict[str, str]]:
 
 
 def main() -> None:
-    commits = git("rev-list", "--first-parent", f"--max-count={WINDOW}", "HEAD").splitlines()
+    history_ref = os.environ.get("BPT_COUPLING_HISTORY_REF", "HEAD")
+    history_sha = git("rev-parse", history_ref)
+    commits = git("rev-list", "--first-parent", f"--max-count={WINDOW}", history_sha).splitlines()
     rows = []
     counts = {"backend_only": 0, "frontend_only": 0, "cross_boundary": 0}
 
@@ -145,9 +148,11 @@ def main() -> None:
         "protocol": {
             "commit_window": WINDOW,
             "history": "first-parent",
+            "history_ref": history_ref,
+            "history_sha": history_sha,
             "docs_only_excluded_from_product_commit_denominator": True,
         },
-        "head": git("rev-parse", "HEAD"),
+        "tree_head": git("rev-parse", "HEAD"),
         "commits_examined_n": len(commits),
         "product_commits_n": product_n,
         "backend_only_n": counts["backend_only"],
