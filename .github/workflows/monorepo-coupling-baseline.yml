@@ -12,7 +12,8 @@ on:
       - 'tests/**'
       - 'public-web/**'
       - 'scripts/measure-monorepo-coupling.py'
-      - 'docs/exec-plans/active/0062-monorepo-coupling-baseline.md'
+      - 'docs/exec-plans/completed/0062-monorepo-coupling-baseline.md'
+      - 'docs/audits/2026-09-03-monorepo-coupling-baseline.md'
       - '.github/workflows/**'
       - 'docs/generated/repository-facts.md'
   workflow_dispatch:
@@ -24,6 +25,8 @@ jobs:
   monorepo-coupling-baseline:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      BPT_COUPLING_HISTORY_REF: 53be795b6205ef57c03f1118e0c0287dc0f2873c
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
