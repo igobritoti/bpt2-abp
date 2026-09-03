@@ -15,6 +15,23 @@ Arquitetura só é congelada quando a necessidade do BPT e evidência suficiente
 
 Prioridade quando fontes conflitarem: teste/código reproduzível → documentação oficial atual → standard → evidência externa confiável → inferência → preferência.
 
+### Admissibilidade de sugestões técnicas
+
+Sugestões apresentadas como melhoria técnica devem ser limitadas ao que a evidência disponível sustenta. Afirmações de superioridade — por exemplo, “mais simples”, “mais rápido”, “mais seguro”, “mais barato”, “mais sustentável”, “melhor para manutenção” ou “arquiteturalmente superior” — exigem método e evidência compatíveis com a afirmação.
+
+Aplicar os princípios dos [ACM SIGSOFT Empirical Standards for Software Engineering](references/EMPIRICAL_SOFTWARE_ENGINEERING.md) e critérios de reprodutibilidade ao formular ou promover recomendações:
+
+- declarar a afirmação, pergunta ou hipótese que está sendo avaliada;
+- usar método apropriado ao tipo de afirmação: benchmark, experimento, repository mining, engineering research, replication ou outro método aplicável;
+- predefinir, quando material, métricas, baseline, critérios de inclusão/exclusão e regra de decisão antes de interpretar resultados;
+- preservar procedimento, versões, dados/fixtures, parâmetros e resultados suficientes para repetição;
+- declarar limitações e ameaças à validade relevantes;
+- não generalizar além da população, workload, ambiente ou comportamento realmente estudado.
+
+Sem evidência suficiente, a formulação permitida é **hipótese**, **alternativa a testar** ou **experimento proposto**. Não promover classe C/D para requisito, recomendação factual ou decisão congelada apenas por plausibilidade, popularidade, familiaridade, elegância arquitetural ou preferência do agente.
+
+Guias e literatura metodológica qualificam como produzir evidência; não substituem evidência local quando a conclusão depende do BPT2. A validação operacional deste protocolo fica em `QUALITY.md`.
+
 ## Migração e transplante de capacidades entre projetos
 
 O BPT1 (`igobritoti/bomprati`) é tratado como **donor de capacidades e evidência**, não como chassis técnico do BPT2. A existência de uma feature, biblioteca, tabela, serviço ou padrão no donor não cria requisito para o BPT2.

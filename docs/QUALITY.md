@@ -23,6 +23,31 @@ Não crie suites por ritual e não pule um check relevante por conveniência.
 | side effect externo | falha intermediária + retry/idempotência/recuperação |
 | bug | regressão que falha antes e passa depois, quando viável |
 
+## Evidência empírica para recomendações
+
+Quando uma conclusão técnica depende de observação — performance, manutenção, complexidade, confiabilidade, produtividade, qualidade, segurança, escalabilidade, custo ou comportamento comparativo — a prova deve seguir um desenho empírico adequado à pergunta e ser reproduzível na medida necessária para sustentar a decisão.
+
+A referência metodológica do projeto está em [`references/EMPIRICAL_SOFTWARE_ENGINEERING.md`](references/EMPIRICAL_SOFTWARE_ENGINEERING.md), baseada nos ACM SIGSOFT Empirical Standards e em critérios ACM de artifact review/reproducibility.
+
+Antes de aceitar uma recomendação empírica como evidência A/B, verificar conforme aplicável:
+
+- pergunta, hipótese ou afirmação explicitada antes da conclusão;
+- objetos de estudo, população/amostra ou workload definidos;
+- baseline e alternativas comparáveis;
+- ambiente, versões e configuração material registradas;
+- métrica e unidade adequadas à afirmação;
+- critérios de inclusão/exclusão documentados;
+- regra de decisão ou threshold predefinido quando houver risco de escolha pós-resultado;
+- repetições/amostra suficientes para o tipo de variabilidade observada;
+- artefatos e comandos suficientes para repetir a execução;
+- resultados brutos ou intermediários suficientes para rechecagem;
+- limitações e ameaças à validade explicitadas;
+- conclusão limitada ao que foi efetivamente medido.
+
+Falha em um item não invalida automaticamente todo estudo; reduz a força da evidência conforme sua relevância para a afirmação. Quando a lacuna impedir uma conclusão factual, classificar o resultado como inferência/hipótese e propor o menor experimento capaz de resolvê-la.
+
+Não usar popularidade, preferência de framework, opinião de comunidade, contagem de estrelas, benchmark de terceiros incompatível, exemplo de documentação ou experiência isolada como prova de superioridade no BPT2. Essas fontes podem gerar hipóteses ou orientar desenho experimental, mas não substituem evidência compatível com o contexto do projeto.
+
 ## Validação de capacidades transplantadas ou inspiradas em outro projeto
 
 Para BPT1 → BPT2 e qualquer donor futuro, não validar por equivalência visual nem por contagem de arquivos. Validar o **comportamento e o risco**.
