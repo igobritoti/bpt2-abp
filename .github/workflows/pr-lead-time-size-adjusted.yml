@@ -1,0 +1,32 @@
+name: BPT2 PR Lead Time Size Adjusted
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/measure-pr-lead-time-size-adjusted.py'
+      - 'docs/exec-plans/**'
+      - '.github/workflows/pr-lead-time-size-adjusted.yml'
+      - 'docs/generated/repository-facts.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-lead-time-size-adjusted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Measure size-adjusted PR lead time
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/measure-pr-lead-time-size-adjusted.py
+      - name: Upload evidence
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          name: pr-lead-time-size-adjusted
+          path: artifacts/pr-lead-time-size-adjusted.json
+          if-no-files-found: error
