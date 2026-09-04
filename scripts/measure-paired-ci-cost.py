@@ -85,7 +85,9 @@ def main():
                         'split_compute_median_s': s_compute, 'split_critical_path_median_s': s_critical,
                         'split_compute_vs_combined_total_ratio': ratio(s_compute, c_total),
                         'split_critical_vs_combined_total_ratio': ratio(s_critical, c_total)})
-    payload = {'schema_version': 1, 'head_sha': os.getenv('GITHUB_SHA'), 'pairs': observations, 'summary': summary,
+    measured_head_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    payload = {'schema_version': 1, 'head_sha': measured_head_sha, 'github_event_sha': os.getenv('GITHUB_SHA'),
+               'pairs': observations, 'summary': summary,
                'scope': 'paired same-runner build/check probe; split critical path is modeled max(streams), not observed two-job elapsed time'}
     Path(args.output).write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n')
     print(json.dumps(summary, indent=2, sort_keys=True))
