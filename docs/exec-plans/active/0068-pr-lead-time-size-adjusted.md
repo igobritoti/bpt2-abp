@@ -58,11 +58,14 @@ Métricas: mediana/IQR de churn e arquivos por grupo; comparação pareada por n
 ## Progress log
 
 - 2026-09-03: protocolo pré-registrado antes de consultar churn/tamanho da população.
+- 2026-09-03: primeiro run completou a análise, mas o workflow ainda fazia checkout da merge-ref; `tree_head` do artifact não identificou diretamente o PR head. Esse run é mantido apenas como piloto não-autoritativo.
+- 2026-09-03: workflow corrigido para checkout explícito de `github.event.pull_request.head.sha`, concurrency padrão e action pin vigente; resultado autoritativo será apenas uma execução posterior à correção.
 
 ## Decision log
 
 - 2026-09-03: escolhido matching em churn + arquivos e regressão HC3 complementar para testar a principal ameaça de validade identificada no 0067.
 - 2026-09-03: lead time não participa da seleção dos pares.
+- 2026-09-03: o primeiro artifact não será usado como autoridade decisória por ambiguidade de rastreabilidade do checkout, mesmo com análise funcionalmente concluída.
 
 ## Critérios de aceite
 
@@ -70,6 +73,7 @@ Métricas: mediana/IQR de churn e arquivos por grupo; comparação pareada por n
 - população 0062/0067 reproduzida;
 - >=8 pares matched;
 - artifact machine-readable com pares e regressão;
+- artifact autoritativo identifica o PR head medido;
 - interpretação contra thresholds;
 - plano arquivado;
 - checks/review verdes no head final.
