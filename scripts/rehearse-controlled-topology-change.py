@@ -132,9 +132,11 @@ def split(rep: int) -> dict[str, object]:
         check_s, check_rc = timed(["npm", "run", "check"], frontend)
         consumer_ok = check_consumer(frontend)
 
-        backend_stream = backend_materialize_s + backend_patch_s + backend_build_s + handoff_s
-        frontend_stream = frontend_materialize_s + frontend_patch_s + install_s + check_s
-        compute = backend_stream + frontend_stream
+        backend_to_handoff = backend_materialize_s + backend_patch_s + backend_build_s + handoff_s
+        frontend_pre_handoff = frontend_materialize_s + install_s
+        frontend_post_handoff = frontend_patch_s + check_s
+        compute = backend_to_handoff + frontend_pre_handoff + frontend_post_handoff
+        critical_path = max(backend_to_handoff, frontend_pre_handoff) + frontend_post_handoff
         return {
             "backend_materialize_s": backend_materialize_s,
             "frontend_materialize_s": frontend_materialize_s,
@@ -144,10 +146,11 @@ def split(rep: int) -> dict[str, object]:
             "backend_build_s": backend_build_s,
             "frontend_install_s": install_s,
             "frontend_check_s": check_s,
-            "backend_stream_s": backend_stream,
-            "frontend_stream_s": frontend_stream,
+            "backend_to_handoff_s": backend_to_handoff,
+            "frontend_pre_handoff_s": frontend_pre_handoff,
+            "frontend_post_handoff_s": frontend_post_handoff,
             "compute_s": compute,
-            "critical_path_s": max(backend_stream, frontend_stream),
+            "critical_path_s": critical_path,
             "contract_before_sha256": before_digest,
             "contract_after_sha256": after_digest,
             "contract_lock_accepted": lock_accepted,
